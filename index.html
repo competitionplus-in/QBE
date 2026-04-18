@@ -3,62 +3,128 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Competition Plus | Rajasthan Engineering Exams</title>
+    <title>Competition Plus | Rajasthan Engineering Exam Experts</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .glass-nav { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
+    </style>
 </head>
-<body class="bg-gray-50 text-gray-800">
+<body class="bg-slate-50 text-slate-900">
 
-    <nav class="bg-white shadow-md p-4">
-        <div class="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
-            <h1 class="text-2xl font-bold text-blue-800">Competition Plus</h1>
-            
-            <div class="space-x-6 hidden md:block">
-                <a href="index.html" class="hover:text-blue-600 font-medium">Home</a>
-                <a href="test-screen.html" class="hover:text-blue-600 font-medium">Mock Tests</a>
-                <a href="#" class="hover:text-blue-600 font-medium">Syllabus</a>
+    <nav class="glass-nav sticky top-0 z-50 border-b border-slate-200 p-4">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-2">
+                <div class="bg-blue-700 text-white p-1.5 rounded-lg">
+                    <i class="fas fa-graduation-cap text-xl"></i>
+                </div>
+                <h1 class="text-2xl font-800 tracking-tight text-slate-900">COMPETITION<span class="text-blue-700">PLUS</span></h1>
             </div>
             
-            <a href="login.html" class="w-full md:w-auto text-center bg-pink-600 hover:bg-pink-700 text-white px-6 py-2 rounded-md font-medium transition shadow-sm">
-                Login / Register
+            <div class="hidden md:flex space-x-8 text-sm font-semibold text-slate-600 uppercase tracking-wider">
+                <a href="index.html" class="hover:text-blue-700 transition">Home</a>
+                <a href="test-screen.html" class="hover:text-blue-700 transition">Mock Tests</a>
+                <a href="#" class="hover:text-blue-700 transition">Syllabus</a>
+                <a href="#" class="hover:text-blue-700 transition">Resources</a>
+            </div>
+            
+            <a href="login.html" class="w-full md:w-auto bg-slate-900 hover:bg-slate-800 text-white px-8 py-2.5 rounded-full text-sm font-bold transition shadow-lg text-center">
+                STUDENT LOGIN
             </a>
         </div>
     </nav>
 
-    <header class="py-12 md:py-20 text-center px-4">
-        <h2 class="text-3xl md:text-5xl font-extrabold mb-4 leading-tight">
-            Target RPSC AEn & <br class="md:hidden"> RSMSSB JEn
-        </h2>
-        <p class="text-lg md:text-xl text-gray-600 max-w-2xl mx-auto mb-8">
-            The specialized platform for Rajasthan Government Engineering Exams. 
-            Prepare for Civil Engineering & Rajasthan GK.
-        </p>
+    <header class="relative py-16 md:py-28 overflow-hidden bg-white">
+        <div class="absolute top-0 right-0 -translate-y-1/2 translate-x-1/4 w-96 h-96 bg-blue-50 rounded-full blur-3xl"></div>
         
-        <div class="flex justify-center">
-            <a href="test-screen.html" class="w-full max-w-xs md:w-auto bg-blue-700 hover:bg-blue-800 text-white px-10 py-4 rounded-lg font-bold text-lg shadow-lg transition transform hover:-translate-y-1">
-                Start Free Mock Test
-            </a>
+        <div class="max-w-5xl mx-auto text-center px-4 relative z-10">
+            <span class="inline-block py-1 px-4 rounded-full bg-blue-100 text-blue-700 text-xs font-bold uppercase tracking-widest mb-6">
+                Premium Rajasthan Exam Prep
+            </span>
+            <h2 class="text-4xl md:text-6xl font-800 text-slate-900 mb-6 leading-tight">
+                Master the <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-700 to-indigo-600">RPSC AEn & RSMSSB JEn</span> Exams
+            </h2>
+            <p class="text-lg md:text-xl text-slate-500 max-w-2xl mx-auto mb-10 leading-relaxed">
+                The most trusted platform for Rajasthan Civil Engineers. Updated 2026 patterns, IS code-specific MCQs, and detailed GK analytics.
+            </p>
+            
+            <div class="flex flex-col md:flex-row justify-center items-center gap-4">
+                <a href="test-screen.html" class="w-full md:w-auto bg-gradient-to-r from-blue-700 to-blue-800 hover:from-blue-800 hover:to-indigo-900 text-white px-12 py-4 rounded-xl font-bold text-lg shadow-2xl transition transform hover:-translate-y-1 flex items-center justify-center gap-3">
+                    <i class="fas fa-play-circle"></i> Start Free Mock Test
+                </a>
+                <p class="text-sm text-slate-400 font-medium">No credit card required. Start practicing instantly.</p>
+            </div>
         </div>
     </header>
 
-    <section class="max-w-6xl mx-auto px-4 py-8 grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div class="bg-white p-6 rounded-xl shadow-sm border-t-4 border-blue-600">
-            <h3 class="font-bold text-xl mb-2 text-blue-800">Civil Engineering</h3>
-            <p class="text-gray-600">Detailed MCQs on RCC, Steel, and Soil Mechanics based on IS Codes.</p>
-        </div>
+    <section class="max-w-7xl mx-auto px-4 py-16">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div class="group bg-white p-8 rounded-2xl shadow-sm border border-slate-100 hover:shadow-xl hover:border-blue-200 transition-all duration-300">
+                <div class="w-14 h-14 bg-blue-50 rounded-xl flex items-center justify-center mb-6 group-hover:bg-blue-600 transition-colors">
+                    <i class="fas fa-drafting-compass text-2xl text-blue-600 group-hover:text-white"></i>
+                </div>
+                <h3 class="font-bold text-xl mb-3">Civil Engineering</h3>
+                <p class="text-slate-500 text-sm leading-relaxed mb-4">Highly targeted questions for RCC, Steel, SM, and FM based strictly on IS 456, 800, and 1343.</p>
+                <div class="h-1 w-12 bg-blue-600 rounded"></div>
+            </div>
 
-        <div class="bg-white p-6 rounded-xl shadow-sm border-t-4 border-blue-600">
-            <h3 class="font-bold text-xl mb-2 text-blue-800">Rajasthan GK</h3>
-            <p class="text-gray-600">History, Geography, and Culture of Rajasthan for administrative exams.</p>
-        </div>
+            <div class="group bg-white p-8 rounded-2xl shadow-sm border border-slate-100 hover:shadow-xl hover:border-blue-200 transition-all duration-300">
+                <div class="w-14 h-14 bg-orange-50 rounded-xl flex items-center justify-center mb-6 group-hover:bg-orange-600 transition-colors">
+                    <i class="fas fa-map-marked-alt text-2xl text-orange-600 group-hover:text-white"></i>
+                </div>
+                <h3 class="font-bold text-xl mb-3">Rajasthan GK</h3>
+                <p class="text-slate-500 text-sm leading-relaxed mb-4">Comprehensive coverage of Art, Culture, Geography, and 2026 District Reorganization reports.</p>
+                <div class="h-1 w-12 bg-orange-600 rounded"></div>
+            </div>
 
-        <div class="bg-white p-6 rounded-xl shadow-sm border-t-4 border-blue-600">
-            <h3 class="font-bold text-xl mb-2 text-blue-800">Hindi Grammar</h3>
-            <p class="text-gray-600">Technical Hindi terminology and grammar for the AEn Main Exam.</p>
+            <div class="group bg-white p-8 rounded-2xl shadow-sm border border-slate-100 hover:shadow-xl hover:border-blue-200 transition-all duration-300">
+                <div class="w-14 h-14 bg-pink-50 rounded-xl flex items-center justify-center mb-6 group-hover:bg-pink-600 transition-colors">
+                    <i class="fas fa-language text-2xl text-pink-600 group-hover:text-white"></i>
+                </div>
+                <h3 class="font-bold text-xl mb-3">Hindi Grammar</h3>
+                <p class="text-slate-500 text-sm leading-relaxed mb-4">Technical terminology and precise grammar modules designed for the AEn Main examination.</p>
+                <div class="h-1 w-12 bg-pink-600 rounded"></div>
+            </div>
         </div>
     </section>
 
-    <footer class="text-center py-10 text-gray-500 text-sm border-t border-gray-200 mt-10">
-        &copy; 2026 Competition Plus | Rajasthan Exam Preparation Hub
+    <section class="bg-slate-900 py-16 text-white text-center">
+        <div class="max-w-4xl mx-auto px-4">
+            <h3 class="text-2xl md:text-3xl font-bold mb-12 italic text-slate-400 underline underline-offset-8">Competitive Edge Features</h3>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-8">
+                <div>
+                    <span class="block text-3xl font-bold mb-2">5,000+</span>
+                    <span class="text-xs uppercase text-slate-500 tracking-widest font-bold">MCQs</span>
+                </div>
+                <div>
+                    <span class="block text-3xl font-bold mb-2">1/3rd</span>
+                    <span class="text-xs uppercase text-slate-500 tracking-widest font-bold">Negative Simulation</span>
+                </div>
+                <div>
+                    <span class="block text-3xl font-bold mb-2">2026</span>
+                    <span class="text-xs uppercase text-slate-500 tracking-widest font-bold">Exam Pattern</span>
+                </div>
+                <div>
+                    <span class="block text-3xl font-bold mb-2">Mobile</span>
+                    <span class="text-xs uppercase text-slate-500 tracking-widest font-bold">App Interface</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="bg-white border-t border-slate-200 py-12 px-4">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
+            <div class="text-slate-400 text-sm font-medium">
+                &copy; 2026 Competition Plus | Rajasthan's No. 1 Engineering Portal
+            </div>
+            <div class="flex space-x-6 text-slate-400">
+                <a href="#" class="hover:text-blue-700 transition"><i class="fab fa-youtube text-xl"></i></a>
+                <a href="#" class="hover:text-blue-700 transition"><i class="fab fa-telegram text-xl"></i></a>
+                <a href="#" class="hover:text-blue-700 transition"><i class="fab fa-whatsapp text-xl"></i></a>
+            </div>
+        </div>
     </footer>
 
 </body>
