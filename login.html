@@ -99,37 +99,70 @@
     </div>
 
     <script>
-        let isLogin = true;
+    let isLogin = true;
 
-        function toggleAuth() {
-            isLogin = !isLogin;
-            const title = document.getElementById('auth-title');
-            const subtitle = document.getElementById('auth-subtitle');
-            const nameField = document.getElementById('name-field');
-            const toggleText = document.getElementById('toggle-text');
-            const toggleBtn = document.getElementById('toggle-btn');
+    function toggleAuth() {
+        isLogin = !isLogin;
+        const title = document.getElementById('auth-title');
+        const subtitle = document.getElementById('auth-subtitle');
+        const nameField = document.getElementById('name-field');
+        const toggleText = document.getElementById('toggle-text');
+        const toggleBtn = document.getElementById('toggle-btn');
 
-            if (isLogin) {
-                title.innerText = "Welcome Back";
-                subtitle.innerText = "Log in to continue your preparation";
-                nameField.classList.add('hidden');
-                toggleText.innerText = "New to Competition Plus?";
-                toggleBtn.innerText = "Create Account";
-            } else {
-                title.innerText = "Get Started";
-                subtitle.innerText = "Create your free account today";
-                nameField.classList.remove('hidden');
-                toggleText.innerText = "Already have an account?";
-                toggleBtn.innerText = "Login here";
-            }
+        if (isLogin) {
+            title.innerText = "Welcome Back";
+            subtitle.innerText = "Log in to continue your preparation";
+            nameField.classList.add('hidden');
+            toggleText.innerText = "New to Competition Plus?";
+            toggleBtn.innerText = "Create Account";
+        } else {
+            title.innerText = "Get Started";
+            subtitle.innerText = "Create your free account today";
+            nameField.classList.remove('hidden');
+            toggleText.innerText = "Already have an account?";
+            toggleBtn.innerText = "Login here";
         }
+    }
 
-        function handleAuth(e) {
-            e.preventDefault();
-            // In a real app, you'd connect this to Firebase or a database
-            alert(isLogin ? "Logging you in..." : "Creating your account...");
-            window.location.href = "index.html"; // Redirect to home
+    function handleAuth(e) {
+        e.preventDefault();
+        
+        // Correctly select inputs regardless of whether name-field is hidden
+        const inputs = e.target.querySelectorAll('input');
+        const fullName = inputs[0].value;
+        const email = inputs[1].value;
+        const password = inputs[2].value;
+
+        if (isLogin) {
+            // FIREBASE LOGIN
+            auth.signInWithEmailAndPassword(email, password)
+                .then((userCredential) => {
+                    console.log("Logged in:", userCredential.user.email);
+                    window.location.href = "index.html";
+                })
+                .catch((error) => {
+                    alert("Login Failed: " + error.message);
+                });
+        } else {
+            // FIREBASE SIGN UP
+            auth.createUserWithEmailAndPassword(email, password)
+                .then((userCredential) => {
+                    // Store the user's name in Firestore
+                    return db.collection("users").doc(userCredential.user.uid).set({
+                        name: fullName,
+                        email: email,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                })
+                .then(() => {
+                    console.log("Account created successfully!");
+                    window.location.href = "index.html";
+                })
+                .catch((error) => {
+                    alert("Registration Failed: " + error.message);
+                });
         }
-    </script>
+    }
+</script>
 </body>
 </html>
