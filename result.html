@@ -117,6 +117,30 @@
         </div>
 
     </main>
+<script>
+    window.onload = function() {
+        const data = JSON.parse(localStorage.getItem('lastTestResult'));
+        
+        if(data) {
+            // Update Main Score
+            document.querySelector('.text-4xl.font-800').innerText = data.total;
+            
+            // Update Summary Stats
+            const listItems = document.querySelectorAll('ul li span.font-bold');
+            listItems[0].innerText = data.correct + data.incorrect; // Attempted
+            listItems[1].innerText = data.correct;                 // Correct
+            listItems[2].innerText = data.incorrect;               // Incorrect
+            listItems[3].innerText = data.skipped;                 // Skipped
 
+            // Update Subject Bars (Example for Civil)
+            const civilScore = document.querySelector('.text-blue-700.font-bold');
+            civilScore.innerText = `${data.subjects.Civil.toFixed(1)} / 80`;
+            
+            // Update Progress Circle (CSS Variable)
+            const percentage = (data.total / 120) * 360;
+            document.querySelector('.score-circle').style.setProperty('--progress', `${percentage}deg`);
+        }
+    }
+</script>
 </body>
 </html>
