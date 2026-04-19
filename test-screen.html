@@ -42,7 +42,7 @@
         <div class="flex items-center gap-6">
             <div class="flex items-center gap-2 bg-slate-800 px-4 py-1.5 rounded-full border border-slate-700">
                 <i class="fas fa-clock text-blue-400"></i>
-                <span id="timer" class="font-mono text-lg font-bold">120:00</span>
+                <span id="timer" class="font-mono text-lg font-bold">2:00:00</span>
             </div>
             <button onclick="confirmSubmit()" class="bg-red-600 hover:bg-red-700 text-white px-6 py-1.5 rounded-lg font-bold transition">
                 SUBMIT TEST
@@ -269,12 +269,21 @@ function updatePalette() {
 }
 
 // 5. TIMER LOGIC
+// 5. UPDATED TIMER LOGIC (H:MM:SS)
 function startTimer() {
     const timerElement = document.getElementById('timer');
     const countdown = setInterval(() => {
-        const minutes = Math.floor(timeInSeconds / 60);
+        // Calculate Hours, Minutes, and Seconds
+        const hours = Math.floor(timeInSeconds / 3600);
+        const minutes = Math.floor((timeInSeconds % 3600) / 60);
         const seconds = timeInSeconds % 60;
-        timerElement.innerText = `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+
+        // Format: H:MM:SS (with leading zeros for MM and SS)
+        const displayHours = hours; 
+        const displayMinutes = minutes < 10 ? '0' + minutes : minutes;
+        const displaySeconds = seconds < 10 ? '0' + seconds : seconds;
+
+        timerElement.innerText = `${displayHours}:${displayMinutes}:${displaySeconds}`;
 
         if (timeInSeconds <= 0) {
             clearInterval(countdown);
