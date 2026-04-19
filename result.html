@@ -9,33 +9,18 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
         body { font-family: 'Inter', sans-serif; }
-        .score-circle { background: conic-gradient(#1d4ed8 var(--progress), #e2e8f0 0deg); }
+        /* Dynamic progress circle using CSS variable */
+        .score-circle { 
+            background: conic-gradient(#1d4ed8 var(--progress, 0deg), #e2e8f0 0deg); 
+            transition: --progress 0.5s ease-out;
+        }
     </style>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-
-<script>
-  const firebaseConfig = {
-    apiKey: "AIzaSyCAl9iSJhwn5IAUCA5LrgPK5FzFZPtWNZo",
-    authDomain: "competition-plus-9996b.firebaseapp.com",
-    projectId: "competition-plus-9996b",
-    storageBucket: "competition-plus-9996b.firebasestorage.app",
-    messagingSenderId: "49252651907",
-    appId: "1:49252651907:web:8a5162064aaf3e69bd1cb6",
-    measurementId: "G-ESTWZJ5X0K"
-  };
-  // Initialize Firebase
-  firebase.initializeApp(firebaseConfig);
-  const auth = firebase.auth();
-  const db = firebase.firestore();
-</script>
 </head>
 <body class="bg-slate-50 text-slate-900 pb-20">
 
     <nav class="bg-white border-b border-slate-200 p-4 sticky top-0 z-50">
         <div class="max-w-5xl mx-auto flex justify-between items-center">
-            <h1 class="text-xl font-800 text-blue-800">COMPETITION<span class="text-slate-900">PLUS</span></h1>
+            <h1 class="text-xl font-800 text-blue-800 tracking-tighter">COMPETITION<span class="text-slate-900">PLUS</span></h1>
             <a href="index.html" class="text-sm font-bold text-slate-500 hover:text-blue-700">EXIT TO HOME</a>
         </div>
     </nav>
@@ -53,23 +38,23 @@
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
             
             <div class="md:col-span-2 bg-white p-8 rounded-3xl shadow-sm border border-slate-100 flex flex-col md:flex-row items-center gap-8">
-                <div class="relative w-40 h-40 rounded-full flex items-center justify-center score-circle" style="--progress: 75%;">
+                <div id="score-circle-element" class="relative w-40 h-40 rounded-full flex items-center justify-center score-circle" style="--progress: 0deg;">
                     <div class="absolute inset-2 bg-white rounded-full flex flex-col items-center justify-center">
-                        <span class="text-4xl font-800 text-blue-800">92.5</span>
-                        <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">Out of 120</span>
+                        <span id="display-final-score" class="text-4xl font-800 text-blue-800">0.0</span>
+                        <span id="display-out-of" class="text-xs font-bold text-slate-400 uppercase tracking-widest">Out of 0</span>
                     </div>
                 </div>
                 <div class="flex-1 space-y-4">
-                    <h3 class="text-xl font-bold">Excellent Work!</h3>
-                    <p class="text-slate-500 text-sm">You are in the **top 5%** of students preparing for the RPSC AEn this week.</p>
+                    <h3 id="performance-title" class="text-xl font-bold text-center md:text-left">Analyzing...</h3>
+                    <p id="performance-desc" class="text-slate-500 text-sm text-center md:text-left">Calculating your ranking based on Rajasthan state standards.</p>
                     <div class="flex gap-4">
                         <div class="bg-slate-50 p-3 rounded-xl flex-1 text-center">
-                            <span class="block text-lg font-bold text-slate-800">82%</span>
-                            <span class="text-[10px] font-bold text-slate-400 uppercase">Accuracy</span>
+                            <span id="display-accuracy" class="block text-lg font-bold text-slate-800">0%</span>
+                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Accuracy</span>
                         </div>
                         <div class="bg-slate-50 p-3 rounded-xl flex-1 text-center">
-                            <span class="block text-lg font-bold text-slate-800">95m</span>
-                            <span class="text-[10px] font-bold text-slate-400 uppercase">Time Spent</span>
+                            <span id="display-attempted-count" class="block text-lg font-bold text-slate-800">0</span>
+                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Attempted</span>
                         </div>
                     </div>
                 </div>
@@ -79,87 +64,104 @@
                 <div>
                     <h4 class="text-slate-400 text-xs font-bold uppercase tracking-widest mb-4">Quick Summary</h4>
                     <ul class="space-y-3">
-                        <li class="flex justify-between text-sm"><span>Attempted</span> <span class="font-bold">105</span></li>
-                        <li class="flex justify-between text-sm text-green-400"><span>Correct</span> <span class="font-bold">98</span></li>
-                        <li class="flex justify-between text-sm text-red-400"><span>Incorrect</span> <span class="font-bold">7</span></li>
-                        <li class="flex justify-between text-sm text-slate-400"><span>Skipped</span> <span class="font-bold">15</span></li>
+                        <li class="flex justify-between text-sm"><span>Attempted</span> <span id="summary-attempted" class="font-bold">0</span></li>
+                        <li class="flex justify-between text-sm text-green-400"><span>Correct</span> <span id="summary-correct" class="font-bold">0</span></li>
+                        <li class="flex justify-between text-sm text-red-400"><span>Incorrect</span> <span id="summary-incorrect" class="font-bold">0</span></li>
+                        <li class="flex justify-between text-sm text-slate-400"><span>Skipped</span> <span id="summary-skipped" class="font-bold">0</span></li>
                     </ul>
                 </div>
-                <div class="pt-6 border-t border-slate-800 text-xs">
-                    <p class="text-slate-500 italic">*Negative marking of 1/3 applied.</p>
+                <div class="pt-6 border-t border-slate-800 text-[10px]">
+                    <p class="text-slate-500 italic">*Negative marking of 1/3 applied per state rules.</p>
                 </div>
             </div>
         </div>
 
         <h3 class="text-lg font-bold mb-6 flex items-center gap-2">
-            <i class="fas fa-chart-bar text-blue-600"></i> Subject Analysis
+            <i class="fas fa-chart-bar text-blue-600"></i> Performance Analysis
         </h3>
         <div class="space-y-4">
             <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
                 <div class="flex justify-between items-center mb-4">
-                    <span class="font-bold text-slate-700">Civil Engineering</span>
-                    <span class="text-blue-700 font-bold">65.3 / 80</span>
+                    <span class="font-bold text-slate-700">Overall Syllabus Coverage</span>
+                    <span id="subject-score-text" class="text-blue-700 font-bold">0 / 0</span>
                 </div>
                 <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                    <div class="bg-blue-600 h-full rounded-full" style="width: 81%;"></div>
-                </div>
-            </div>
-
-            <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
-                <div class="flex justify-between items-center mb-4">
-                    <span class="font-bold text-slate-700">Rajasthan GK</span>
-                    <span class="text-orange-600 font-bold">22.0 / 30</span>
-                </div>
-                <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                    <div class="bg-orange-500 h-full rounded-full" style="width: 73%;"></div>
-                </div>
-            </div>
-
-            <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
-                <div class="flex justify-between items-center mb-4">
-                    <span class="font-bold text-slate-700">General Hindi</span>
-                    <span class="text-pink-600 font-bold">5.2 / 10</span>
-                </div>
-                <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                    <div class="bg-pink-500 h-full rounded-full" style="width: 52%;"></div>
+                    <div id="subject-progress-bar" class="bg-blue-600 h-full rounded-full transition-all duration-1000" style="width: 0%;"></div>
                 </div>
             </div>
         </div>
 
         <div class="mt-12 flex flex-col md:flex-row gap-4 justify-center">
-            <button class="bg-slate-900 text-white px-10 py-4 rounded-xl font-bold shadow-lg hover:bg-slate-800 transition">
+            <button onclick="location.href='index.html'" class="bg-slate-900 text-white px-10 py-4 rounded-xl font-bold shadow-lg hover:bg-slate-800 transition">
                 <i class="fas fa-redo mr-2"></i> Retake Test
             </button>
-            <button class="bg-white border-2 border-slate-200 text-slate-700 px-10 py-4 rounded-xl font-bold hover:bg-slate-50 transition">
-                <i class="fas fa-list-check mr-2"></i> View Solutions
+            <button onclick="window.print()" class="bg-white border-2 border-slate-200 text-slate-700 px-10 py-4 rounded-xl font-bold hover:bg-slate-50 transition">
+                <i class="fas fa-download mr-2"></i> Download Result
             </button>
         </div>
-
     </main>
-<script>
-    window.onload = function() {
-        const data = JSON.parse(localStorage.getItem('lastTestResult'));
-        
-        if(data) {
-            // Update Main Score
-            document.querySelector('.text-4xl.font-800').innerText = data.total;
-            
-            // Update Summary Stats
-            const listItems = document.querySelectorAll('ul li span.font-bold');
-            listItems[0].innerText = data.correct + data.incorrect; // Attempted
-            listItems[1].innerText = data.correct;                 // Correct
-            listItems[2].innerText = data.incorrect;               // Incorrect
-            listItems[3].innerText = data.skipped;                 // Skipped
 
-            // Update Subject Bars (Example for Civil)
-            const civilScore = document.querySelector('.text-blue-700.font-bold');
-            civilScore.innerText = `${data.subjects.Civil.toFixed(1)} / 80`;
+    <script>
+        window.onload = function() {
+            // 1. Get the data from LocalStorage
+            const rawData = localStorage.getItem('lastTestResult');
             
-            // Update Progress Circle (CSS Variable)
-            const percentage = (data.total / 120) * 360;
-            document.querySelector('.score-circle').style.setProperty('--progress', `${percentage}deg`);
-        }
-    }
-</script>
+            if(!rawData) {
+                document.querySelector('main').innerHTML = `
+                    <div class="text-center py-20">
+                        <h2 class="text-2xl font-bold text-slate-400">No test data found.</h2>
+                        <a href="index.html" class="text-blue-600 font-bold underline mt-4 inline-block">Go back to Home</a>
+                    </div>`;
+                return;
+            }
+
+            const data = JSON.parse(rawData);
+
+            // 2. Map data to the UI
+            const totalMarks = parseFloat(data.total);
+            const totalQuestions = parseInt(data.totalQ);
+            const attempted = data.correct + data.incorrect;
+            
+            // Update Main Circle Text
+            document.getElementById('display-final-score').innerText = totalMarks;
+            document.getElementById('display-out-of').innerText = `Out of ${totalQuestions}`;
+            
+            // Update Summary sidebar
+            document.getElementById('summary-attempted').innerText = attempted;
+            document.getElementById('summary-correct').innerText = data.correct;
+            document.getElementById('summary-incorrect').innerText = data.incorrect;
+            document.getElementById('summary-skipped').innerText = data.skipped;
+
+            // Update Accuracy and Attempted count cards
+            const accuracy = attempted > 0 ? Math.round((data.correct / attempted) * 100) : 0;
+            document.getElementById('display-accuracy').innerText = accuracy + "%";
+            document.getElementById('display-attempted-count').innerText = attempted;
+
+            // 3. Update Progress Circle (CSS Variable)
+            // Note: 3.6 degrees per 1%
+            const scorePercent = (totalMarks / totalQuestions) * 100;
+            const degrees = Math.max(0, (scorePercent / 100) * 360);
+            document.getElementById('score-circle-element').style.setProperty('--progress', `${degrees}deg`);
+
+            // 4. Update Subject Bar
+            document.getElementById('subject-score-text').innerText = `${totalMarks} / ${totalQuestions}`;
+            document.getElementById('subject-progress-bar').style.width = `${Math.max(0, scorePercent)}%`;
+
+            // 5. Dynamic Feedback Messages
+            const title = document.getElementById('performance-title');
+            const desc = document.getElementById('performance-desc');
+
+            if (scorePercent >= 75) {
+                title.innerText = "Excellent Work!";
+                desc.innerHTML = "You are in the <strong>top 5%</strong> of students preparing for state exams.";
+            } else if (scorePercent >= 50) {
+                title.innerText = "Good Performance!";
+                desc.innerText = "You have a solid foundation. Focus on accuracy to improve further.";
+            } else {
+                title.innerText = "Keep Studying!";
+                desc.innerText = "Consistency is key. Review your incorrect answers and try again.";
+            }
+        };
+    </script>
 </body>
 </html>
