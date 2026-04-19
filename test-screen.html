@@ -63,11 +63,13 @@
                 </div>
 
                 <div class="p-6 md:p-10">
-                    <p class="text-lg md:text-xl text-slate-800 font-semibold mb-8 leading-relaxed">
-                        As per IS 456:2000, what is the minimum grade of concrete for a pre-stressed concrete structural member?
-                    </p>
+    <p id="question-display" class="text-lg md:text-xl text-slate-800 font-semibold mb-8 leading-relaxed">
+        Loading questions from Competition Plus...
+    </p>
 
-                    <div class="space-y-4">
+    <div id="options-display" class="space-y-4">
+        </div>
+</div>
                         <label class="flex items-center p-4 border-2 border-slate-100 rounded-xl hover:bg-blue-50 hover:border-blue-200 cursor-pointer transition-all group">
                             <input type="radio" name="q1" class="w-5 h-5 text-blue-600 focus:ring-blue-500">
                             <span class="ml-4 text-slate-700 font-medium group-hover:text-blue-900">M20</span>
@@ -165,6 +167,148 @@
         window.location.href = "result.html";
     }
 }
+        // CONFIGURATION
+const DB_URL = "https://competition-plus-9996b-default-rtdb.asia-southeast1.firebasedatabase.app/questions.json";
+let allQuestions = [];
+let currentIndex = 0;
+let studentAnswers = {}; // Stores { questionIndex: selectedOptionIndex }
+
+// 1. FETCH FROM FIREBASE
+async function loadTestData() {
+    try {
+        const response = await fetch(DB_URL);
+        const data = await response.json();
+        // Convert Firebase object to Array
+        allQuestions = Object.values(data);
+        renderQuestion();
+        updatePalette();
+    } catch (error) {
+        console.error("Firebase Error:", error);
+        document.getElementById("question-display").innerText = "Error loading test data.";
+    }
+}
+
+// 2. DISPLAY QUESTION
+function renderQuestion() {
+    const q = allQuestions[currentIndex];
+    const qDisplay = document.getElementById("question-display");
+    const oDisplay = document.getElementById("options-display");
+
+    // Set Question Text
+    qDisplay.innerText = `${currentIndex + 1}. ${q.questionText}`;
+
+    // Generate Options
+    oDisplay.innerHTML = "";
+    q.options.forEach((opt, index) => {
+        const isSelected = studentAnswers[currentIndex] === index;
+        const btn = document.createElement("label");
+        btn.className = `flex items-center p-4 border-2 rounded-xl cursor-pointer transition-all group ${
+            isSelected ? 'border-blue-600 bg-blue-50' : 'border-slate-100 hover:bg-blue-50'
+        }`;
+        
+        btn.innerHTML = `
+            <input type="radio" name="option" class="w-5 h-5 text-blue-600" 
+            ${isSelected ? 'checked' : ''} onclick="recordAnswer(${index})">
+            <span class="ml-4 ${isSelected ? 'text-blue-900 font-bold' : 'text-slate-700 font-medium'}">${opt}</span>
+        `;
+        oDisplay.appendChild(btn);
+    });
+
+    // Update Question Number Tag
+    document.querySelector(".bg-blue-700.text-white.px-3").innerText = `Question ${currentIndex + 1}`;
+}
+
+// 3. LOGIC FOR BUTTONS
+function recordAnswer(index) {
+    studentAnswers[currentIndex] = index;
+}
+
+function nextQuestion() {
+    if (currentIndex < allQuestions.length - 1) {
+        currentIndex++;
+        renderQuestion();
+        updatePalette();
+    }
+}
+
+function prevQuestion() {
+    if (currentIndex > 0) {
+        currentIndex--;
+        renderQuestion();
+        updatePalette();
+    }
+}
+
+// 4. UPDATE SIDEBAR PALETTE
+function updatePalette() {
+    const palette = document.querySelector(".grid-cols-5");
+    palette.innerHTML = "";
+    
+    allQuestions.forEach((_, i) => {
+        let statusClass = "bg-slate-100 text-slate-400"; // Not Answered
+        if (studentAnswers[i] !== undefined) statusClass = "bg-green-600 text-white";
+        if (i === currentIndex) statusClass = "border-2 border-blue-600 text-blue-600";
+
+        const btn = document.createElement("button");
+        btn.className = `w-10 h-10 rounded text-xs font-bold ${statusClass}`;
+        btn.innerText = i + 1;
+        btn.onclick = () => { currentIndex = i; renderQuestion(); updatePalette(); };
+        palette.appendChild(btn);
+    });
+}
+
+// 5. MODIFIED SUBMIT FOR RESULTS
+function confirmSubmit() {
+    if(confirm("Confirm: Do you want to end your Rajasthan History Mock Test?")) {
+        let correctCount = 0;
+        let incorrectCount = 0;
+
+        allQuestions.forEach((q, index) => {
+            const ans = studentAnswers[index];
+            if (ans !== undefined) {
+                if (ans === q.correctIndex) correctCount++;
+                else incorrectCount++;
+            }
+        });
+
+        // Calculate based on RPSC/RSSB 1/3 negative marking
+        const finalMarks = (correctCount * 1) - (incorrectCount * 0.33);
+
+        const report = {
+            total: finalMarks.toFixed(2),
+            correct: correctCount,
+            incorrect: incorrectCount,
+            totalQ: allQuestions.length
+        };
+        
+        localStorage.setItem('lastTestResult', JSON.stringify(report));
+        window.location.href = "result.html";
+    }
+}
+
+// Initialize on load
+loadTestData();
+        let timeInSeconds = 120 * 60; // 120 Minutes
+const timerElement = document.getElementById('timer');
+
+function startTimer() {
+    const countdown = setInterval(() => {
+        const minutes = Math.floor(timeInSeconds / 60);
+        const seconds = timeInSeconds % 60;
+
+        timerElement.innerText = `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+
+        if (timeInSeconds <= 0) {
+            clearInterval(countdown);
+            confirmSubmit(); // Auto-submit when time is up
+        } else {
+            timeInSeconds--;
+        }
+    }, 1000);
+}
+
+// Call this inside your loadTestData() function after questions load
+// startTimer();
     </script>
 </body>
 </html>
