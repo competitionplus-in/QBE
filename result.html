@@ -41,7 +41,7 @@
                 <div id="score-circle-element" class="relative w-40 h-40 rounded-full flex items-center justify-center score-circle" style="--progress: 0deg;">
                     <div class="absolute inset-2 bg-white rounded-full flex flex-col items-center justify-center">
                         <span id="display-final-score" class="text-4xl font-800 text-blue-800">0.0</span>
-                        <span id="display-out-of" class="text-xs font-bold text-slate-400 uppercase tracking-widest">Out of 0</span>
+                        <span id="display-out-of" class="text-xs font-bold text-slate-400 uppercase tracking-widest text-center px-2">Out of 0</span>
                     </div>
                 </div>
                 <div class="flex-1 space-y-4">
@@ -103,7 +103,6 @@
 
     <script>
         window.onload = function() {
-            // 1. Get the data from LocalStorage
             const rawData = localStorage.getItem('lastTestResult');
             
             if(!rawData) {
@@ -117,37 +116,29 @@
 
             const data = JSON.parse(rawData);
 
-            // 2. Map data to the UI
             const totalMarks = parseFloat(data.total);
             const totalQuestions = parseInt(data.totalQ);
             const attempted = data.correct + data.incorrect;
             
-            // Update Main Circle Text
             document.getElementById('display-final-score').innerText = totalMarks;
             document.getElementById('display-out-of').innerText = `Out of ${totalQuestions}`;
             
-            // Update Summary sidebar
             document.getElementById('summary-attempted').innerText = attempted;
             document.getElementById('summary-correct').innerText = data.correct;
             document.getElementById('summary-incorrect').innerText = data.incorrect;
             document.getElementById('summary-skipped').innerText = data.skipped;
 
-            // Update Accuracy and Attempted count cards
             const accuracy = attempted > 0 ? Math.round((data.correct / attempted) * 100) : 0;
             document.getElementById('display-accuracy').innerText = accuracy + "%";
             document.getElementById('display-attempted-count').innerText = attempted;
 
-            // 3. Update Progress Circle (CSS Variable)
-            // Note: 3.6 degrees per 1%
             const scorePercent = (totalMarks / totalQuestions) * 100;
             const degrees = Math.max(0, (scorePercent / 100) * 360);
             document.getElementById('score-circle-element').style.setProperty('--progress', `${degrees}deg`);
 
-            // 4. Update Subject Bar
             document.getElementById('subject-score-text').innerText = `${totalMarks} / ${totalQuestions}`;
             document.getElementById('subject-progress-bar').style.width = `${Math.max(0, scorePercent)}%`;
 
-            // 5. Dynamic Feedback Messages
             const title = document.getElementById('performance-title');
             const desc = document.getElementById('performance-desc');
 
