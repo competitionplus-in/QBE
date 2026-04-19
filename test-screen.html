@@ -11,6 +11,25 @@
         body { font-family: 'Inter', sans-serif; }
         .no-select { user-select: none; } /* Prevents copying questions */
     </style>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyCAl9iSJhwn5IAUCA5LrgPK5FzFZPtWNZo",
+    authDomain: "competition-plus-9996b.firebaseapp.com",
+    projectId: "competition-plus-9996b",
+    storageBucket: "competition-plus-9996b.firebasestorage.app",
+    messagingSenderId: "49252651907",
+    appId: "1:49252651907:web:8a5162064aaf3e69bd1cb6",
+    measurementId: "G-ESTWZJ5X0K"
+  };
+  // Initialize Firebase
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+  const db = firebase.firestore();
+</script>
 </head>
 <body class="bg-slate-100 h-screen flex flex-col overflow-hidden no-select">
 
