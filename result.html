@@ -13,9 +13,7 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
         body { font-family: 'Inter', sans-serif; }
-        .score-circle { 
-            transition: background 0.8s ease-in-out;
-        }
+        .score-circle { transition: background 0.8s ease-in-out; }
         @media print { .print-hidden { display: none; } }
     </style>
 </head>
@@ -28,7 +26,7 @@
                 <button onclick="shareOnWhatsApp()" class="text-green-600 font-bold text-sm flex items-center gap-1">
                     <i class="fab fa-whatsapp"></i> SHARE
                 </button>
-                <a href="index.html" class="text-sm font-bold text-slate-500 hover:text-blue-700 transition">EXIT</a>
+                <a href="dashboard.html" class="text-sm font-bold text-slate-500 hover:text-blue-700 transition">DASHBOARD</a>
             </div>
         </div>
     </nav>
@@ -39,7 +37,7 @@
                 <i class="fas fa-check-circle text-3xl"></i>
             </div>
             <h2 class="text-3xl font-extrabold tracking-tight">Test Successfully Submitted</h2>
-            <p class="text-slate-500 mt-2">Performance breakdown for RPSC / RSMSSB Mock Test</p>
+            <p class="text-slate-500 mt-2">Detailed performance analysis for Madhukar</p>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
@@ -87,32 +85,7 @@
             <h3 class="text-lg font-bold mb-4 flex items-center gap-2">
                 <i class="fas fa-chart-pie text-blue-600"></i> Subject-Wise Analysis
             </h3>
-            <div id="subject-analysis-container" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                </div>
-        </div>
-
-        <div class="mb-12 bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden print-hidden">
-            <div class="p-6 border-b border-slate-50 flex justify-between items-center bg-slate-900 text-white">
-                <h3 class="text-lg font-bold flex items-center gap-2">
-                    <i class="fas fa-trophy text-yellow-400"></i> Rajasthan State Ranking
-                </h3>
-                <span class="text-[10px] font-bold uppercase tracking-widest text-slate-400">Live Top 10</span>
-            </div>
-            <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse">
-                    <thead>
-                        <tr class="bg-slate-50 text-slate-400 text-[10px] uppercase tracking-widest">
-                            <th class="px-6 py-4">Rank</th>
-                            <th class="px-6 py-4">Candidate</th>
-                            <th class="px-6 py-4">Score</th>
-                            <th class="px-6 py-4">Accuracy</th>
-                        </tr>
-                    </thead>
-                    <tbody id="leaderboard-body" class="text-sm">
-                        <tr><td colspan="4" class="px-6 py-8 text-center text-slate-400">Loading rankings...</td></tr>
-                    </tbody>
-                </table>
-            </div>
+            <div id="subject-analysis-container" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
         </div>
 
         <div class="flex justify-between items-end mb-6">
@@ -120,14 +93,6 @@
                 <i class="fas fa-list-check text-blue-600"></i> Detailed Review
             </h3>
         </div>
-
-        <div class="flex flex-wrap gap-2 mb-6 print-hidden">
-            <button onclick="filterReview('all', this)" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-xs font-bold transition shadow-md">ALL</button>
-            <button onclick="filterReview('correct', this)" class="px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-lg text-xs font-bold transition">CORRECT</button>
-            <button onclick="filterReview('incorrect', this)" class="px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-lg text-xs font-bold transition">INCORRECT</button>
-            <button onclick="filterReview('skipped', this)" class="px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-lg text-xs font-bold transition">SKIPPED</button>
-        </div>
-
         <div id="review-container" class="space-y-6"></div>
 
         <div class="mt-12 flex flex-col md:flex-row gap-4 justify-center print-hidden">
@@ -135,13 +100,12 @@
                 <i class="fas fa-redo mr-2"></i> Retake Test
             </button>
             <button onclick="window.print()" class="bg-white border-2 border-slate-200 text-slate-700 px-10 py-4 rounded-xl font-bold hover:bg-slate-50 transition transform hover:-translate-y-1">
-                <i class="fas fa-download mr-2"></i> Save Report card
+                <i class="fas fa-download mr-2"></i> Save Report
             </button>
         </div>
     </main>
 
     <script>
-        // --- FIREBASE INITIALIZATION ---
         const firebaseConfig = {
             apiKey: "AIzaSyCAl9iSJhwn5IAUCA5LrgPK5FzFZPtWNZo",
             authDomain: "competition-plus-9996b.firebaseapp.com",
@@ -153,12 +117,12 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
-        window.onload = function() {
+        window.onload = async function() {
             const rawResult = localStorage.getItem('lastTestResult');
             const report = JSON.parse(localStorage.getItem('detailedTestReport'));
 
             if(!rawResult || !report) {
-                document.querySelector('main').innerHTML = `<div class="text-center py-20"><h2 class="text-2xl font-bold text-slate-400">No data found. Please take the test again.</h2></div>`;
+                document.querySelector('main').innerHTML = `<div class="text-center py-20"><h2 class="text-2xl font-bold text-slate-400">No data found.</h2></div>`;
                 return;
             }
 
@@ -170,164 +134,75 @@
             const totalSeconds = report.reduce((acc, curr) => acc + (curr.timeSpent || 0), 0);
             const avgTime = attempted > 0 ? (totalSeconds / attempted).toFixed(1) : 0;
 
-            // UI Display Updates
+            // UI Updates
             document.getElementById('display-final-score').innerText = totalMarks.toFixed(2);
             document.getElementById('display-out-of').innerText = `Out of ${totalQ}`;
             document.getElementById('display-accuracy').innerText = accuracy + "%";
             document.getElementById('display-attempted-count').innerText = attempted;
             document.getElementById('display-avg-time').innerText = avgTime + "s";
             
-            document.getElementById('summary-attempted').innerText = attempted;
-            document.getElementById('summary-correct').innerText = data.correct;
-            document.getElementById('summary-incorrect').innerText = data.incorrect;
-            document.getElementById('summary-skipped').innerText = totalQ - attempted;
-
-            // --- PROGRESS CIRCLE IMPROVEMENT ---
-            const scorePercent = (totalMarks / totalQ) * 100;
-            const circle = document.getElementById('score-circle-element');
-            // Color logic: Red < 40%, Yellow < 70%, Green >= 70%
-            const circleColor = scorePercent >= 70 ? '#16a34a' : (scorePercent >= 40 ? '#ca8a04' : '#dc2626');
-            circle.style.background = `conic-gradient(${circleColor} ${Math.max(0, scorePercent)}%, #e2e8f0 0deg)`;
-            
-            const title = document.getElementById('performance-title');
-            if(scorePercent >= 75) title.innerText = "Excellent Achievement!";
-            else if(scorePercent >= 45) title.innerText = "Good Performance!";
-            else title.innerText = "Scope for Improvement!";
-
-            // --- SUBJECT ANALYSIS LOGIC ---
+            // --- AUTOMATED SUBJECT MAPPING ---
             const subjects = {};
+            const subjectsSummary = { civil: 0, gk: 0, hindi: 0, science: 0, maths: 0 };
+
             report.forEach(q => {
                 const sub = q.subject || "General";
-                if(!subjects[sub]) subjects[sub] = { correct: 0, total: 0, score: 0 };
+                if(!subjects[sub]) subjects[sub] = { correct: 0, total: 0 };
                 subjects[sub].total++;
-                if(q.isCorrect) {
-                    subjects[sub].correct++;
-                    subjects[sub].score += 1;
-                } else if (q.userAnswer !== undefined) {
-                    subjects[sub].score -= 0.33;
-                }
+                if(q.isCorrect) subjects[sub].correct++;
             });
 
             const subContainer = document.getElementById('subject-analysis-container');
             for(const [name, stats] of Object.entries(subjects)) {
-                const perc = ((stats.correct / stats.total) * 100).toFixed(0);
+                const perc = parseFloat(((stats.correct / stats.total) * 100).toFixed(1));
+                
+                // Map names to Dashboard Keys
+                const lower = name.toLowerCase();
+                if (lower.includes('civil')) subjectsSummary.civil = perc;
+                else if (lower.includes('gk') || lower.includes('raj')) subjectsSummary.gk = perc;
+                else if (lower.includes('hindi')) subjectsSummary.hindi = perc;
+                else if (lower.includes('science')) subjectsSummary.science = perc;
+                else if (lower.includes('math') || lower.includes('reason')) subjectsSummary.maths = perc;
+
                 subContainer.innerHTML += `
                     <div class="p-4 bg-slate-50 rounded-2xl border border-slate-100">
                         <div class="flex justify-between items-center mb-2">
                             <span class="text-xs font-bold uppercase text-slate-500">${name}</span>
-                            <span class="text-xs font-bold text-blue-700">${stats.score.toFixed(2)} Marks</span>
+                            <span class="text-xs font-bold text-blue-700">${perc}%</span>
                         </div>
                         <div class="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
                             <div class="bg-blue-600 h-full" style="width: ${perc}%"></div>
                         </div>
-                        <p class="text-[10px] mt-2 text-slate-400 font-bold">${stats.correct}/${stats.total} Questions Correct</p>
-                    </div>
-                `;
+                    </div>`;
             }
 
-            // --- LEADERBOARD LOGIC ---
-            async function loadLeaderboard() {
-                const leaderboardBody = document.getElementById('leaderboard-body');
-                try {
-                    const snapshot = await db.collection("leaderboard")
-                        .orderBy("score", "desc")
-                        .limit(10)
-                        .get();
-
-                    leaderboardBody.innerHTML = "";
-                    let rank = 1;
-
-                    snapshot.forEach((doc) => {
-                        const rowData = doc.data();
-                        let rankIcon = rank;
-                        if(rank === 1) rankIcon = "🥇";
-                        else if(rank === 2) rankIcon = "🥈";
-                        else if(rank === 3) rankIcon = "🥉";
-
-                        const row = document.createElement('tr');
-                        row.className = "border-b border-slate-50 hover:bg-slate-50 transition";
-                        row.innerHTML = `
-                            <td class="px-6 py-4 text-slate-500 font-bold">${rankIcon}</td>
-                            <td class="px-6 py-4">
-                                <div class="flex items-center gap-2">
-                                    <div class="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-[10px] font-bold">
-                                        ${(rowData.name || "A").charAt(0).toUpperCase()}
-                                    </div>
-                                    <span class="text-slate-800 font-medium">${rowData.name || "Aspirant"}</span>
-                                </div>
-                            </td>
-                            <td class="px-6 py-4 font-bold text-blue-700">${Number(rowData.score).toFixed(2)}</td>
-                            <td class="px-6 py-4">
-                                <div class="flex items-center gap-2">
-                                    <div class="w-16 bg-slate-100 h-1.5 rounded-full overflow-hidden">
-                                        <div class="bg-green-500 h-full" style="width: ${rowData.accuracy}%"></div>
-                                    </div>
-                                    <span class="text-[10px] text-slate-400">${rowData.accuracy}%</span>
-                                </div>
-                            </td>
-                        `;
-                        leaderboardBody.appendChild(row);
-                        rank++;
-                    });
-                } catch (e) {
-                    console.error("Leaderboard Error:", e);
-                    leaderboardBody.innerHTML = `<tr><td colspan="4" class="px-6 py-8 text-center text-red-400">Leaderboard temporarily unavailable.</td></tr>`;
-                }
-            }
-            loadLeaderboard();
-
-            // --- FILTER LOGIC ---
-            window.filterReview = function(type, btn) {
-                const container = document.getElementById('review-container');
-                container.innerHTML = "";
-                
-                document.querySelectorAll('.print-hidden button').forEach(b => {
-                    if(["ALL", "CORRECT", "INCORRECT", "SKIPPED"].includes(b.innerText)) {
-                        b.classList.remove('bg-blue-600', 'text-white', 'shadow-md');
-                        b.classList.add('bg-white', 'text-slate-600');
-                    }
+            // --- SYNC TO FIREBASE ---
+            try {
+                await db.collection("leaderboard").add({
+                    name: "Madhukar",
+                    score: totalMarks,
+                    totalQ: totalQ,
+                    accuracy: accuracy,
+                    subjects: subjectsSummary, // Critical for Radar Chart
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
                 });
-                btn.classList.add('bg-blue-600', 'text-white', 'shadow-md');
-                btn.classList.remove('bg-white', 'text-slate-600');
+            } catch (e) { console.error("Sync Error:", e); }
 
-                report.forEach((q, i) => {
-                    const isAns = q.userAnswer !== undefined;
-                    if(type === 'correct' && (!isAns || !q.isCorrect)) return;
-                    if(type === 'incorrect' && (!isAns || q.isCorrect)) return;
-                    if(type === 'skipped' && isAns) return;
-
-                    const card = document.createElement('div');
-                    card.className = `p-6 rounded-2xl border-2 bg-white transition ${q.isCorrect ? 'border-green-100' : isAns ? 'border-red-100' : 'border-slate-100'}`;
-                    card.innerHTML = `
-                        <div class="flex justify-between text-[10px] font-bold uppercase mb-4 text-slate-400">
-                            <span>Question ${i+1} • ${q.subject || 'General'} • ${q.isCorrect ? 'Correct' : isAns ? 'Incorrect' : 'Skipped'}</span>
-                            <span><i class="fas fa-clock"></i> ${q.timeSpent || 0}s spent</span>
-                        </div>
-                        <p class="font-bold text-slate-800 mb-4">${q.questionText}</p>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
-                            ${q.options.map((opt, idx) => {
-                                let color = "border-slate-100 text-slate-500";
-                                if(idx === q.correctIndex) color = "bg-green-50 border-green-500 text-green-700 font-bold";
-                                else if(idx === q.userAnswer) color = "bg-red-50 border-red-500 text-red-700 font-bold";
-                                return `<div class="p-3 border rounded-xl text-sm ${color}">${opt}</div>`;
-                            }).join('')}
-                        </div>
-                        <div class="bg-blue-50 p-4 rounded-xl text-sm border border-blue-100">
-                            <span class="font-bold text-blue-800 uppercase text-[10px] block mb-1">Answer Explanation</span>
-                            <p class="text-slate-600 leading-relaxed">${q.explanation || "No explanation provided."}</p>
-                        </div>
-                    `;
-                    container.appendChild(card);
-                });
-            };
-
-            window.shareOnWhatsApp = function() {
-                const text = `🎯 I just scored ${totalMarks.toFixed(2)}/${totalQ} on Competition Plus RPSC/RSMSSB Mock Test! My Accuracy: ${accuracy}%. Can you beat me? Check out Competition Plus!`;
-                window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
-            };
-
-            filterReview('all', document.querySelector('button[onclick*="all"]'));
+            // --- RENDER REVIEW ---
+            const container = document.getElementById('review-container');
+            report.forEach((q, i) => {
+                const card = document.createElement('div');
+                card.className = `p-6 rounded-2xl border-2 bg-white ${q.isCorrect ? 'border-green-100' : (q.userAnswer !== undefined ? 'border-red-100' : 'border-slate-100')}`;
+                card.innerHTML = `<p class="font-bold mb-4">${i+1}. ${q.questionText}</p>
+                                  <div class="text-sm text-slate-600 bg-blue-50 p-3 rounded-xl"><strong>Ans:</strong> ${q.options[q.correctIndex]}</div>`;
+                container.appendChild(card);
+            });
         };
+
+        function shareOnWhatsApp() {
+            const text = `🎯 I scored ${document.getElementById('display-final-score').innerText} on Competition Plus! Can you beat me?`;
+            window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+        }
     </script>
 </body>
 </html>
