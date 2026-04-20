@@ -243,6 +243,8 @@
             btn.disabled = true;
 
             logTime();
+            const totalQuestionsInTest = allQuestions.length;
+            
             const report = allQuestions.map((q, i) => ({
                 ...q,
                 userAnswer: studentAnswers[i],
@@ -255,21 +257,25 @@
             const correct = report.filter(q => q.userAnswer !== undefined && q.isCorrect).length;
             const incorrect = answeredQs.length - correct;
             
-            const finalScore = parseFloat(((correct * 1) - (incorrect * 0.33)).toFixed(2));
+            // Standard RSSB/RPSC marking + Safety Cap to prevent scores higher than Total Questions
+            const rawScore = (correct * 1) - (incorrect * 0.33);
+            const finalScore = Math.min(totalQuestionsInTest, parseFloat(rawScore.toFixed(2)));
             const accuracy = answeredQs.length > 0 ? Math.round((correct / answeredQs.length) * 100) : 0;
 
-            // 1. Save locally first
             localStorage.setItem('detailedTestReport', JSON.stringify(report));
             localStorage.setItem('lastTestResult', JSON.stringify({
                 total: finalScore,
-                correct, incorrect, totalQ: allQuestions.length, accuracy
+                correct, 
+                incorrect, 
+                totalQ: totalQuestionsInTest, 
+                accuracy
             }));
 
             try {
-                // 2. Race Firebase save against a 4-second timeout
                 const firebaseSave = db.collection("leaderboard").add({
-                    name: localStorage.getItem('userName') || "Aspirant",
+                    name: localStorage.getItem('userName') || "Madhukar",
                     score: finalScore,
+                    totalQuestions: totalQuestionsInTest, // Now dynamic
                     accuracy: accuracy,
                     timestamp: firebase.firestore.FieldValue.serverTimestamp()
                 });
@@ -279,9 +285,8 @@
                     new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 4000))
                 ]);
             } catch (e) {
-                console.warn("Firebase save bypassed due to error or timeout.");
+                console.warn("Firebase save bypassed.");
             } finally {
-                // 3. Always redirect
                 ['cp_answers', 'cp_reviews', 'cp_visited', 'cp_timer', 'cp_time_spent'].forEach(k => localStorage.removeItem(k));
                 window.location.href = "result.html";
             }
