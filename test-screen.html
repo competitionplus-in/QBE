@@ -10,7 +10,6 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
         body { font-family: 'Inter', sans-serif; }
         .no-select { user-select: none; }
-        /* Custom Scrollbar for the Palette */
         #palette-container::-webkit-scrollbar { width: 4px; }
         #palette-container::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
     </style>
@@ -29,8 +28,6 @@
         measurementId: "G-ESTWZJ5X0K"
       };
       firebase.initializeApp(firebaseConfig);
-      const auth = firebase.auth();
-      const db = firebase.firestore();
     </script>
 </head>
 <body class="bg-slate-100 h-screen flex flex-col overflow-hidden no-select">
@@ -44,7 +41,7 @@
         <div class="flex items-center gap-6">
             <div class="flex items-center gap-2 bg-slate-800 px-4 py-1.5 rounded-full border border-slate-700">
                 <i class="fas fa-clock text-blue-400"></i>
-                <span id="timer" class="font-mono text-lg font-bold">2:00:00</span>
+                <span id="timer" class="font-mono text-lg font-bold">--:--:--</span>
             </div>
             <button onclick="confirmSubmit()" class="bg-red-600 hover:bg-red-700 text-white px-6 py-1.5 rounded-lg font-bold transition">
                 SUBMIT TEST
@@ -56,7 +53,10 @@
         <div class="flex-1 overflow-y-auto p-4 md:p-8">
             <div class="max-w-3xl mx-auto bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col min-h-[500px]">
                 <div class="bg-slate-50 p-4 border-b border-slate-200 flex justify-between items-center">
-                    <span id="q-number-badge" class="bg-blue-700 text-white px-3 py-1 rounded text-xs font-bold uppercase">Question 01</span>
+                    <div class="flex items-center gap-2">
+                        <span id="q-number-badge" class="bg-blue-700 text-white px-3 py-1 rounded text-xs font-bold uppercase">Question 01</span>
+                        <span id="subject-tag" class="bg-slate-200 text-slate-600 px-3 py-1 rounded text-xs font-bold uppercase tracking-wider">Civil Eng.</span>
+                    </div>
                     <div class="flex gap-4 text-xs font-bold">
                         <span class="text-green-600">+1.0 Mark</span>
                         <span class="text-red-600">-0.33 Negative</span>
@@ -76,10 +76,13 @@
                     </button>
                     
                     <div class="flex gap-2">
-                        <button onclick="markReview()" class="bg-orange-100 text-orange-700 px-4 py-2 rounded-lg font-bold text-sm hover:bg-orange-200">
-                            <i class="fas fa-bookmark"></i> MARK FOR REVIEW
+                        <button onclick="clearResponse()" class="bg-white border border-slate-200 text-slate-500 px-4 py-2 rounded-lg font-bold text-sm hover:bg-slate-100 transition">
+                            CLEAR
                         </button>
-                        <button onclick="nextQuestion()" class="bg-blue-700 text-white px-8 py-2 rounded-lg font-bold hover:bg-blue-800 shadow-lg flex items-center gap-2">
+                        <button onclick="markReview()" class="bg-orange-100 text-orange-700 px-4 py-2 rounded-lg font-bold text-sm hover:bg-orange-200 transition">
+                            <i class="fas fa-bookmark"></i> REVIEW
+                        </button>
+                        <button onclick="saveAndNext()" class="bg-blue-700 text-white px-8 py-2 rounded-lg font-bold hover:bg-blue-800 shadow-lg flex items-center gap-2 transition">
                             SAVE & NEXT <i class="fas fa-chevron-right"></i>
                         </button>
                     </div>
@@ -90,8 +93,7 @@
         <aside class="w-full md:w-80 bg-white border-l border-slate-200 flex flex-col">
             <div class="p-6 flex-1 overflow-hidden flex flex-col">
                 <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Question Palette</h4>
-                <div id="palette-container" class="grid grid-cols-5 gap-2 overflow-y-auto pr-2 mb-4">
-                </div>
+                <div id="palette-container" class="grid grid-cols-5 gap-2 overflow-y-auto pr-2 mb-4"></div>
             </div>
             
             <div class="p-6 bg-slate-50 border-t border-slate-200 grid grid-cols-2 gap-4 text-xs font-bold">
@@ -117,79 +119,87 @@
                 <div class="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
                     <i class="fas fa-file-export text-2xl"></i>
                 </div>
-                <h3 class="text-xl font-bold text-slate-900 mb-2">Competition Plus wants to confirm:</h3>
-                <p class="text-slate-500">Are you sure you want to <strong>submit the test</strong>?</p>
+                <h3 class="text-xl font-bold text-slate-900 mb-2">Ready to Submit?</h3>
+                <p class="text-slate-500 text-sm">Once submitted, you cannot change your answers. Are you sure?</p>
             </div>
             <div class="bg-slate-50 p-4 flex gap-3">
-                <button onclick="closeModal()" class="flex-1 px-4 py-2 bg-white border border-slate-200 text-slate-700 font-bold rounded-lg hover:bg-slate-100 transition">
-                    CANCEL
-                </button>
-                <button onclick="processSubmit()" class="flex-1 px-4 py-2 bg-blue-700 text-white font-bold rounded-lg hover:bg-blue-800 shadow-lg transition">
-                    OK
-                </button>
+                <button onclick="closeModal()" class="flex-1 px-4 py-2 bg-white border border-slate-200 text-slate-700 font-bold rounded-lg hover:bg-slate-100 transition">CANCEL</button>
+                <button onclick="processSubmit()" class="flex-1 px-4 py-2 bg-blue-700 text-white font-bold rounded-lg hover:bg-blue-800 shadow-lg transition">SUBMIT</button>
             </div>
         </div>
     </div>
 
     <script>
         const DB_URL = "https://competition-plus-9996b-default-rtdb.asia-southeast1.firebasedatabase.app/questions.json";
+        
         let allQuestions = [];
         let currentIndex = 0;
-        let studentAnswers = {}; 
-        let reviewList = {}; 
-        let timeInSeconds = 120 * 60; 
+        
+        let studentAnswers = JSON.parse(localStorage.getItem('cp_answers')) || {}; 
+        let reviewList = JSON.parse(localStorage.getItem('cp_reviews')) || {}; 
+        let visitedList = JSON.parse(localStorage.getItem('cp_visited')) || {}; 
+        let timeInSeconds = parseInt(localStorage.getItem('cp_timer')) || 120 * 60; 
 
         async function loadTestData() {
             try {
                 const response = await fetch(DB_URL);
                 const data = await response.json();
                 allQuestions = Object.values(data);
-                
                 if(allQuestions.length > 0) {
                     renderQuestion();
                     updatePalette();
                     startTimer();
-                } else {
-                    document.getElementById("question-display").innerText = "No questions found.";
                 }
-            } catch (error) {
-                console.error("Firebase Error:", error);
-                document.getElementById("question-display").innerText = "Server connection error.";
-            }
+            } catch (error) { console.error("Data Error:", error); }
         }
 
         function renderQuestion() {
             const q = allQuestions[currentIndex];
-            const qDisplay = document.getElementById("question-display");
+            visitedList[currentIndex] = true; // Mark as visited
+            localStorage.setItem('cp_visited', JSON.stringify(visitedList));
+
+            document.getElementById("q-number-badge").innerText = `Question ${currentIndex + 1}`;
+            document.getElementById("subject-tag").innerText = q.subject || "General Engineering";
+            document.getElementById("question-display").innerText = q.questionText;
+
             const oDisplay = document.getElementById("options-display");
-            const qBadge = document.getElementById("q-number-badge");
-
-            qBadge.innerText = `Question ${currentIndex + 1}`;
-            qDisplay.innerText = `${currentIndex + 1}. ${q.questionText}`;
-
             oDisplay.innerHTML = "";
             q.options.forEach((opt, index) => {
                 const isSelected = studentAnswers[currentIndex] === index;
                 const btn = document.createElement("label");
-                btn.className = `flex items-center p-4 border-2 rounded-xl cursor-pointer transition-all ${
-                    isSelected ? 'border-blue-600 bg-blue-50' : 'border-slate-100 hover:bg-blue-50'
-                }`;
-                
-                btn.innerHTML = `
-                    <input type="radio" name="option" class="w-5 h-5 text-blue-600" 
-                    ${isSelected ? 'checked' : ''} onchange="recordAnswer(${index})">
-                    <span class="ml-4 ${isSelected ? 'text-blue-900 font-bold' : 'text-slate-700 font-medium'}">${opt}</span>
-                `;
+                btn.className = `flex items-center p-4 border-2 rounded-xl cursor-pointer transition-all ${isSelected ? 'border-blue-600 bg-blue-50' : 'border-slate-100 hover:bg-blue-50'}`;
+                btn.innerHTML = `<input type="radio" name="option" class="w-5 h-5 text-blue-600" ${isSelected ? 'checked' : ''} onchange="recordAnswer(${index})"><span class="ml-4 ${isSelected ? 'text-blue-900 font-bold' : 'text-slate-700 font-medium'}">${opt}</span>`;
                 oDisplay.appendChild(btn);
             });
+            updatePalette(); 
         }
 
         function recordAnswer(index) {
             studentAnswers[currentIndex] = index;
+            localStorage.setItem('cp_answers', JSON.stringify(studentAnswers));
+            // Removed immediate palette update to prevent premature color change
+        }
+
+        function clearResponse() {
+            delete studentAnswers[currentIndex];
+            localStorage.setItem('cp_answers', JSON.stringify(studentAnswers));
+            renderQuestion();
+            updatePalette(); // Reverts to Visited/Skipped grey color
         }
 
         function markReview() {
-            reviewList[currentIndex] = true;
+            reviewList[currentIndex] = !reviewList[currentIndex];
+            localStorage.setItem('cp_reviews', JSON.stringify(reviewList));
+            updatePalette();
+            nextQuestion();
+        }
+
+        function saveAndNext() {
+            // Unmark review if saved with an answer
+            if (studentAnswers[currentIndex] !== undefined) {
+                delete reviewList[currentIndex];
+                localStorage.setItem('cp_reviews', JSON.stringify(reviewList));
+            }
             nextQuestion();
         }
 
@@ -197,7 +207,6 @@
             if (currentIndex < allQuestions.length - 1) {
                 currentIndex++;
                 renderQuestion();
-                updatePalette();
             }
         }
 
@@ -205,93 +214,73 @@
             if (currentIndex > 0) {
                 currentIndex--;
                 renderQuestion();
-                updatePalette();
             }
         }
 
         function updatePalette() {
             const palette = document.getElementById("palette-container");
             palette.innerHTML = "";
-            let answeredCount = 0;
-            let reviewCount = 0;
-            
+            let answered = 0, review = 0, notVisited = 0;
+
             allQuestions.forEach((_, i) => {
-                let statusClass = "bg-slate-100 text-slate-400"; 
-                
-                if (studentAnswers[i] !== undefined) {
-                    statusClass = "bg-green-600 text-white";
-                    answeredCount++;
-                }
+                let statusClass = "bg-slate-100 text-slate-400"; // Default Not Visited color
                 
                 if (reviewList[i]) {
                     statusClass = "bg-orange-500 text-white";
-                    reviewCount++;
+                    review++;
+                } else if (studentAnswers[i] !== undefined) {
+                    statusClass = "bg-green-600 text-white";
+                    answered++;
+                } else if (visitedList[i]) {
+                    statusClass = "bg-slate-300 text-slate-600"; // Visited color
+                } else {
+                    notVisited++;
                 }
 
                 if (i === currentIndex) {
-                    statusClass += " ring-2 ring-blue-600 ring-offset-2";
+                    statusClass += " ring-2 ring-blue-600 ring-offset-2"; // Professional selection border
                 }
 
                 const btn = document.createElement("button");
-                btn.className = `w-10 h-10 flex-shrink-0 rounded text-xs font-bold transition ${statusClass}`;
+                btn.className = `w-10 h-10 rounded text-xs font-bold transition ${statusClass}`;
                 btn.innerText = i + 1;
-                btn.onclick = () => { currentIndex = i; renderQuestion(); updatePalette(); };
+                btn.onclick = () => { currentIndex = i; renderQuestion(); };
                 palette.appendChild(btn);
             });
 
-            document.getElementById("stat-answered").innerText = answeredCount;
-            document.getElementById("stat-review").innerText = reviewCount;
-            document.getElementById("stat-not-visited").innerText = allQuestions.length - answeredCount;
+            document.getElementById("stat-answered").innerText = answered;
+            document.getElementById("stat-review").innerText = review;
+            document.getElementById("stat-not-visited").innerText = notVisited;
         }
 
         function startTimer() {
             const timerElement = document.getElementById('timer');
-            const countdown = setInterval(() => {
+            setInterval(() => {
+                if (timeInSeconds <= 0) processSubmit();
                 const h = Math.floor(timeInSeconds / 3600);
                 const m = Math.floor((timeInSeconds % 3600) / 60);
                 const s = timeInSeconds % 60;
                 timerElement.innerText = `${h}:${m < 10 ? '0' : ''}${m}:${s < 10 ? '0' : ''}${s}`;
-
-                if (timeInSeconds <= 0) {
-                    clearInterval(countdown);
-                    processSubmit();
-                } else {
-                    timeInSeconds--;
-                }
+                timeInSeconds--;
+                if (timeInSeconds % 10 === 0) localStorage.setItem('cp_timer', timeInSeconds);
             }, 1000);
         }
 
-        // CUSTOM MODAL FUNCTIONS
-        function confirmSubmit() {
-            document.getElementById('submitModal').classList.remove('hidden');
-        }
-
-        function closeModal() {
-            document.getElementById('submitModal').classList.add('hidden');
-        }
+        function confirmSubmit() { document.getElementById('submitModal').classList.remove('hidden'); }
+        function closeModal() { document.getElementById('submitModal').classList.add('hidden'); }
 
         function processSubmit() {
-            let correctCount = 0;
-            let incorrectCount = 0;
-
-            allQuestions.forEach((q, index) => {
-                const ans = studentAnswers[index];
-                if (ans !== undefined) {
-                    if (ans === q.correctIndex) correctCount++;
-                    else incorrectCount++;
-                }
+            let correct = 0, incorrect = 0;
+            allQuestions.forEach((q, i) => {
+                if (studentAnswers[i] === q.correctIndex) correct++;
+                else if (studentAnswers[i] !== undefined) incorrect++;
             });
 
-            const finalMarks = (correctCount * 1) - (incorrectCount * 0.33);
-            const report = {
-                total: finalMarks.toFixed(2),
-                correct: correctCount,
-                incorrect: incorrectCount,
-                skipped: allQuestions.length - (Object.keys(studentAnswers).length),
-                totalQ: allQuestions.length
-            };
-            
-            localStorage.setItem('lastTestResult', JSON.stringify(report));
+            localStorage.clear(); // Clear all temp data
+            localStorage.setItem('lastTestResult', JSON.stringify({
+                total: ((correct * 1) - (incorrect * 0.33)).toFixed(2),
+                correct, incorrect, totalQ: allQuestions.length
+            }));
             window.location.href = "result.html";
         }
 
