@@ -124,7 +124,7 @@
 
             <div class="relative py-6">
                 <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-slate-100"></div></div>
-                <div class="relative flex justify-center text-[10px] uppercase font-800 tracking-widest"><span class="bg-white px-4 text-pink-400">Or use email</span></div>
+                <div class="relative flex justify-center text-[10px] uppercase font-800 tracking-widest"><span class="bg-white px-4 text-slate-400">Or use email</span></div>
             </div>
         </div>
 
@@ -220,23 +220,31 @@
                 logForm.classList.remove('hidden');
                 logTab.classList.add('tab-active');
                 regTab.classList.remove('tab-active');
-                // Focus on login email
                 setTimeout(() => document.getElementById('loginEmail').focus(), 100);
             } else {
                 logForm.classList.add('hidden');
                 regForm.classList.remove('hidden');
                 regTab.classList.add('tab-active');
                 logTab.classList.remove('tab-active');
-                // Focus on registration name
                 setTimeout(() => document.getElementById('regName').focus(), 100);
             }
-
-            // Fix: Reset scroll position smoothly
             scrollArea.scrollTo({ top: 0, behavior: 'smooth' });
         }
+
+        // Logic to redirect to test-screen.html
+        document.getElementById('loginForm').onsubmit = function(e) {
+            e.preventDefault();
+            window.location.href = 'test-screen.html';
+        };
+
+        document.getElementById('registerForm').onsubmit = function(e) {
+            e.preventDefault();
+            window.location.href = 'test-screen.html';
+        };
         
         function googleLogin() {
             console.log("Firebase Google Auth Triggered");
+            window.location.href = 'test-screen.html';
         }
     </script>
 </body>
