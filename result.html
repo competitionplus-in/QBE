@@ -6,8 +6,10 @@
     <title>Test Results | Competition Plus</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
         body { font-family: 'Inter', sans-serif; }
@@ -22,7 +24,7 @@
 
     <nav class="bg-white border-b border-slate-200 p-4 sticky top-0 z-50 print-hidden">
         <div class="max-w-5xl mx-auto flex justify-between items-center">
-            <h1 class="text-xl font-extrabold text-blue-800 tracking-tighter">COMPETITION<span class="text-slate-900">PLUS</span></h1>
+            <h1 class="text-xl font-extrabold text-blue-800 tracking-tighter uppercase">COMPETITION<span class="text-slate-900">PLUS</span></h1>
             <a href="index.html" class="text-sm font-bold text-slate-500 hover:text-blue-700 transition">EXIT TO HOME</a>
         </div>
     </nav>
@@ -45,7 +47,7 @@
                     </div>
                 </div>
                 <div class="flex-1 space-y-4">
-                    <h3 id="performance-title" class="text-xl font-bold text-slate-800">Analyzing...</h3>
+                    <h3 id="performance-title" class="text-xl font-bold text-slate-800 text-center md:text-left">Analyzing...</h3>
                     <div class="flex gap-4">
                         <div class="bg-slate-50 p-3 rounded-xl flex-1 text-center border border-slate-100">
                             <span id="display-accuracy" class="block text-lg font-bold">0%</span>
@@ -78,7 +80,7 @@
                 <h3 class="text-lg font-bold flex items-center gap-2">
                     <i class="fas fa-trophy text-yellow-400"></i> Rajasthan State Ranking
                 </h3>
-                <span class="text-[10px] font-bold uppercase tracking-widest text-slate-400">Top 10 Performance</span>
+                <span class="text-[10px] font-bold uppercase tracking-widest text-slate-400">Live Top 10</span>
             </div>
             <div class="overflow-x-auto">
                 <table class="w-full text-left border-collapse">
@@ -102,7 +104,7 @@
         </h3>
 
         <div class="flex flex-wrap gap-2 mb-6 print-hidden">
-            <button onclick="filterReview('all', this)" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-xs font-bold transition">ALL</button>
+            <button onclick="filterReview('all', this)" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-xs font-bold transition shadow-md">ALL</button>
             <button onclick="filterReview('correct', this)" class="px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-lg text-xs font-bold transition">CORRECT</button>
             <button onclick="filterReview('incorrect', this)" class="px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-lg text-xs font-bold transition">INCORRECT</button>
             <button onclick="filterReview('skipped', this)" class="px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-lg text-xs font-bold transition">SKIPPED</button>
@@ -123,12 +125,12 @@
     <script>
         // --- FIREBASE INITIALIZATION ---
         const firebaseConfig = {
-            apiKey: "YOUR_API_KEY",
+            apiKey: "AIzaSyCAl9iSJhwn5IAUCA5LrgPK5FzFZPtWNZo",
             authDomain: "competition-plus-9996b.firebaseapp.com",
             projectId: "competition-plus-9996b",
-            storageBucket: "competition-plus-9996b.appspot.com",
-            messagingSenderId: "YOUR_SENDER_ID",
-            appId: "YOUR_APP_ID"
+            storageBucket: "competition-plus-9996b.firebasestorage.app",
+            messagingSenderId: "49252651907",
+            appId: "1:49252651907:web:8a5162064aaf3e69bd1cb6"
         };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
@@ -138,7 +140,7 @@
             const report = JSON.parse(localStorage.getItem('detailedTestReport'));
 
             if(!rawResult || !report) {
-                document.querySelector('main').innerHTML = `<div class="text-center py-20"><h2 class="text-2xl font-bold text-slate-400">No data found.</h2></div>`;
+                document.querySelector('main').innerHTML = `<div class="text-center py-20"><h2 class="text-2xl font-bold text-slate-400">No data found. Please take the test again.</h2></div>`;
                 return;
             }
 
@@ -146,8 +148,9 @@
             const totalMarks = parseFloat(data.total);
             const totalQ = parseInt(data.totalQ);
             const attempted = data.correct + data.incorrect;
-            const accuracy = attempted > 0 ? Math.round((data.correct / attempted) * 100) : 0;
+            const accuracy = data.accuracy || 0;
 
+            // UI Display Updates
             document.getElementById('display-final-score').innerText = totalMarks.toFixed(2);
             document.getElementById('display-out-of').innerText = `Out of ${totalQ}`;
             document.getElementById('display-accuracy').innerText = accuracy + "%";
@@ -157,6 +160,7 @@
             document.getElementById('summary-incorrect').innerText = data.incorrect;
             document.getElementById('summary-skipped').innerText = totalQ - attempted;
 
+            // Progress Circle Logic
             const scorePercent = (totalMarks / totalQ) * 100;
             document.getElementById('score-circle-element').style.setProperty('--progress', `${Math.max(0, (scorePercent / 100) * 360)}deg`);
             
@@ -191,12 +195,12 @@
                             <td class="px-6 py-4">
                                 <div class="flex items-center gap-2">
                                     <div class="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-[10px] font-bold">
-                                        ${rowData.name.charAt(0)}
+                                        ${(rowData.name || "A").charAt(0).toUpperCase()}
                                     </div>
-                                    <span class="text-slate-800 font-medium">${rowData.name}</span>
+                                    <span class="text-slate-800 font-medium">${rowData.name || "Aspirant"}</span>
                                 </div>
                             </td>
-                            <td class="px-6 py-4 font-bold text-blue-700">${rowData.score.toFixed(2)}</td>
+                            <td class="px-6 py-4 font-bold text-blue-700">${Number(rowData.score).toFixed(2)}</td>
                             <td class="px-6 py-4">
                                 <div class="flex items-center gap-2">
                                     <div class="w-16 bg-slate-100 h-1.5 rounded-full overflow-hidden">
@@ -210,7 +214,8 @@
                         rank++;
                     });
                 } catch (e) {
-                    leaderboardBody.innerHTML = `<tr><td colspan="4" class="px-6 py-8 text-center text-red-400">Failed to load leaderboard.</td></tr>`;
+                    console.error("Leaderboard Error:", e);
+                    leaderboardBody.innerHTML = `<tr><td colspan="4" class="px-6 py-8 text-center text-red-400">Leaderboard temporarily unavailable.</td></tr>`;
                 }
             }
             loadLeaderboard();
@@ -220,15 +225,15 @@
                 const container = document.getElementById('review-container');
                 container.innerHTML = "";
                 
-                document.querySelectorAll('button').forEach(b => {
-                    if(b.innerText === btn.innerText) { 
-                        b.classList.add('bg-blue-600', 'text-white'); 
-                        b.classList.remove('bg-white', 'text-slate-600'); 
-                    } else if(["ALL", "CORRECT", "INCORRECT", "SKIPPED"].includes(b.innerText)) { 
-                        b.classList.remove('bg-blue-600', 'text-white'); 
-                        b.classList.add('bg-white', 'text-slate-600'); 
+                // Update button styles
+                document.querySelectorAll('.print-hidden button').forEach(b => {
+                    if(["ALL", "CORRECT", "INCORRECT", "SKIPPED"].includes(b.innerText)) {
+                        b.classList.remove('bg-blue-600', 'text-white', 'shadow-md');
+                        b.classList.add('bg-white', 'text-slate-600');
                     }
                 });
+                btn.classList.add('bg-blue-600', 'text-white', 'shadow-md');
+                btn.classList.remove('bg-white', 'text-slate-600');
 
                 report.forEach((q, i) => {
                     const isAns = q.userAnswer !== undefined;
@@ -241,26 +246,28 @@
                     card.innerHTML = `
                         <div class="flex justify-between text-[10px] font-bold uppercase mb-4 text-slate-400">
                             <span>Question ${i+1} • ${q.isCorrect ? 'Correct' : isAns ? 'Incorrect' : 'Skipped'}</span>
-                            <span><i class="fas fa-clock"></i> ${q.timeSpent}s spent</span>
+                            <span><i class="fas fa-clock"></i> ${q.timeSpent || 0}s spent</span>
                         </div>
                         <p class="font-bold text-slate-800 mb-4">${q.questionText}</p>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
                             ${q.options.map((opt, idx) => {
                                 let color = "border-slate-100 text-slate-500";
-                                if(idx === q.correctIndex) color = "bg-green-100 border-green-500 text-green-700 font-bold";
-                                else if(idx === q.userAnswer) color = "bg-red-100 border-red-500 text-red-700 font-bold";
+                                if(idx === q.correctIndex) color = "bg-green-50 border-green-500 text-green-700 font-bold";
+                                else if(idx === q.userAnswer) color = "bg-red-50 border-red-500 text-red-700 font-bold";
                                 return `<div class="p-3 border rounded-xl text-sm ${color}">${opt}</div>`;
                             }).join('')}
                         </div>
                         <div class="bg-blue-50 p-4 rounded-xl text-sm border border-blue-100">
-                            <span class="font-bold text-blue-800 uppercase text-[10px] block mb-1">Explanation</span>
-                            <p class="text-slate-600 leading-relaxed">${q.explanation || "No explanation provided."}</p>
+                            <span class="font-bold text-blue-800 uppercase text-[10px] block mb-1">Answer Explanation</span>
+                            <p class="text-slate-600 leading-relaxed">${q.explanation || "No explanation provided for this question."}</p>
                         </div>
                     `;
                     container.appendChild(card);
                 });
             };
-            filterReview('all', document.querySelector('button'));
+            
+            // Initial render of all questions
+            filterReview('all', document.querySelector('button[onclick*="all"]'));
         };
     </script>
 </body>
