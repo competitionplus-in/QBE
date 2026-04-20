@@ -6,6 +6,8 @@
     <title>Live Mock Test | Competition Plus</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
         body { font-family: 'Inter', sans-serif; }
@@ -13,7 +15,6 @@
         #palette-container::-webkit-scrollbar { width: 4px; }
         #palette-container::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
         
-        /* Fix for selected question border on palette border */
         .selected-q {
             box-shadow: 0 0 0 2px white, 0 0 0 4px #1d4ed8 !important;
             transform: scale(1.05);
@@ -91,6 +92,19 @@
     </div>
 
     <script>
+        // --- FIREBASE INITIALIZATION ---
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "competition-plus-9996b.firebaseapp.com",
+            databaseURL: "https://competition-plus-9996b-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "competition-plus-9996b",
+            storageBucket: "competition-plus-9996b.appspot.com",
+            messagingSenderId: "YOUR_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
         const DB_URL = "https://competition-plus-9996b-default-rtdb.asia-southeast1.firebasedatabase.app/questions.json";
         
         let allQuestions = [];
@@ -114,9 +128,7 @@
         }
 
         function renderQuestion() {
-            // Track time spent on the previous question before rendering new one
             logTime();
-            
             const q = allQuestions[currentIndex];
             visitedList[currentIndex] = true;
             localStorage.setItem('cp_visited', JSON.stringify(visitedList));
@@ -148,7 +160,6 @@
         function recordAnswer(index) {
             studentAnswers[currentIndex] = index;
             localStorage.setItem('cp_answers', JSON.stringify(studentAnswers));
-            // Question color stays grey until Save & Next is clicked
         }
 
         function clearResponse() {
@@ -191,8 +202,7 @@
             let ans = 0, rev = 0, nv = 0;
 
             allQuestions.forEach((_, i) => {
-                let status = "bg-slate-100 text-slate-400"; // Not Visited (Grey on Grey)
-                
+                let status = "bg-slate-100 text-slate-400";
                 if (reviewList[i]) { status = "bg-orange-500 text-white"; rev++; }
                 else if (studentAnswers[i] !== undefined) { status = "bg-green-600 text-white"; ans++; }
                 else if (visitedList[i]) { status = "bg-slate-300 text-slate-600"; }
@@ -225,7 +235,7 @@
         function confirmSubmit() { document.getElementById('submitModal').classList.remove('hidden'); }
         function closeModal() { document.getElementById('submitModal').classList.add('hidden'); }
 
-        function processSubmit() {
+        async function processSubmit() {
             logTime();
             const report = allQuestions.map((q, i) => ({
                 ...q,
@@ -237,12 +247,24 @@
 
             const correct = report.filter(q => q.userAnswer !== undefined && q.isCorrect).length;
             const incorrect = report.filter(q => q.userAnswer !== undefined && !q.isCorrect).length;
+            const finalScore = parseFloat(((correct * 1) - (incorrect * 0.33)).toFixed(2));
 
             localStorage.setItem('detailedTestReport', JSON.stringify(report));
             localStorage.setItem('lastTestResult', JSON.stringify({
-                total: ((correct * 1) - (incorrect * 0.33)).toFixed(2),
+                total: finalScore,
                 correct, incorrect, totalQ: allQuestions.length
             }));
+
+            // --- LEADERBOARD PUSH ---
+            try {
+                await db.collection("leaderboard").add({
+                    name: localStorage.getItem('userName') || "Aspirant",
+                    score: finalScore,
+                    accuracy: Math.round((correct / (correct + incorrect)) * 100) || 0,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            } catch (e) { console.error("Leaderboard Error:", e); }
+
             window.location.href = "result.html";
         }
 
