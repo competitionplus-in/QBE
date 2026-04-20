@@ -10,7 +10,9 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
         body { font-family: 'Inter', sans-serif; }
         .glass-nav { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
+        .hero-gradient { background: linear-gradient(135deg, #1e40af 0%, #3730a3 100%); }
     </style>
+    
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
@@ -25,10 +27,51 @@
         appId: "1:49252651907:web:8a5162064aaf3e69bd1cb6",
         measurementId: "G-ESTWZJ5X0K"
       };
-      // Initialize Firebase
       firebase.initializeApp(firebaseConfig);
       const auth = firebase.auth();
       const db = firebase.firestore();
+
+      // Quick Start Functionality
+      function startTest() {
+          let userName = localStorage.getItem('userName');
+          if (!userName) {
+              userName = prompt("Enter your Full Name for the State Leaderboard:", "Aspirant");
+              if (userName && userName.trim() !== "") {
+                  localStorage.setItem('userName', userName.trim());
+                  window.location.href = 'test-screen.html';
+              }
+          } else {
+              window.location.href = 'test-screen.html';
+          }
+      }
+
+      // Load Real Live Toppers
+      async function loadLiveToppers() {
+          const container = document.getElementById('toppers-container');
+          try {
+              const snapshot = await db.collection("leaderboard").orderBy("score", "desc").limit(3).get();
+              if(snapshot.empty) return;
+              
+              container.innerHTML = "";
+              const icons = ["🥇", "🥈", "🥉"];
+              let i = 0;
+              
+              snapshot.forEach(doc => {
+                  const data = doc.data();
+                  container.innerHTML += `
+                      <div class="bg-white p-6 rounded-2xl border border-slate-100 flex items-center gap-4 shadow-sm hover:shadow-md transition">
+                          <span class="text-3xl">${icons[i]}</span>
+                          <div>
+                              <p class="font-bold text-slate-900">${data.name}</p>
+                              <p class="text-xs text-blue-600 font-bold uppercase tracking-tight">Score: ${data.score.toFixed(1)} / 120</p>
+                          </div>
+                      </div>
+                  `;
+                  i++;
+              });
+          } catch (e) { console.log("Toppers fetch error", e); }
+      }
+      window.onload = loadLiveToppers;
     </script>
 </head>
 <body class="bg-slate-50 text-slate-900">
@@ -39,12 +82,12 @@
                 <div class="bg-blue-700 text-white p-1.5 rounded-lg">
                     <i class="fas fa-graduation-cap text-xl"></i>
                 </div>
-                <h1 class="text-2xl font-800 tracking-wider text-slate-900 uppercase">COMPETITION <span class="text-blue-700 ml-1">PLUS</span></h1>
+                <h1 class="text-2xl font-[800] tracking-wider text-slate-900 uppercase">COMPETITION <span class="text-blue-700 ml-1">PLUS</span></h1>
             </div>
             
             <div class="hidden md:flex space-x-8 text-sm font-semibold uppercase tracking-wider">
                 <a href="index.html" class="text-blue-700 border-b-2 border-blue-700 pb-1">Home</a>
-                <a href="login.html" class="text-slate-600 hover:text-blue-700 transition">Mock Tests</a>
+                <a href="javascript:void(0)" onclick="startTest()" class="text-slate-600 hover:text-blue-700 transition">Mock Tests</a>
                 <a href="syllabus.html" class="text-slate-600 hover:text-blue-700 transition">Syllabus</a>
             </div>
             
@@ -60,10 +103,10 @@
         <div class="max-w-5xl mx-auto text-center px-4 relative z-10">
             <div class="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-blue-50 border border-blue-100 mb-8">
                 <span class="flex h-3 w-3 rounded-full bg-blue-600 animate-pulse"></span>
-                <span class="text-[11px] font-800 text-blue-700 uppercase tracking-widest">New: 2026 RSMSSB Pattern Included</span>
+                <span class="text-[11px] font-[800] text-blue-700 uppercase tracking-widest">New: 2026 RSMSSB Pattern Included</span>
             </div>
             
-            <h2 class="text-4xl md:text-7xl font-800 text-slate-900 mb-8 leading-tight">
+            <h2 class="text-4xl md:text-7xl font-[800] text-slate-900 mb-8 leading-tight">
                 Master the <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-700 to-indigo-600 uppercase">RSSB JEn</span> Exams
             </h2>
             
@@ -72,9 +115,9 @@
             </p>
             
             <div class="flex flex-col md:flex-row justify-center items-center gap-6">
-                <a href="login.html" class="w-full md:w-auto bg-blue-700 hover:bg-blue-800 text-white px-10 py-4 rounded-xl font-bold text-lg shadow-2xl transition transform hover:-translate-y-1 flex items-center justify-center gap-3">
+                <button onclick="startTest()" class="w-full md:w-auto bg-blue-700 hover:bg-blue-800 text-white px-10 py-4 rounded-xl font-bold text-lg shadow-2xl transition transform hover:-translate-y-1 flex items-center justify-center gap-3">
                     <i class="fas fa-play-circle"></i> Start Free Mock Test
-                </a>
+                </button>
                 
                 <div class="flex items-center gap-3 bg-white p-1 pr-5 rounded-full border border-slate-200 shadow-sm">
                     <div class="flex -space-x-2">
@@ -87,14 +130,26 @@
         </div>
     </header>
 
+    <section class="max-w-5xl mx-auto px-4 py-16 border-y border-slate-100 bg-slate-50/50">
+        <div class="text-center mb-10">
+            <h3 class="text-2xl font-[800] text-slate-900">Current Hall of Fame</h3>
+            <p class="text-slate-500 text-sm mt-2 font-medium">Real-time toppers from the latest RSMSSB Mock Test</p>
+        </div>
+        <div id="toppers-container" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="animate-pulse bg-white p-6 rounded-2xl border border-slate-100 h-24"></div>
+            <div class="animate-pulse bg-white p-6 rounded-2xl border border-slate-100 h-24"></div>
+            <div class="animate-pulse bg-white p-6 rounded-2xl border border-slate-100 h-24"></div>
+        </div>
+    </section>
+
     <section class="max-w-5xl mx-auto px-4 py-16">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div class="group bg-white p-8 rounded-2xl shadow-sm border border-slate-100 hover:shadow-xl hover:border-blue-200 transition-all duration-300">
                 <div class="w-14 h-14 bg-blue-50 rounded-xl flex items-center justify-center mb-6 group-hover:bg-blue-600 transition-colors">
                     <i class="fas fa-drafting-compass text-2xl text-blue-600 group-hover:text-white"></i>
                 </div>
-                <h3 class="font-bold text-xl mb-3">Civil Engineering</h3>
-                <p class="text-slate-500 text-sm leading-relaxed mb-4">Highly targeted questions for RCC, Steel, SM, and FM based strictly on IS 456, 800, and 1343.</p>
+                <h3 class="font-bold text-xl mb-3 text-slate-800">Civil Engineering</h3>
+                <p class="text-slate-500 text-sm leading-relaxed mb-4 font-medium">Highly targeted questions for RCC, Steel, SM, and FM based strictly on IS 456, 800, and 1343.</p>
                 <div class="h-1.5 w-12 bg-blue-600 rounded-full"></div>
             </div>
 
@@ -102,8 +157,8 @@
                 <div class="w-14 h-14 bg-orange-50 rounded-xl flex items-center justify-center mb-6 group-hover:bg-orange-600 transition-colors">
                     <i class="fas fa-map-marked-alt text-2xl text-orange-600 group-hover:text-white"></i>
                 </div>
-                <h3 class="font-bold text-xl mb-3">Rajasthan GK</h3>
-                <p class="text-slate-500 text-sm leading-relaxed mb-4">Comprehensive coverage of Art, Culture, Geography, and 2026 District Reorganization reports.</p>
+                <h3 class="font-bold text-xl mb-3 text-slate-800">Rajasthan GK</h3>
+                <p class="text-slate-500 text-sm leading-relaxed mb-4 font-medium">Comprehensive coverage of Art, Culture, Geography, and 2026 District Reorganization reports.</p>
                 <div class="h-1.5 w-12 bg-orange-600 rounded-full"></div>
             </div>
         </div>
@@ -112,7 +167,7 @@
     <section class="bg-slate-900 py-16 text-white text-center">
         <div class="max-w-4xl mx-auto px-4">
             <h3 class="text-2xl font-bold mb-12 italic text-slate-500 underline underline-offset-8 uppercase tracking-widest">Competitive Edge Features</h3>
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-8">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-8 text-white">
                 <div>
                     <span class="block text-3xl font-bold mb-2">5,000+</span>
                     <span class="text-xs uppercase text-slate-500 tracking-widest font-bold">MCQs</span>
@@ -127,7 +182,7 @@
                 </div>
                 <div>
                     <span class="block text-3xl font-bold mb-2">Mobile</span>
-                    <span class="text-xs uppercase text-slate-500 tracking-widest font-bold">App Interface</span>
+                    <span class="text-xs uppercase text-slate-500 tracking-widest font-bold">Ready UI</span>
                 </div>
             </div>
         </div>
