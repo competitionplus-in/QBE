@@ -18,7 +18,6 @@
         #palette-container::-webkit-scrollbar { width: 4px; }
         #palette-container::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
         
-        /* Matching the palette focus from image_0928a1.png */
         .selected-q {
             box-shadow: 0 0 0 2px white, 0 0 0 4px #1d4ed8 !important;
             transform: scale(1.05);
@@ -90,7 +89,7 @@
                     <i class="fas fa-file-signature text-2xl"></i>
                 </div>
                 <h3 class="text-2xl font-bold text-slate-900 mb-2">Submit Test?</h3>
-                <p class="text-slate-500 font-medium">Review your answers before final submission. Your score will be saved to the Rajasthan leaderboard.</p>
+                <p class="text-slate-500 font-medium">Your score will be saved to the Rajasthan leaderboard.</p>
             </div>
             <div class="p-6 pt-0 flex gap-4">
                 <button onclick="closeModal()" class="flex-1 px-6 py-3 bg-slate-100 text-slate-600 font-bold rounded-xl hover:bg-slate-200 transition">CANCEL</button>
@@ -133,7 +132,7 @@
                     startTimer();
                     updatePalette();
                 }
-            } catch (e) { alert("Error loading questions. Check your internet."); }
+            } catch (e) { alert("Error loading questions."); }
         }
 
         function renderQuestion() {
@@ -192,17 +191,11 @@
         }
 
         function nextQuestion() {
-            if (currentIndex < allQuestions.length - 1) {
-                currentIndex++;
-                renderQuestion();
-            }
+            if (currentIndex < allQuestions.length - 1) { currentIndex++; renderQuestion(); }
         }
 
         function prevQuestion() {
-            if (currentIndex > 0) {
-                currentIndex--;
-                renderQuestion();
-            }
+            if (currentIndex > 0) { currentIndex--; renderQuestion(); }
         }
 
         function updatePalette() {
@@ -231,7 +224,7 @@
 
         function startTimer() {
             setInterval(() => {
-                if (timeInSeconds <= 0) processSubmit();
+                if (timeInSeconds <= 0) { processSubmit(); return; }
                 const h = Math.floor(timeInSeconds / 3600);
                 const m = Math.floor((timeInSeconds % 3600) / 60);
                 const s = timeInSeconds % 60;
@@ -262,10 +255,10 @@
             const correct = report.filter(q => q.userAnswer !== undefined && q.isCorrect).length;
             const incorrect = answeredQs.length - correct;
             
-            // Standard RSSB/RPSC marking: 1 for correct, -0.33 for incorrect
             const finalScore = parseFloat(((correct * 1) - (incorrect * 0.33)).toFixed(2));
             const accuracy = answeredQs.length > 0 ? Math.round((correct / answeredQs.length) * 100) : 0;
 
+            // 1. Save locally first
             localStorage.setItem('detailedTestReport', JSON.stringify(report));
             localStorage.setItem('lastTestResult', JSON.stringify({
                 total: finalScore,
@@ -273,17 +266,25 @@
             }));
 
             try {
-                await db.collection("leaderboard").add({
-                    name: localStorage.getItem('userName') || "Madhukar", // cite: User Summary
+                // 2. Race Firebase save against a 4-second timeout
+                const firebaseSave = db.collection("leaderboard").add({
+                    name: localStorage.getItem('userName') || "Aspirant",
                     score: finalScore,
                     accuracy: accuracy,
                     timestamp: firebase.firestore.FieldValue.serverTimestamp()
                 });
-                
-                // Clear progress data
+
+                await Promise.race([
+                    firebaseSave,
+                    new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 4000))
+                ]);
+            } catch (e) {
+                console.warn("Firebase save bypassed due to error or timeout.");
+            } finally {
+                // 3. Always redirect
                 ['cp_answers', 'cp_reviews', 'cp_visited', 'cp_timer', 'cp_time_spent'].forEach(k => localStorage.removeItem(k));
                 window.location.href = "result.html";
-            } catch (e) { window.location.href = "result.html"; }
+            }
         }
 
         loadTestData();
