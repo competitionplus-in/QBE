@@ -9,52 +9,49 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
         body { font-family: 'Inter', sans-serif; }
-        /* Dynamic progress circle using CSS variable */
         .score-circle { 
             background: conic-gradient(#1d4ed8 var(--progress, 0deg), #e2e8f0 0deg); 
-            transition: --progress 0.5s ease-out;
+            transition: --progress 0.8s ease-in-out;
         }
+        @media print { .print-hidden { display: none; } }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-900 pb-20">
 
-    <nav class="bg-white border-b border-slate-200 p-4 sticky top-0 z-50">
+    <nav class="bg-white border-b border-slate-200 p-4 sticky top-0 z-50 print-hidden">
         <div class="max-w-5xl mx-auto flex justify-between items-center">
-            <h1 class="text-xl font-800 text-blue-800 tracking-tighter">COMPETITION<span class="text-slate-900">PLUS</span></h1>
-            <a href="index.html" class="text-sm font-bold text-slate-500 hover:text-blue-700">EXIT TO HOME</a>
+            <h1 class="text-xl font-extrabold text-blue-800 tracking-tighter">COMPETITION<span class="text-slate-900">PLUS</span></h1>
+            <a href="index.html" class="text-sm font-bold text-slate-500 hover:text-blue-700 transition">EXIT TO HOME</a>
         </div>
     </nav>
 
     <main class="max-w-4xl mx-auto px-4 mt-10">
-        
         <div class="text-center mb-10">
             <div class="inline-block p-3 bg-green-100 text-green-700 rounded-full mb-4">
                 <i class="fas fa-check-circle text-3xl"></i>
             </div>
-            <h2 class="text-3xl font-800 tracking-tight">Test Successfully Submitted</h2>
-            <p class="text-slate-500 mt-2">Here is your detailed performance breakdown for Mock Test #01</p>
+            <h2 class="text-3xl font-extrabold tracking-tight">Test Successfully Submitted</h2>
+            <p class="text-slate-500 mt-2">Performance breakdown for RPSC / RSMSSB Mock Test</p>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-            
             <div class="md:col-span-2 bg-white p-8 rounded-3xl shadow-sm border border-slate-100 flex flex-col md:flex-row items-center gap-8">
                 <div id="score-circle-element" class="relative w-40 h-40 rounded-full flex items-center justify-center score-circle" style="--progress: 0deg;">
                     <div class="absolute inset-2 bg-white rounded-full flex flex-col items-center justify-center">
-                        <span id="display-final-score" class="text-4xl font-800 text-blue-800">0.0</span>
-                        <span id="display-out-of" class="text-xs font-bold text-slate-400 uppercase tracking-widest text-center px-2">Out of 0</span>
+                        <span id="display-final-score" class="text-4xl font-extrabold text-blue-800">0.0</span>
+                        <span id="display-out-of" class="text-xs font-bold text-slate-400 uppercase tracking-widest">Out of 0</span>
                     </div>
                 </div>
                 <div class="flex-1 space-y-4">
-                    <h3 id="performance-title" class="text-xl font-bold text-center md:text-left">Analyzing...</h3>
-                    <p id="performance-desc" class="text-slate-500 text-sm text-center md:text-left">Calculating your ranking based on Rajasthan state standards.</p>
+                    <h3 id="performance-title" class="text-xl font-bold text-slate-800">Analyzing...</h3>
                     <div class="flex gap-4">
-                        <div class="bg-slate-50 p-3 rounded-xl flex-1 text-center">
-                            <span id="display-accuracy" class="block text-lg font-bold text-slate-800">0%</span>
-                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Accuracy</span>
+                        <div class="bg-slate-50 p-3 rounded-xl flex-1 text-center border border-slate-100">
+                            <span id="display-accuracy" class="block text-lg font-bold">0%</span>
+                            <span class="text-[10px] font-bold text-slate-400 uppercase">Accuracy</span>
                         </div>
-                        <div class="bg-slate-50 p-3 rounded-xl flex-1 text-center">
-                            <span id="display-attempted-count" class="block text-lg font-bold text-slate-800">0</span>
-                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Attempted</span>
+                        <div class="bg-slate-50 p-3 rounded-xl flex-1 text-center border border-slate-100">
+                            <span id="display-attempted-count" class="block text-lg font-bold">0</span>
+                            <span class="text-[10px] font-bold text-slate-400 uppercase">Attempted</span>
                         </div>
                     </div>
                 </div>
@@ -62,7 +59,7 @@
 
             <div class="bg-slate-900 text-white p-8 rounded-3xl shadow-lg flex flex-col justify-between">
                 <div>
-                    <h4 class="text-slate-400 text-xs font-bold uppercase tracking-widest mb-4">Quick Summary</h4>
+                    <h4 class="text-slate-400 text-xs font-bold uppercase mb-4">Metric Summary</h4>
                     <ul class="space-y-3">
                         <li class="flex justify-between text-sm"><span>Attempted</span> <span id="summary-attempted" class="font-bold">0</span></li>
                         <li class="flex justify-between text-sm text-green-400"><span>Correct</span> <span id="summary-correct" class="font-bold">0</span></li>
@@ -70,88 +67,113 @@
                         <li class="flex justify-between text-sm text-slate-400"><span>Skipped</span> <span id="summary-skipped" class="font-bold">0</span></li>
                     </ul>
                 </div>
-                <div class="pt-6 border-t border-slate-800 text-[10px]">
-                    <p class="text-slate-500 italic">*Negative marking of 1/3 applied per state rules.</p>
-                </div>
+                <p class="text-[10px] text-slate-500 pt-4 border-t border-slate-800 italic">*Negative marks (1/3) applied</p>
             </div>
         </div>
 
-        <h3 class="text-lg font-bold mb-6 flex items-center gap-2">
-            <i class="fas fa-chart-bar text-blue-600"></i> Performance Analysis
+        <h3 class="text-xl font-extrabold mb-6 flex items-center gap-2">
+            <i class="fas fa-list-check text-blue-600"></i> Detailed Review
         </h3>
-        <div class="space-y-4">
-            <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
-                <div class="flex justify-between items-center mb-4">
-                    <span class="font-bold text-slate-700">Overall Syllabus Coverage</span>
-                    <span id="subject-score-text" class="text-blue-700 font-bold">0 / 0</span>
-                </div>
-                <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                    <div id="subject-progress-bar" class="bg-blue-600 h-full rounded-full transition-all duration-1000" style="width: 0%;"></div>
-                </div>
-            </div>
+
+        <div class="flex flex-wrap gap-2 mb-6 print-hidden">
+            <button onclick="filterReview('all', this)" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-xs font-bold transition">ALL</button>
+            <button onclick="filterReview('correct', this)" class="px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-lg text-xs font-bold transition">CORRECT</button>
+            <button onclick="filterReview('incorrect', this)" class="px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-lg text-xs font-bold transition">INCORRECT</button>
+            <button onclick="filterReview('skipped', this)" class="px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-lg text-xs font-bold transition">SKIPPED</button>
         </div>
 
-        <div class="mt-12 flex flex-col md:flex-row gap-4 justify-center">
-            <button onclick="location.href='index.html'" class="bg-slate-900 text-white px-10 py-4 rounded-xl font-bold shadow-lg hover:bg-slate-800 transition">
+        <div id="review-container" class="space-y-6"></div>
+
+        <div class="mt-12 flex flex-col md:flex-row gap-4 justify-center print-hidden">
+            <button onclick="location.href='index.html'" class="bg-slate-900 text-white px-10 py-4 rounded-xl font-bold shadow-lg hover:bg-slate-800 transition transform hover:-translate-y-1">
                 <i class="fas fa-redo mr-2"></i> Retake Test
             </button>
-            <button onclick="window.print()" class="bg-white border-2 border-slate-200 text-slate-700 px-10 py-4 rounded-xl font-bold hover:bg-slate-50 transition">
-                <i class="fas fa-download mr-2"></i> Download Result
+            <button onclick="window.print()" class="bg-white border-2 border-slate-200 text-slate-700 px-10 py-4 rounded-xl font-bold hover:bg-slate-50 transition transform hover:-translate-y-1">
+                <i class="fas fa-download mr-2"></i> Save PDF
             </button>
         </div>
     </main>
 
     <script>
         window.onload = function() {
-            const rawData = localStorage.getItem('lastTestResult');
-            
-            if(!rawData) {
-                document.querySelector('main').innerHTML = `
-                    <div class="text-center py-20">
-                        <h2 class="text-2xl font-bold text-slate-400">No test data found.</h2>
-                        <a href="index.html" class="text-blue-600 font-bold underline mt-4 inline-block">Go back to Home</a>
-                    </div>`;
+            const rawResult = localStorage.getItem('lastTestResult');
+            const report = JSON.parse(localStorage.getItem('detailedTestReport'));
+
+            if(!rawResult || !report) {
+                document.querySelector('main').innerHTML = `<div class="text-center py-20"><h2 class="text-2xl font-bold text-slate-400">No data found.</h2></div>`;
                 return;
             }
 
-            const data = JSON.parse(rawData);
-
+            const data = JSON.parse(rawResult);
             const totalMarks = parseFloat(data.total);
-            const totalQuestions = parseInt(data.totalQ);
+            const totalQ = parseInt(data.totalQ);
             const attempted = data.correct + data.incorrect;
-            
-            document.getElementById('display-final-score').innerText = totalMarks;
-            document.getElementById('display-out-of').innerText = `Out of ${totalQuestions}`;
-            
+            const accuracy = attempted > 0 ? Math.round((data.correct / attempted) * 100) : 0;
+
+            // Update Header Stats
+            document.getElementById('display-final-score').innerText = totalMarks.toFixed(2);
+            document.getElementById('display-out-of').innerText = `Out of ${totalQ}`;
+            document.getElementById('display-accuracy').innerText = accuracy + "%";
+            document.getElementById('display-attempted-count').innerText = attempted;
             document.getElementById('summary-attempted').innerText = attempted;
             document.getElementById('summary-correct').innerText = data.correct;
             document.getElementById('summary-incorrect').innerText = data.incorrect;
-            document.getElementById('summary-skipped').innerText = data.skipped;
+            document.getElementById('summary-skipped').innerText = totalQ - attempted;
 
-            const accuracy = attempted > 0 ? Math.round((data.correct / attempted) * 100) : 0;
-            document.getElementById('display-accuracy').innerText = accuracy + "%";
-            document.getElementById('display-attempted-count').innerText = attempted;
-
-            const scorePercent = (totalMarks / totalQuestions) * 100;
-            const degrees = Math.max(0, (scorePercent / 100) * 360);
-            document.getElementById('score-circle-element').style.setProperty('--progress', `${degrees}deg`);
-
-            document.getElementById('subject-score-text').innerText = `${totalMarks} / ${totalQuestions}`;
-            document.getElementById('subject-progress-bar').style.width = `${Math.max(0, scorePercent)}%`;
-
+            // Progress Circle & Title
+            const scorePercent = (totalMarks / totalQ) * 100;
+            document.getElementById('score-circle-element').style.setProperty('--progress', `${Math.max(0, scorePercent / 100 * 360)}deg`);
+            
             const title = document.getElementById('performance-title');
-            const desc = document.getElementById('performance-desc');
+            if(scorePercent >= 75) title.innerText = "Excellent!";
+            else if(scorePercent >= 45) title.innerText = "Good Performance!";
+            else title.innerText = "Needs Improvement!";
 
-            if (scorePercent >= 75) {
-                title.innerText = "Excellent Work!";
-                desc.innerHTML = "You are in the <strong>top 5%</strong> of students preparing for state exams.";
-            } else if (scorePercent >= 50) {
-                title.innerText = "Good Performance!";
-                desc.innerText = "You have a solid foundation. Focus on accuracy to improve further.";
-            } else {
-                title.innerText = "Keep Studying!";
-                desc.innerText = "Consistency is key. Review your incorrect answers and try again.";
-            }
+            // Filter Functionality
+            window.filterReview = function(type, btn) {
+                const container = document.getElementById('review-container');
+                container.innerHTML = "";
+                
+                // Button Styling
+                document.querySelectorAll('button').forEach(b => {
+                    if(b.innerText === btn.innerText) { b.classList.replace('bg-white', 'bg-blue-600'); b.classList.replace('text-slate-600', 'text-white'); }
+                    else if(["ALL", "CORRECT", "INCORRECT", "SKIPPED"].includes(b.innerText)) { b.classList.replace('bg-blue-600', 'bg-white'); b.classList.replace('text-white', 'text-slate-600'); }
+                });
+
+                report.forEach((q, i) => {
+                    const isAns = q.userAnswer !== undefined;
+                    if(type === 'correct' && (!isAns || !q.isCorrect)) return;
+                    if(type === 'incorrect' && (!isAns || q.isCorrect)) return;
+                    if(type === 'skipped' && isAns) return;
+
+                    const card = document.createElement('div');
+                    card.className = `p-6 rounded-2xl border-2 bg-white transition ${q.isCorrect ? 'border-green-100' : isAns ? 'border-red-100' : 'border-slate-100'}`;
+                    
+                    card.innerHTML = `
+                        <div class="flex justify-between text-[10px] font-bold uppercase mb-4 text-slate-400">
+                            <span>Question ${i+1} • ${q.isCorrect ? 'Correct' : isAns ? 'Incorrect' : 'Skipped'}</span>
+                            <span><i class="fas fa-clock"></i> ${q.timeSpent}s spent</span>
+                        </div>
+                        <p class="font-bold text-slate-800 mb-4">${q.questionText}</p>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+                            ${q.options.map((opt, idx) => {
+                                let color = "border-slate-100 text-slate-500";
+                                if(idx === q.correctIndex) color = "bg-green-100 border-green-500 text-green-700 font-bold";
+                                else if(idx === q.userAnswer) color = "bg-red-100 border-red-500 text-red-700 font-bold";
+                                return `<div class="p-3 border rounded-xl text-sm ${color}">${opt}</div>`;
+                            }).join('')}
+                        </div>
+                        <div class="bg-blue-50 p-4 rounded-xl text-sm border border-blue-100">
+                            <span class="font-bold text-blue-800 uppercase text-[10px] block mb-1">Explanation</span>
+                            <p class="text-slate-600 leading-relaxed">${q.explanation || "No explanation provided."}</p>
+                        </div>
+                    `;
+                    container.appendChild(card);
+                });
+            };
+
+            // Init Review
+            filterReview('all', document.querySelector('button'));
         };
     </script>
 </body>
