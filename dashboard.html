@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard | Competition Plus</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .glass-card { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(10px); }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900">
+
+    <div class="flex flex-col md:flex-row min-h-screen">
+        <aside class="w-full md:w-64 bg-slate-900 text-white p-6">
+            <h1 class="text-xl font-extrabold text-blue-400 tracking-tighter uppercase mb-10">COMPETITION<span class="text-white">PLUS</span></h1>
+            <nav class="space-y-2">
+                <a href="#" class="flex items-center gap-3 p-3 bg-blue-600 rounded-xl font-bold transition">
+                    <i class="fas fa-home"></i> Dashboard
+                </a>
+                <a href="index.html" class="flex items-center gap-3 p-3 text-slate-400 hover:bg-slate-800 rounded-xl transition">
+                    <i class="fas fa-book-open"></i> Take a Test
+                </a>
+                <a href="#" class="flex items-center gap-3 p-3 text-slate-400 hover:bg-slate-800 rounded-xl transition">
+                    <i class="fas fa-chart-line"></i> Performance
+                </a>
+            </nav>
+        </aside>
+
+        <main class="flex-1 p-6 md:p-10">
+            <header class="flex justify-between items-center mb-10">
+                <div>
+                    <h2 class="text-2xl font-extrabold tracking-tight">Welcome Back!</h2>
+                    <p class="text-slate-500">Track your RPSC / RSMSSB prep progress.</p>
+                </div>
+                <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center border-2 border-blue-200">
+                    <i class="fas fa-user text-blue-600"></i>
+                </div>
+            </header>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+                <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
+                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Tests Attempted</span>
+                    <h3 id="stat-total-tests" class="text-3xl font-extrabold">0</h3>
+                </div>
+                <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
+                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Average Score</span>
+                    <h3 id="stat-avg-score" class="text-3xl font-extrabold">0%</h3>
+                </div>
+                <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm bg-blue-600 text-white">
+                    <span class="text-[10px] font-bold text-blue-200 uppercase tracking-widest block mb-2">Global Rank</span>
+                    <h3 id="stat-rank" class="text-3xl font-extrabold">#--</h3>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+                <div class="p-6 border-b border-slate-50 flex justify-between items-center">
+                    <h3 class="font-bold text-lg">Recent Test Attempts</h3>
+                    <button class="text-xs font-bold text-blue-600 hover:underline">View All</button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-50 text-slate-400 text-[10px] uppercase tracking-widest">
+                                <th class="px-6 py-4">Test Date</th>
+                                <th class="px-6 py-4">Score</th>
+                                <th class="px-6 py-4">Accuracy</th>
+                                <th class="px-6 py-4">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recent-attempts-body" class="text-sm">
+                            <tr>
+                                <td colspan="4" class="px-6 py-10 text-center text-slate-400">Fetching your activity history...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // --- FIREBASE CONFIG ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyCAl9iSJhwn5IAUCA5LrgPK5FzFZPtWNZo",
+            authDomain: "competition-plus-9996b.firebaseapp.com",
+            projectId: "competition-plus-9996b",
+            storageBucket: "competition-plus-9996b.firebasestorage.app",
+            messagingSenderId: "49252651907",
+            appId: "1:49252651907:web:8a5162064aaf3e69bd1cb6"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        // Load dashboard data
+        async function loadDashboard() {
+            const tableBody = document.getElementById('recent-attempts-body');
+            
+            try {
+                // In a real app, you'd filter by user ID: .where("userId", "==", currentUserId)
+                const snapshot = await db.collection("leaderboard")
+                    .orderBy("timestamp", "desc")
+                    .limit(5)
+                    .get();
+
+                if (snapshot.empty) {
+                    tableBody.innerHTML = `<tr><td colspan="4" class="px-6 py-10 text-center text-slate-400 font-medium">No tests taken yet. Start your journey today!</td></tr>`;
+                    return;
+                }
+
+                tableBody.innerHTML = "";
+                let totalScorePerc = 0;
+                let count = 0;
+
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    const date = data.timestamp ? new Date(data.timestamp.seconds * 1000).toLocaleDateString() : 'N/A';
+                    
+                    totalScorePerc += (data.score / (data.totalQ || 100)) * 100;
+                    count++;
+
+                    const row = `
+                        <tr class="border-b border-slate-50 hover:bg-slate-50 transition">
+                            <td class="px-6 py-4 font-medium text-slate-700">${date}</td>
+                            <td class="px-6 py-4 font-bold text-blue-700">${Number(data.score).toFixed(2)}</td>
+                            <td class="px-6 py-4">
+                                <span class="px-2 py-1 bg-green-100 text-green-700 rounded-md text-[10px] font-bold">${data.accuracy}%</span>
+                            </td>
+                            <td class="px-6 py-4">
+                                <button class="text-blue-600 font-bold hover:text-blue-800 transition">Review</button>
+                            </td>
+                        </tr>
+                    `;
+                    tableBody.innerHTML += row;
+                });
+
+                // Update Overview Stats
+                document.getElementById('stat-total-tests').innerText = count;
+                document.getElementById('stat-avg-score').innerText = (totalScorePerc / count).toFixed(1) + "%";
+
+            } catch (error) {
+                console.error("Dashboard Error:", error);
+                tableBody.innerHTML = `<tr><td colspan="4" class="px-6 py-10 text-center text-red-400">Error loading data.</td></tr>`;
+            }
+        }
+
+        window.onload = loadDashboard;
+    </script>
+</body>
+</html>
