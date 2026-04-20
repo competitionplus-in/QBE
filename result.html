@@ -14,8 +14,7 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
         body { font-family: 'Inter', sans-serif; }
         .score-circle { 
-            background: conic-gradient(#1d4ed8 var(--progress, 0deg), #e2e8f0 0deg); 
-            transition: --progress 0.8s ease-in-out;
+            transition: background 0.8s ease-in-out;
         }
         @media print { .print-hidden { display: none; } }
     </style>
@@ -25,7 +24,12 @@
     <nav class="bg-white border-b border-slate-200 p-4 sticky top-0 z-50 print-hidden">
         <div class="max-w-5xl mx-auto flex justify-between items-center">
             <h1 class="text-xl font-extrabold text-blue-800 tracking-tighter uppercase">COMPETITION<span class="text-slate-900">PLUS</span></h1>
-            <a href="index.html" class="text-sm font-bold text-slate-500 hover:text-blue-700 transition">EXIT TO HOME</a>
+            <div class="flex gap-4">
+                <button onclick="shareOnWhatsApp()" class="text-green-600 font-bold text-sm flex items-center gap-1">
+                    <i class="fab fa-whatsapp"></i> SHARE
+                </button>
+                <a href="index.html" class="text-sm font-bold text-slate-500 hover:text-blue-700 transition">EXIT</a>
+            </div>
         </div>
     </nav>
 
@@ -40,22 +44,26 @@
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
             <div class="md:col-span-2 bg-white p-8 rounded-3xl shadow-sm border border-slate-100 flex flex-col md:flex-row items-center gap-8">
-                <div id="score-circle-element" class="relative w-40 h-40 rounded-full flex items-center justify-center score-circle" style="--progress: 0deg;">
+                <div id="score-circle-element" class="relative w-40 h-40 rounded-full flex items-center justify-center score-circle">
                     <div class="absolute inset-2 bg-white rounded-full flex flex-col items-center justify-center">
                         <span id="display-final-score" class="text-4xl font-extrabold text-blue-800">0.0</span>
                         <span id="display-out-of" class="text-xs font-bold text-slate-400 uppercase tracking-widest">Out of 0</span>
                     </div>
                 </div>
                 <div class="flex-1 space-y-4">
-                    <h3 id="performance-title" class="text-xl font-bold text-slate-800 text-center md:text-left">Analyzing...</h3>
-                    <div class="flex gap-4">
-                        <div class="bg-slate-50 p-3 rounded-xl flex-1 text-center border border-slate-100">
+                    <h3 id="performance-title" class="text-xl font-bold text-slate-800 text-center md:text-left tracking-tight">Analyzing...</h3>
+                    <div class="grid grid-cols-3 gap-2">
+                        <div class="bg-slate-50 p-3 rounded-xl text-center border border-slate-100">
                             <span id="display-accuracy" class="block text-lg font-bold">0%</span>
                             <span class="text-[10px] font-bold text-slate-400 uppercase">Accuracy</span>
                         </div>
-                        <div class="bg-slate-50 p-3 rounded-xl flex-1 text-center border border-slate-100">
+                        <div class="bg-slate-50 p-3 rounded-xl text-center border border-slate-100">
                             <span id="display-attempted-count" class="block text-lg font-bold">0</span>
                             <span class="text-[10px] font-bold text-slate-400 uppercase">Attempted</span>
+                        </div>
+                        <div class="bg-slate-50 p-3 rounded-xl text-center border border-slate-100">
+                            <span id="display-avg-time" class="block text-lg font-bold">0s</span>
+                            <span class="text-[10px] font-bold text-slate-400 uppercase">Avg Time</span>
                         </div>
                     </div>
                 </div>
@@ -63,7 +71,7 @@
 
             <div class="bg-slate-900 text-white p-8 rounded-3xl shadow-lg flex flex-col justify-between">
                 <div>
-                    <h4 class="text-slate-400 text-xs font-bold uppercase mb-4">Metric Summary</h4>
+                    <h4 class="text-slate-400 text-xs font-bold uppercase mb-4 tracking-widest">Metric Summary</h4>
                     <ul class="space-y-3">
                         <li class="flex justify-between text-sm"><span>Attempted</span> <span id="summary-attempted" class="font-bold">0</span></li>
                         <li class="flex justify-between text-sm text-green-400"><span>Correct</span> <span id="summary-correct" class="font-bold">0</span></li>
@@ -73,6 +81,14 @@
                 </div>
                 <p class="text-[10px] text-slate-500 pt-4 border-t border-slate-800 italic">*Negative marks (1/3) applied</p>
             </div>
+        </div>
+
+        <div class="mb-10 bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
+            <h3 class="text-lg font-bold mb-4 flex items-center gap-2">
+                <i class="fas fa-chart-pie text-blue-600"></i> Subject-Wise Analysis
+            </h3>
+            <div id="subject-analysis-container" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                </div>
         </div>
 
         <div class="mb-12 bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden print-hidden">
@@ -99,9 +115,11 @@
             </div>
         </div>
 
-        <h3 class="text-xl font-extrabold mb-6 flex items-center gap-2">
-            <i class="fas fa-list-check text-blue-600"></i> Detailed Review
-        </h3>
+        <div class="flex justify-between items-end mb-6">
+            <h3 class="text-xl font-extrabold flex items-center gap-2">
+                <i class="fas fa-list-check text-blue-600"></i> Detailed Review
+            </h3>
+        </div>
 
         <div class="flex flex-wrap gap-2 mb-6 print-hidden">
             <button onclick="filterReview('all', this)" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-xs font-bold transition shadow-md">ALL</button>
@@ -117,7 +135,7 @@
                 <i class="fas fa-redo mr-2"></i> Retake Test
             </button>
             <button onclick="window.print()" class="bg-white border-2 border-slate-200 text-slate-700 px-10 py-4 rounded-xl font-bold hover:bg-slate-50 transition transform hover:-translate-y-1">
-                <i class="fas fa-download mr-2"></i> Save PDF
+                <i class="fas fa-download mr-2"></i> Save Report card
             </button>
         </div>
     </main>
@@ -149,25 +167,63 @@
             const totalQ = parseInt(data.totalQ);
             const attempted = data.correct + data.incorrect;
             const accuracy = data.accuracy || 0;
+            const totalSeconds = report.reduce((acc, curr) => acc + (curr.timeSpent || 0), 0);
+            const avgTime = attempted > 0 ? (totalSeconds / attempted).toFixed(1) : 0;
 
             // UI Display Updates
             document.getElementById('display-final-score').innerText = totalMarks.toFixed(2);
             document.getElementById('display-out-of').innerText = `Out of ${totalQ}`;
             document.getElementById('display-accuracy').innerText = accuracy + "%";
             document.getElementById('display-attempted-count').innerText = attempted;
+            document.getElementById('display-avg-time').innerText = avgTime + "s";
+            
             document.getElementById('summary-attempted').innerText = attempted;
             document.getElementById('summary-correct').innerText = data.correct;
             document.getElementById('summary-incorrect').innerText = data.incorrect;
             document.getElementById('summary-skipped').innerText = totalQ - attempted;
 
-            // Progress Circle Logic
+            // --- PROGRESS CIRCLE IMPROVEMENT ---
             const scorePercent = (totalMarks / totalQ) * 100;
-            document.getElementById('score-circle-element').style.setProperty('--progress', `${Math.max(0, (scorePercent / 100) * 360)}deg`);
+            const circle = document.getElementById('score-circle-element');
+            // Color logic: Red < 40%, Yellow < 70%, Green >= 70%
+            const circleColor = scorePercent >= 70 ? '#16a34a' : (scorePercent >= 40 ? '#ca8a04' : '#dc2626');
+            circle.style.background = `conic-gradient(${circleColor} ${Math.max(0, scorePercent)}%, #e2e8f0 0deg)`;
             
             const title = document.getElementById('performance-title');
-            if(scorePercent >= 75) title.innerText = "Excellent!";
+            if(scorePercent >= 75) title.innerText = "Excellent Achievement!";
             else if(scorePercent >= 45) title.innerText = "Good Performance!";
-            else title.innerText = "Needs Improvement!";
+            else title.innerText = "Scope for Improvement!";
+
+            // --- SUBJECT ANALYSIS LOGIC ---
+            const subjects = {};
+            report.forEach(q => {
+                const sub = q.subject || "General";
+                if(!subjects[sub]) subjects[sub] = { correct: 0, total: 0, score: 0 };
+                subjects[sub].total++;
+                if(q.isCorrect) {
+                    subjects[sub].correct++;
+                    subjects[sub].score += 1;
+                } else if (q.userAnswer !== undefined) {
+                    subjects[sub].score -= 0.33;
+                }
+            });
+
+            const subContainer = document.getElementById('subject-analysis-container');
+            for(const [name, stats] of Object.entries(subjects)) {
+                const perc = ((stats.correct / stats.total) * 100).toFixed(0);
+                subContainer.innerHTML += `
+                    <div class="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-xs font-bold uppercase text-slate-500">${name}</span>
+                            <span class="text-xs font-bold text-blue-700">${stats.score.toFixed(2)} Marks</span>
+                        </div>
+                        <div class="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
+                            <div class="bg-blue-600 h-full" style="width: ${perc}%"></div>
+                        </div>
+                        <p class="text-[10px] mt-2 text-slate-400 font-bold">${stats.correct}/${stats.total} Questions Correct</p>
+                    </div>
+                `;
+            }
 
             // --- LEADERBOARD LOGIC ---
             async function loadLeaderboard() {
@@ -225,7 +281,6 @@
                 const container = document.getElementById('review-container');
                 container.innerHTML = "";
                 
-                // Update button styles
                 document.querySelectorAll('.print-hidden button').forEach(b => {
                     if(["ALL", "CORRECT", "INCORRECT", "SKIPPED"].includes(b.innerText)) {
                         b.classList.remove('bg-blue-600', 'text-white', 'shadow-md');
@@ -245,7 +300,7 @@
                     card.className = `p-6 rounded-2xl border-2 bg-white transition ${q.isCorrect ? 'border-green-100' : isAns ? 'border-red-100' : 'border-slate-100'}`;
                     card.innerHTML = `
                         <div class="flex justify-between text-[10px] font-bold uppercase mb-4 text-slate-400">
-                            <span>Question ${i+1} • ${q.isCorrect ? 'Correct' : isAns ? 'Incorrect' : 'Skipped'}</span>
+                            <span>Question ${i+1} • ${q.subject || 'General'} • ${q.isCorrect ? 'Correct' : isAns ? 'Incorrect' : 'Skipped'}</span>
                             <span><i class="fas fa-clock"></i> ${q.timeSpent || 0}s spent</span>
                         </div>
                         <p class="font-bold text-slate-800 mb-4">${q.questionText}</p>
@@ -259,14 +314,18 @@
                         </div>
                         <div class="bg-blue-50 p-4 rounded-xl text-sm border border-blue-100">
                             <span class="font-bold text-blue-800 uppercase text-[10px] block mb-1">Answer Explanation</span>
-                            <p class="text-slate-600 leading-relaxed">${q.explanation || "No explanation provided for this question."}</p>
+                            <p class="text-slate-600 leading-relaxed">${q.explanation || "No explanation provided."}</p>
                         </div>
                     `;
                     container.appendChild(card);
                 });
             };
-            
-            // Initial render of all questions
+
+            window.shareOnWhatsApp = function() {
+                const text = `🎯 I just scored ${totalMarks.toFixed(2)}/${totalQ} on Competition Plus RPSC/RSMSSB Mock Test! My Accuracy: ${accuracy}%. Can you beat me? Check out Competition Plus!`;
+                window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+            };
+
             filterReview('all', document.querySelector('button[onclick*="all"]'));
         };
     </script>
