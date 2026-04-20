@@ -6,6 +6,8 @@
     <title>Test Results | Competition Plus</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
         body { font-family: 'Inter', sans-serif; }
@@ -71,6 +73,30 @@
             </div>
         </div>
 
+        <div class="mb-12 bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden print-hidden">
+            <div class="p-6 border-b border-slate-50 flex justify-between items-center bg-slate-900 text-white">
+                <h3 class="text-lg font-bold flex items-center gap-2">
+                    <i class="fas fa-trophy text-yellow-400"></i> Rajasthan State Ranking
+                </h3>
+                <span class="text-[10px] font-bold uppercase tracking-widest text-slate-400">Top 10 Performance</span>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-slate-50 text-slate-400 text-[10px] uppercase tracking-widest">
+                            <th class="px-6 py-4">Rank</th>
+                            <th class="px-6 py-4">Candidate</th>
+                            <th class="px-6 py-4">Score</th>
+                            <th class="px-6 py-4">Accuracy</th>
+                        </tr>
+                    </thead>
+                    <tbody id="leaderboard-body" class="text-sm">
+                        <tr><td colspan="4" class="px-6 py-8 text-center text-slate-400">Loading rankings...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
         <h3 class="text-xl font-extrabold mb-6 flex items-center gap-2">
             <i class="fas fa-list-check text-blue-600"></i> Detailed Review
         </h3>
@@ -95,6 +121,18 @@
     </main>
 
     <script>
+        // --- FIREBASE INITIALIZATION ---
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "competition-plus-9996b.firebaseapp.com",
+            projectId: "competition-plus-9996b",
+            storageBucket: "competition-plus-9996b.appspot.com",
+            messagingSenderId: "YOUR_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
         window.onload = function() {
             const rawResult = localStorage.getItem('lastTestResult');
             const report = JSON.parse(localStorage.getItem('detailedTestReport'));
@@ -110,7 +148,6 @@
             const attempted = data.correct + data.incorrect;
             const accuracy = attempted > 0 ? Math.round((data.correct / attempted) * 100) : 0;
 
-            // Update Header Stats
             document.getElementById('display-final-score').innerText = totalMarks.toFixed(2);
             document.getElementById('display-out-of').innerText = `Out of ${totalQ}`;
             document.getElementById('display-accuracy').innerText = accuracy + "%";
@@ -120,24 +157,77 @@
             document.getElementById('summary-incorrect').innerText = data.incorrect;
             document.getElementById('summary-skipped').innerText = totalQ - attempted;
 
-            // Progress Circle & Title
             const scorePercent = (totalMarks / totalQ) * 100;
-            document.getElementById('score-circle-element').style.setProperty('--progress', `${Math.max(0, scorePercent / 100 * 360)}deg`);
+            document.getElementById('score-circle-element').style.setProperty('--progress', `${Math.max(0, (scorePercent / 100) * 360)}deg`);
             
             const title = document.getElementById('performance-title');
             if(scorePercent >= 75) title.innerText = "Excellent!";
             else if(scorePercent >= 45) title.innerText = "Good Performance!";
             else title.innerText = "Needs Improvement!";
 
-            // Filter Functionality
+            // --- LEADERBOARD LOGIC ---
+            async function loadLeaderboard() {
+                const leaderboardBody = document.getElementById('leaderboard-body');
+                try {
+                    const snapshot = await db.collection("leaderboard")
+                        .orderBy("score", "desc")
+                        .limit(10)
+                        .get();
+
+                    leaderboardBody.innerHTML = "";
+                    let rank = 1;
+
+                    snapshot.forEach((doc) => {
+                        const rowData = doc.data();
+                        let rankIcon = rank;
+                        if(rank === 1) rankIcon = "🥇";
+                        else if(rank === 2) rankIcon = "🥈";
+                        else if(rank === 3) rankIcon = "🥉";
+
+                        const row = document.createElement('tr');
+                        row.className = "border-b border-slate-50 hover:bg-slate-50 transition";
+                        row.innerHTML = `
+                            <td class="px-6 py-4 text-slate-500 font-bold">${rankIcon}</td>
+                            <td class="px-6 py-4">
+                                <div class="flex items-center gap-2">
+                                    <div class="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-[10px] font-bold">
+                                        ${rowData.name.charAt(0)}
+                                    </div>
+                                    <span class="text-slate-800 font-medium">${rowData.name}</span>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 font-bold text-blue-700">${rowData.score.toFixed(2)}</td>
+                            <td class="px-6 py-4">
+                                <div class="flex items-center gap-2">
+                                    <div class="w-16 bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                                        <div class="bg-green-500 h-full" style="width: ${rowData.accuracy}%"></div>
+                                    </div>
+                                    <span class="text-[10px] text-slate-400">${rowData.accuracy}%</span>
+                                </div>
+                            </td>
+                        `;
+                        leaderboardBody.appendChild(row);
+                        rank++;
+                    });
+                } catch (e) {
+                    leaderboardBody.innerHTML = `<tr><td colspan="4" class="px-6 py-8 text-center text-red-400">Failed to load leaderboard.</td></tr>`;
+                }
+            }
+            loadLeaderboard();
+
+            // --- FILTER LOGIC ---
             window.filterReview = function(type, btn) {
                 const container = document.getElementById('review-container');
                 container.innerHTML = "";
                 
-                // Button Styling
                 document.querySelectorAll('button').forEach(b => {
-                    if(b.innerText === btn.innerText) { b.classList.replace('bg-white', 'bg-blue-600'); b.classList.replace('text-slate-600', 'text-white'); }
-                    else if(["ALL", "CORRECT", "INCORRECT", "SKIPPED"].includes(b.innerText)) { b.classList.replace('bg-blue-600', 'bg-white'); b.classList.replace('text-white', 'text-slate-600'); }
+                    if(b.innerText === btn.innerText) { 
+                        b.classList.add('bg-blue-600', 'text-white'); 
+                        b.classList.remove('bg-white', 'text-slate-600'); 
+                    } else if(["ALL", "CORRECT", "INCORRECT", "SKIPPED"].includes(b.innerText)) { 
+                        b.classList.remove('bg-blue-600', 'text-white'); 
+                        b.classList.add('bg-white', 'text-slate-600'); 
+                    }
                 });
 
                 report.forEach((q, i) => {
@@ -148,7 +238,6 @@
 
                     const card = document.createElement('div');
                     card.className = `p-6 rounded-2xl border-2 bg-white transition ${q.isCorrect ? 'border-green-100' : isAns ? 'border-red-100' : 'border-slate-100'}`;
-                    
                     card.innerHTML = `
                         <div class="flex justify-between text-[10px] font-bold uppercase mb-4 text-slate-400">
                             <span>Question ${i+1} • ${q.isCorrect ? 'Correct' : isAns ? 'Incorrect' : 'Skipped'}</span>
@@ -171,8 +260,6 @@
                     container.appendChild(card);
                 });
             };
-
-            // Init Review
             filterReview('all', document.querySelector('button'));
         };
     </script>
