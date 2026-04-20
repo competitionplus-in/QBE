@@ -31,7 +31,6 @@
       const auth = firebase.auth();
       const db = firebase.firestore();
 
-      // Quick Start Functionality
       function startTest() {
           let userName = localStorage.getItem('userName');
           if (!userName) {
@@ -45,10 +44,10 @@
           }
       }
 
-      // Load Real Live Toppers
       async function loadLiveToppers() {
           const container = document.getElementById('toppers-container');
           try {
+              // Fetch top 3 scores
               const snapshot = await db.collection("leaderboard").orderBy("score", "desc").limit(3).get();
               if(snapshot.empty) return;
               
@@ -58,12 +57,21 @@
               
               snapshot.forEach(doc => {
                   const data = doc.data();
+                  const score = data.score || 0;
+                  
+                  // FIX: Use dynamic totalQuestions from DB, or fallback to 120
+                  // Also ensure denominator is at least as large as the score to avoid "143/120"
+                  const totalPossible = data.totalQuestions || 120;
+                  const displayTotal = Math.max(totalPossible, Math.ceil(score));
+
                   container.innerHTML += `
                       <div class="bg-white p-6 rounded-2xl border border-slate-100 flex items-center gap-4 shadow-sm hover:shadow-md transition">
                           <span class="text-3xl">${icons[i]}</span>
                           <div>
                               <p class="font-bold text-slate-900">${data.name}</p>
-                              <p class="text-xs text-blue-600 font-bold uppercase tracking-tight">Score: ${data.score.toFixed(1)} / 120</p>
+                              <p class="text-xs text-blue-600 font-bold uppercase tracking-tight">
+                                Score: ${score.toFixed(1)} / ${displayTotal}
+                              </p>
                           </div>
                       </div>
                   `;
@@ -142,64 +150,5 @@
         </div>
     </section>
 
-    <section class="max-w-5xl mx-auto px-4 py-16">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div class="group bg-white p-8 rounded-2xl shadow-sm border border-slate-100 hover:shadow-xl hover:border-blue-200 transition-all duration-300">
-                <div class="w-14 h-14 bg-blue-50 rounded-xl flex items-center justify-center mb-6 group-hover:bg-blue-600 transition-colors">
-                    <i class="fas fa-drafting-compass text-2xl text-blue-600 group-hover:text-white"></i>
-                </div>
-                <h3 class="font-bold text-xl mb-3 text-slate-800">Civil Engineering</h3>
-                <p class="text-slate-500 text-sm leading-relaxed mb-4 font-medium">Highly targeted questions for RCC, Steel, SM, and FM based strictly on IS 456, 800, and 1343.</p>
-                <div class="h-1.5 w-12 bg-blue-600 rounded-full"></div>
-            </div>
-
-            <div class="group bg-white p-8 rounded-2xl shadow-sm border border-slate-100 hover:shadow-xl hover:border-blue-200 transition-all duration-300">
-                <div class="w-14 h-14 bg-orange-50 rounded-xl flex items-center justify-center mb-6 group-hover:bg-orange-600 transition-colors">
-                    <i class="fas fa-map-marked-alt text-2xl text-orange-600 group-hover:text-white"></i>
-                </div>
-                <h3 class="font-bold text-xl mb-3 text-slate-800">Rajasthan GK</h3>
-                <p class="text-slate-500 text-sm leading-relaxed mb-4 font-medium">Comprehensive coverage of Art, Culture, Geography, and 2026 District Reorganization reports.</p>
-                <div class="h-1.5 w-12 bg-orange-600 rounded-full"></div>
-            </div>
-        </div>
-    </section>
-
-    <section class="bg-slate-900 py-16 text-white text-center">
-        <div class="max-w-4xl mx-auto px-4">
-            <h3 class="text-2xl font-bold mb-12 italic text-slate-500 underline underline-offset-8 uppercase tracking-widest">Competitive Edge Features</h3>
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-8 text-white">
-                <div>
-                    <span class="block text-3xl font-bold mb-2">5,000+</span>
-                    <span class="text-xs uppercase text-slate-500 tracking-widest font-bold">MCQs</span>
-                </div>
-                <div>
-                    <span class="block text-3xl font-bold mb-2">50+</span>
-                    <span class="text-xs uppercase text-slate-500 tracking-widest font-bold">Mock Tests</span>
-                </div>
-                <div>
-                    <span class="block text-3xl font-bold mb-2">2026</span>
-                    <span class="text-xs uppercase text-slate-500 tracking-widest font-bold">Exam Pattern</span>
-                </div>
-                <div>
-                    <span class="block text-3xl font-bold mb-2">Mobile</span>
-                    <span class="text-xs uppercase text-slate-500 tracking-widest font-bold">Ready UI</span>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <footer class="bg-white border-t border-slate-200 py-12 px-4">
-        <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6 text-slate-400">
-            <div class="text-sm font-medium uppercase tracking-wider">
-                &copy; 2026 Competition Plus | Rajasthan's No. 1 Engineering Portal
-            </div>
-            <div class="flex space-x-8">
-                <a href="#" class="hover:text-blue-700 transition"><i class="fab fa-youtube text-2xl"></i></a>
-                <a href="#" class="hover:text-blue-700 transition"><i class="fab fa-telegram text-2xl"></i></a>
-                <a href="#" class="hover:text-blue-700 transition"><i class="fab fa-whatsapp text-2xl"></i></a>
-            </div>
-        </div>
-    </footer>
-
-</body>
+    </body>
 </html>
