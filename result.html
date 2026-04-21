@@ -59,7 +59,7 @@
                     </div>
                 </div>
                 <div class="flex-1 space-y-4">
-                    <h3 id="performance-title" class="text-xl font-bold text-slate-800 text-center md:text-left tracking-tight">Well Done!</h3>
+                    <h3 id="performance-title" class="text-xl font-bold text-slate-800 text-center md:text-left tracking-tight">Calculating...</h3>
                     <div class="grid grid-cols-3 gap-2">
                         <div class="bg-slate-50 p-3 rounded-xl text-center border border-slate-100">
                             <span id="display-accuracy" class="block text-lg font-bold">0%</span>
@@ -95,7 +95,7 @@
             <h3 class="text-lg font-bold mb-4 flex items-center gap-2">
                 <i class="fas fa-chart-pie text-blue-600"></i> Subject-Wise Analysis
             </h3>
-            <div id="subject-analysis-container" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div id="subject-analysis-container" class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
                 </div>
         </div>
 
@@ -120,7 +120,7 @@
         window.onload = function() {
             const resultData = JSON.parse(localStorage.getItem('lastTestResult'));
             const report = JSON.parse(localStorage.getItem('detailedTestReport'));
-            const userName = localStorage.getItem('userName') || "Madhukar";
+            const userName = localStorage.getItem('userName') || "Aspirant";
 
             if (!resultData || !report) {
                 document.querySelector('main').innerHTML = `<div class="text-center py-20"><h2 class="text-2xl font-bold text-slate-400">No recent test data found.</h2></div>`;
@@ -129,23 +129,25 @@
 
             document.getElementById('user-name-display').innerText = userName;
 
-            // Calculations
+            // Basic Stats
             const totalScore = parseFloat(resultData.total);
             const totalQ = resultData.totalQuestions || report.length;
             const correctCount = resultData.correct;
             const incorrectCount = resultData.incorrect;
             const attempted = correctCount + incorrectCount;
-            const accuracy = attempted > 0 ? ((correctCount / attempted) * 100).toFixed(1) : 0;
+            
+            // Accuracy Calculation (matches your Firestore structure)
+            const accuracy = attempted > 0 ? Math.round((correctCount / attempted) * 100) : 0;
+            
             const totalSeconds = report.reduce((acc, curr) => acc + (curr.timeSpent || 0), 0);
             const avgTime = attempted > 0 ? (totalSeconds / attempted).toFixed(1) : 0;
 
-            // Update UI Score Circle
+            // Update UI
             const percentage = Math.max(0, (totalScore / totalQ) * 100);
             document.getElementById('score-circle-element').style.setProperty('--perc', `${(percentage / 100) * 360}deg`);
             document.getElementById('display-final-score').innerText = totalScore;
             document.getElementById('display-out-of').innerText = `Out of ${totalQ}`;
             
-            // Stats
             document.getElementById('display-accuracy').innerText = accuracy + "%";
             document.getElementById('display-attempted-count').innerText = attempted;
             document.getElementById('display-avg-time').innerText = avgTime + "s";
@@ -155,77 +157,73 @@
             document.getElementById('summary-incorrect').innerText = incorrectCount;
             document.getElementById('summary-skipped').innerText = totalQ - attempted;
 
-            // Performance Title Logic
+            // Performance Feedback
             const pTitle = document.getElementById('performance-title');
-            if(accuracy >= 80) pTitle.innerText = "Excellent Work! 🚀";
-            else if(accuracy >= 50) pTitle.innerText = "Good Effort! 👍";
-            else pTitle.innerText = "Keep Practicing! 📚";
+            if(accuracy >= 90) pTitle.innerText = "Exceptional! 🏆";
+            else if(accuracy >= 75) pTitle.innerText = "Excellent! 🚀";
+            else if(accuracy >= 50) pTitle.innerText = "Good Job! 👍";
+            else pTitle.innerText = "Keep Grinding! 📚";
 
-            // Subject Analysis
-            const subjectData = {};
+            // Dynamic Subject Breakdown (matches your Firestore 'subjects' map)
+            const subjectStats = {};
             report.forEach(q => {
-                const sub = q.subjectCategory || "General";
-                if(!subjectData[sub]) subjectData[sub] = { correct: 0, total: 0 };
-                subjectData[sub].total++;
-                if(q.isCorrect) subjectData[sub].correct++;
+                const sub = q.subject || "GENERAL STUDIES";
+                if(!subjectStats[sub]) subjectStats[sub] = { correct: 0, total: 0 };
+                subjectStats[sub].total++;
+                if(q.isCorrect) subjectStats[sub].correct++;
             });
 
             const subContainer = document.getElementById('subject-analysis-container');
-            Object.keys(subjectData).forEach(sub => {
-                const perc = ((subjectData[sub].correct / subjectData[sub].total) * 100).toFixed(0);
+            Object.keys(subjectStats).forEach(sub => {
+                const subPerc = Math.round((subjectStats[sub].correct / subjectStats[sub].total) * 100);
                 const row = document.createElement('div');
-                row.className = "space-y-1";
+                row.className = "space-y-1 mb-2";
                 row.innerHTML = `
                     <div class="flex justify-between text-xs font-bold uppercase text-slate-500">
                         <span>${sub}</span>
-                        <span>${perc}%</span>
+                        <span>${subPerc}%</span>
                     </div>
                     <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                        <div class="bg-blue-600 h-full" style="width: ${perc}%"></div>
+                        <div class="bg-blue-600 h-full transition-all duration-1000" style="width: ${subPerc}%"></div>
                     </div>
                 `;
                 subContainer.appendChild(row);
             });
 
-            // Review Rendering
+            // Detailed Review Cards
             const reviewContainer = document.getElementById('review-container');
             report.forEach((q, i) => {
                 const card = document.createElement('div');
-                card.className = `p-6 rounded-2xl border-2 bg-white transition-all ${q.isCorrect ? 'border-green-100' : (q.userAnswer === undefined ? 'border-slate-100' : 'border-red-100')}`;
+                const statusColor = q.isCorrect ? 'border-green-100' : (q.userAnswer === "Not Attempted" ? 'border-slate-100' : 'border-red-100');
+                card.className = `p-6 rounded-2xl border-2 bg-white ${statusColor}`;
                 
-                const options = q.options || ["Option A", "Option B", "Option C", "Option D"];
+                // Note: allQuestions[i].options contains the array. Ensure report mapping carries it.
+                // If options aren't in report, we fetch from a fallback or ensure they exist.
+                const opts = q.options || ["Option A", "Option B", "Option C", "Option D"];
                 
                 card.innerHTML = `
                     <div class="flex justify-between items-start mb-3">
-                        <span class="bg-slate-100 text-slate-500 px-3 py-1 rounded-lg text-[10px] font-bold uppercase">Question ${i + 1}</span>
+                        <span class="bg-slate-100 text-slate-500 px-3 py-1 rounded-lg text-[10px] font-bold uppercase">${q.subject || 'GENERAL'} | Q${i + 1}</span>
                         <div class="flex items-center gap-2">
                             ${q.isCorrect ? 
-                                '<span class="text-green-600 text-xs font-bold"><i class="fas fa-plus"></i> 1.00</span>' : 
-                                (q.userAnswer === undefined ? '<span class="text-slate-400 text-xs font-bold">0.00</span>' : '<span class="text-red-500 text-xs font-bold"><i class="fas fa-minus"></i> 0.33</span>')}
+                                '<span class="text-green-600 text-xs font-bold">+1.00</span>' : 
+                                (q.userAnswer === "Not Attempted" ? '<span class="text-slate-400 text-xs font-bold">0.00</span>' : '<span class="text-red-500 text-xs font-bold">-0.33</span>')}
                         </div>
                     </div>
-                    <p class="font-semibold text-slate-800 mb-6 leading-relaxed">${q.question || q.questionText}</p>
+                    <div class="font-semibold text-slate-800 mb-6 leading-relaxed">${q.question}</div>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        ${options.map((opt, idx) => {
-                            let style = "border-slate-100 bg-slate-50 text-slate-600";
-                            let icon = "";
-                            
-                            if (idx === q.correctIdx) {
-                                style = "border-green-200 bg-green-50 text-green-700 font-bold";
-                                icon = '<i class="fas fa-check-circle ml-auto"></i>';
-                            } else if (idx === q.userAnswer && !q.isCorrect) {
-                                style = "border-red-200 bg-red-50 text-red-700 font-bold";
-                                icon = '<i class="fas fa-times-circle ml-auto"></i>';
-                            }
-
-                            return `<div class="flex items-center p-3 rounded-xl border text-sm ${style}">
-                                        <span class="mr-3 opacity-50">${String.fromCharCode(65 + idx)}.</span> ${opt} ${icon}
-                                    </div>`;
-                        }).join('')}
+                        <div class="p-3 rounded-xl border text-sm ${q.userAnswer === q.correctAnswer ? 'bg-green-50 border-green-200 text-green-700' : 'bg-red-50 border-red-200 text-red-700'} ${q.userAnswer === "Not Attempted" ? 'bg-slate-50 border-slate-200 text-slate-500' : ''}">
+                            <span class="font-bold uppercase text-[10px] block opacity-60">Your Answer</span>
+                            ${q.userAnswer}
+                        </div>
+                        <div class="p-3 rounded-xl border border-green-200 bg-green-50 text-green-700 text-sm">
+                            <span class="font-bold uppercase text-[10px] block opacity-60">Correct Answer</span>
+                            ${q.correctAnswer}
+                        </div>
                     </div>
                     ${q.explanation ? `
                         <div class="mt-4 p-4 bg-blue-50/50 rounded-xl border border-blue-100">
-                            <span class="text-[10px] font-bold text-blue-600 uppercase block mb-1">Solution Explanation</span>
+                            <span class="text-[10px] font-bold text-blue-600 uppercase block mb-1">Expert Solution</span>
                             <p class="text-xs text-blue-800 leading-relaxed">${q.explanation}</p>
                         </div>
                     ` : ''}
@@ -233,15 +231,13 @@
                 reviewContainer.appendChild(card);
             });
 
-            // Trigger MathJax
-            if (window.MathJax && MathJax.typesetPromise) {
-                MathJax.typesetPromise();
-            }
+            if (window.MathJax && MathJax.typesetPromise) MathJax.typesetPromise();
         };
 
         function shareOnWhatsApp() {
             const score = document.getElementById('display-final-score').innerText;
-            const text = `🎯 I scored ${score} on Competition Plus! Prepare for Rajasthan AEN/JEN exams with high-quality mock tests.`;
+            const accuracy = document.getElementById('display-accuracy').innerText;
+            const text = `🎯 I scored ${score} with ${accuracy} accuracy on Competition Plus! Prepare for Rajasthan Exam with me.`;
             window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
         }
     </script>
