@@ -137,7 +137,6 @@
                 const data = snapshot.val();
                 if (!data) throw new Error("Exam data not found.");
                 
-                // Keep the order as it is in Firebase
                 allQuestions = Array.isArray(data) ? data : Object.values(data);
                 document.getElementById("test-title").innerText = testId.replace(/_/g, ' ').toUpperCase();
 
@@ -162,22 +161,18 @@
             visitedList[currentIndex] = true;
             localStorage.setItem('cp_visited', JSON.stringify(visitedList));
 
-            // Use q.questionNo if it exists, otherwise use Index
             document.getElementById("q-number-badge").innerText = `Question ${q.questionNo || currentIndex + 1}`;
-            document.getElementById("subject-tag").innerText = q.subject || "CIVIL ENGINEERING";
+            document.getElementById("subject-tag").innerText = q.subject || "GENERAL STUDIES";
             document.getElementById("question-display").innerHTML = q.questionText;
 
             const oDisplay = document.getElementById("options-display");
             oDisplay.innerHTML = "";
-            
-            // Map specifically to your nested 'options' array
             const options = q.options || [];
 
             options.forEach((opt, idx) => {
                 const isSelected = studentAnswers[currentIndex] === idx;
                 const letter = String.fromCharCode(65 + idx);
                 const btn = document.createElement("label");
-                
                 btn.className = `flex items-center p-4 border-2 rounded-xl cursor-pointer transition-all ${isSelected ? 'border-blue-600 bg-blue-50 ring-1 ring-blue-600 shadow-inner' : 'border-slate-100 hover:bg-slate-50'}`;
                 
                 btn.innerHTML = `
@@ -189,9 +184,7 @@
                 oDisplay.appendChild(btn);
             });
 
-            if (window.MathJax && MathJax.typesetPromise) {
-                MathJax.typesetPromise().catch(err => console.log(err));
-            }
+            if (window.MathJax && MathJax.typesetPromise) MathJax.typesetPromise().catch(err => console.log(err));
             updatePalette();
         }
 
@@ -209,7 +202,7 @@
             studentAnswers[currentIndex] = idx;
             localStorage.setItem('cp_answers', JSON.stringify(studentAnswers));
             if (reviewList[currentIndex]) delete reviewList[currentIndex];
-            renderQuestion(); // Forces UI update for radio button
+            renderQuestion();
         }
 
         function clearResponse() {
@@ -280,42 +273,64 @@
 
             try {
                 logTime();
+                const subjectStats = {};
+                let totalAttempted = 0;
+                let totalCorrect = 0;
+                let totalIncorrect = 0;
+
                 const report = allQuestions.map((q, i) => {
                     const options = q.options || [];
                     const userIdx = studentAnswers[i];
-                    
-                    // Maps to your specific correctIndex key
-                    const correctIdx = q.correctIndex; 
+                    const correctIdx = q.correctIndex;
+                    const isCorrect = userIdx === correctIdx;
+                    const sub = q.subject || "GENERAL STUDIES";
+
+                    if (!subjectStats[sub]) subjectStats[sub] = { correct: 0, total: 0 };
+                    subjectStats[sub].total++;
+
+                    if (userIdx !== undefined) {
+                        totalAttempted++;
+                        if (isCorrect) {
+                            totalCorrect++;
+                            subjectStats[sub].correct++;
+                        } else {
+                            totalIncorrect++;
+                        }
+                    }
 
                     return { 
                         question: q.questionText, 
                         userAnswer: userIdx !== undefined ? options[userIdx] : "Not Attempted",
                         correctAnswer: options[correctIdx],
-                        isCorrect: userIdx === correctIdx,
-                        explanation: q.explanation || "See standard reference.",
+                        isCorrect: isCorrect,
+                        subject: sub,
                         timeSpent: timeSpentPerQ[i] || 0 
                     };
                 });
 
-                const correctCount = report.filter(r => r.userAnswer !== "Not Attempted" && r.isCorrect).length;
-                const incorrectCount = report.filter(r => r.userAnswer !== "Not Attempted" && !r.isCorrect).length;
-                
-                // Marks Calculation (Rajasthan AE/JE Standard)
-                const finalScore = (correctCount * 1) - (incorrectCount * 0.3333);
+                const finalScore = (totalCorrect * 1) - (totalIncorrect * 0.3333);
+                const accuracy = totalAttempted > 0 ? Math.round((totalCorrect / totalAttempted) * 100) : 0;
+                const subjectsMap = {};
+                for (const [name, data] of Object.entries(subjectStats)) {
+                    subjectsMap[name] = Math.round((data.correct / data.total) * 100);
+                }
 
                 localStorage.setItem('detailedTestReport', JSON.stringify(report));
                 localStorage.setItem('lastTestResult', JSON.stringify({ 
                     total: finalScore.toFixed(2), 
-                    correct: correctCount, 
-                    incorrect: incorrectCount, 
+                    correct: totalCorrect, 
+                    incorrect: totalIncorrect, 
                     totalQuestions: allQuestions.length 
                 }));
 
                 await db.collection("leaderboard").add({
+                    accuracy: accuracy,
                     name: localStorage.getItem('userName') || "Aspirant",
                     score: parseFloat(finalScore.toFixed(2)),
-                    testId: testId,
-                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                    subjects: subjectsMap,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                    totalQ: allQuestions.length,
+                    testId: testId
                 });
 
                 ['cp_answers', 'cp_reviews', 'cp_visited', 'cp_timer', 'cp_time_spent'].forEach(k => localStorage.removeItem(k));
