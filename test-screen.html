@@ -11,6 +11,9 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
         body { font-family: 'Inter', sans-serif; }
@@ -30,7 +33,7 @@
     <nav class="bg-slate-900 text-white px-6 py-3 flex justify-between items-center shadow-lg">
         <div class="flex items-center gap-4">
             <h1 class="text-xl font-bold border-r border-slate-700 pr-4 uppercase tracking-tight">Competition <span class="text-blue-400">Plus</span></h1>
-            <span id="test-title" class="text-sm text-slate-400 hidden md:inline">RSSB JEn Mock (2026 Pattern)</span>
+            <span id="test-title" class="text-sm text-slate-400 hidden md:inline">Loading Test Title...</span>
         </div>
         <div class="flex items-center gap-6">
             <div class="flex items-center gap-2 bg-slate-800 px-4 py-1.5 rounded-full border border-slate-700">
@@ -46,13 +49,13 @@
             <div class="max-w-3xl mx-auto bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col min-h-[550px]">
                 <div class="bg-slate-50 p-4 border-b border-slate-200 flex justify-between items-center">
                     <div class="flex items-center gap-2">
-                        <span id="q-number-badge" class="bg-blue-700 text-white px-3 py-1 rounded text-xs font-bold uppercase">Question 1</span>
-                        <span id="subject-tag" class="bg-slate-200 text-slate-600 px-3 py-1 rounded text-xs font-bold uppercase tracking-wider">General Engineering</span>
+                        <span id="q-number-badge" class="bg-blue-700 text-white px-3 py-1 rounded text-xs font-bold uppercase">Question</span>
+                        <span id="subject-tag" class="bg-slate-200 text-slate-600 px-3 py-1 rounded text-xs font-bold uppercase tracking-wider">Loading...</span>
                     </div>
                 </div>
 
                 <div class="p-6 md:p-10 flex-1">
-                    <p id="question-display" class="text-lg md:text-xl text-slate-800 font-semibold mb-8 leading-relaxed italic">Loading questions...</p>
+                    <div id="question-display" class="text-lg md:text-xl text-slate-800 font-semibold mb-8 leading-relaxed">Loading questions...</div>
                     <div id="options-display" class="space-y-4"></div>
                 </div>
 
@@ -99,7 +102,11 @@
     </div>
 
     <script>
-        // --- FIREBASE INITIALIZATION ---
+        // --- MathJax Configuration ---
+        window.MathJax = {
+            tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$']] }
+        };
+
         const firebaseConfig = {
             apiKey: "AIzaSyCAl9iSJhwn5IAUCA5LrgPK5FzFZPtWNZo",
             authDomain: "competition-plus-9996b.firebaseapp.com",
@@ -111,8 +118,6 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
-        const DB_URL = "https://competition-plus-9996b-default-rtdb.asia-southeast1.firebasedatabase.app/questions.json";
-        
         let allQuestions = [];
         let currentIndex = 0;
         let studentAnswers = JSON.parse(localStorage.getItem('cp_answers')) || {}; 
@@ -124,15 +129,23 @@
 
         async function loadTestData() {
             try {
-                const response = await fetch(DB_URL);
+                // Fetch the active test node name (e.g., mock_test_2)
+                const activeRes = await fetch("https://competition-plus-9996b-default-rtdb.asia-southeast1.firebasedatabase.app/current_active_test.json");
+                const activeNode = await activeRes.json();
+                
+                // Fetch the actual test data
+                const response = await fetch(`https://competition-plus-9996b-default-rtdb.asia-southeast1.firebasedatabase.app/${activeNode}.json`);
                 const data = await response.json();
-                allQuestions = Object.values(data);
+                
+                allQuestions = Array.isArray(data) ? data : Object.values(data);
+                document.getElementById("test-title").innerText = activeNode.replace(/_/g, ' ').toUpperCase();
+
                 if(allQuestions.length > 0) {
                     renderQuestion();
                     startTimer();
                     updatePalette();
                 }
-            } catch (e) { alert("Error loading questions."); }
+            } catch (e) { alert("Network Error. Please try again."); }
         }
 
         function renderQuestion() {
@@ -142,18 +155,32 @@
             localStorage.setItem('cp_visited', JSON.stringify(visitedList));
 
             document.getElementById("q-number-badge").innerText = `Question ${currentIndex + 1}`;
-            document.getElementById("subject-tag").innerText = q.subject || "CIVIL ENGINEERING";
-            document.getElementById("question-display").innerText = q.questionText;
+            document.getElementById("subject-tag").innerText = q.subjectCategory || q.subject || "GENERAL";
+            document.getElementById("question-display").innerHTML = q.questionText || q.Question;
 
             const oDisplay = document.getElementById("options-display");
             oDisplay.innerHTML = "";
-            q.options.forEach((opt, index) => {
+            
+            const options = q.options || [q.OptionA, q.OptionB, q.OptionC, q.OptionD];
+
+            options.forEach((opt, index) => {
                 const isSelected = studentAnswers[currentIndex] === index;
+                const letter = String.fromCharCode(65 + index); // A, B, C, D
                 const btn = document.createElement("label");
-                btn.className = `flex items-center p-4 border-2 rounded-xl cursor-pointer transition-all ${isSelected ? 'border-blue-600 bg-blue-50' : 'border-slate-100 hover:bg-blue-50'}`;
-                btn.innerHTML = `<input type="radio" name="option" class="w-5 h-5 accent-blue-600" ${isSelected ? 'checked' : ''} onchange="recordAnswer(${index})"><span class="ml-4 font-medium">${opt}</span>`;
+                btn.className = `flex items-center p-4 border-2 rounded-xl cursor-pointer transition-all ${isSelected ? 'border-blue-600 bg-blue-50' : 'border-slate-100 hover:bg-slate-50'}`;
+                btn.innerHTML = `
+                    <div class="flex items-center gap-4 w-full">
+                        <div class="w-8 h-8 rounded-full border-2 flex items-center justify-center font-bold text-sm ${isSelected ? 'bg-blue-600 border-blue-600 text-white' : 'border-slate-300 text-slate-500'}">${letter}</div>
+                        <input type="radio" name="option" class="hidden" ${isSelected ? 'checked' : ''} onchange="recordAnswer(${index})">
+                        <span class="font-medium">${opt}</span>
+                    </div>`;
                 oDisplay.appendChild(btn);
             });
+
+            // Trigger MathJax rendering
+            if (window.MathJax && MathJax.typesetPromise) {
+                MathJax.typesetPromise();
+            }
             updatePalette();
         }
 
@@ -168,6 +195,8 @@
         function recordAnswer(index) {
             studentAnswers[currentIndex] = index;
             localStorage.setItem('cp_answers', JSON.stringify(studentAnswers));
+            // Tiny delay to let user see selection before refreshing UI
+            setTimeout(renderQuestion, 150); 
         }
 
         function clearResponse() {
@@ -177,7 +206,7 @@
         }
 
         function markReview() {
-            reviewList[currentIndex] = !reviewList[currentIndex];
+            reviewList[currentIndex] = true;
             localStorage.setItem('cp_reviews', JSON.stringify(reviewList));
             nextQuestion();
         }
@@ -223,8 +252,12 @@
         }
 
         function startTimer() {
-            setInterval(() => {
-                if (timeInSeconds <= 0) { processSubmit(); return; }
+            const timerInterval = setInterval(() => {
+                if (timeInSeconds <= 0) { 
+                    clearInterval(timerInterval);
+                    processSubmit(); 
+                    return; 
+                }
                 const h = Math.floor(timeInSeconds / 3600);
                 const m = Math.floor((timeInSeconds % 3600) / 60);
                 const s = timeInSeconds % 60;
@@ -243,55 +276,44 @@
             btn.disabled = true;
 
             logTime();
-            const totalQuestionsInTest = allQuestions.length;
             
-            const report = allQuestions.map((q, i) => ({
-                ...q,
-                userAnswer: studentAnswers[i],
-                isCorrect: studentAnswers[i] === q.correctIndex,
-                isVisited: visitedList[i] || false,
-                timeSpent: timeSpentPerQ[i] || 0
-            }));
+            const report = allQuestions.map((q, i) => {
+                // Handle Correct Answer Index conversion (A=0, B=1...)
+                const letterToIdx = { 'A': 0, 'B': 1, 'C': 2, 'D': 3 };
+                const correctIdx = typeof q.CorrectAnswer === 'string' ? letterToIdx[q.CorrectAnswer] : (q.correctIndex || 0);
+
+                return {
+                    ...q,
+                    userAnswer: studentAnswers[i],
+                    isCorrect: studentAnswers[i] === correctIdx,
+                    timeSpent: timeSpentPerQ[i] || 0
+                };
+            });
 
             const answeredQs = report.filter(q => q.userAnswer !== undefined);
             const correct = report.filter(q => q.userAnswer !== undefined && q.isCorrect).length;
             const incorrect = answeredQs.length - correct;
-            
-            // Standard RSSB/RPSC marking + Safety Cap to prevent scores higher than Total Questions
-            const rawScore = (correct * 1) - (incorrect * 0.33);
-            const finalScore = Math.min(totalQuestionsInTest, parseFloat(rawScore.toFixed(2)));
-            const accuracy = answeredQs.length > 0 ? Math.round((correct / answeredQs.length) * 100) : 0;
+            const score = (correct * 1) - (incorrect * 0.33);
 
             localStorage.setItem('detailedTestReport', JSON.stringify(report));
             localStorage.setItem('lastTestResult', JSON.stringify({
-                total: finalScore,
-                correct, 
-                incorrect, 
-                totalQ: totalQuestionsInTest, 
-                accuracy
+                total: score.toFixed(2),
+                correct, incorrect, totalQ: allQuestions.length
             }));
 
             try {
-                const firebaseSave = db.collection("leaderboard").add({
+                await db.collection("leaderboard").add({
                     name: localStorage.getItem('userName') || "Madhukar",
-                    score: finalScore,
-                    totalQuestions: totalQuestionsInTest, // Now dynamic
-                    accuracy: accuracy,
+                    score: parseFloat(score.toFixed(2)),
                     timestamp: firebase.firestore.FieldValue.serverTimestamp()
                 });
-
-                await Promise.race([
-                    firebaseSave,
-                    new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 4000))
-                ]);
-            } catch (e) {
-                console.warn("Firebase save bypassed.");
-            } finally {
-                ['cp_answers', 'cp_reviews', 'cp_visited', 'cp_timer', 'cp_time_spent'].forEach(k => localStorage.removeItem(k));
-                window.location.href = "result.html";
-            }
+            } catch (e) { console.warn("Sync failed."); }
+            
+            ['cp_answers', 'cp_reviews', 'cp_visited', 'cp_timer', 'cp_time_spent'].forEach(k => localStorage.removeItem(k));
+            window.location.href = "result.html";
         }
 
+        window.onbeforeunload = function() { return "Progress will be lost!"; };
         loadTestData();
     </script>
 </body>
