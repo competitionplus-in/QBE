@@ -16,6 +16,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 
     <script>
       // Firebase Configuration
@@ -28,44 +29,57 @@
         appId: "1:49252651907:web:8a5162064aaf3e69bd1cb6",
         measurementId: "G-ESTWZJ5X0K"
       };
+
       firebase.initializeApp(firebaseConfig);
       const auth = firebase.auth();
       const db = firebase.firestore();
+      const rtdb = firebase.database();
 
       /**
        * Enhanced Start Test Logic
-       * Ensures a valid name is collected before proceeding to tests.
+       * 1. Checks for User Name
+       * 2. Fetches current_active_test from RTDB
+       * 3. Redirects to test-screen with correct ID
        */
-      function startTest(targetPage = 'test-screen.html') {
+      async function startTest(targetPage = 'test-screen.html') {
           let userName = localStorage.getItem('userName');
           
           if (!userName) {
               userName = prompt("Enter your Full Name for the State Leaderboard:", "");
-              
-              // If user clicks "Cancel", stop execution
               if (userName === null) return; 
 
               if (userName.trim() !== "") {
                   localStorage.setItem('userName', userName.trim());
-                  window.location.href = targetPage;
               } else {
                   alert("A valid name is required to participate in the Mock Tests.");
+                  return;
               }
-          } else {
-              window.location.href = targetPage;
+          }
+
+          try {
+              // Fetch the active test key (e.g., "mock_test_2") from your RTDB root
+              const snapshot = await rtdb.ref('current_active_test').once('value');
+              const activeId = snapshot.val();
+
+              if (activeId) {
+                  // Redirect with the ID found in RTDB
+                  window.location.href = `${targetPage}?testId=${activeId}`;
+              } else {
+                  alert("Syncing Error: No active test found in the database.");
+              }
+          } catch (error) {
+              console.error("RTDB Fetch Error:", error);
+              alert("Failed to connect to the server. Please check your internet.");
           }
       }
 
-      /**
-       * Loads top 3 performers from Firestore
-       */
       async function loadLiveToppers() {
           const container = document.getElementById('toppers-container');
           try {
               const snapshot = await db.collection("leaderboard")
-                                     .orderBy("score", "desc")
-                                     .limit(3)
-                                     .get();
+                                       .orderBy("score", "desc")
+                                       .limit(3)
+                                       .get();
               
               if(snapshot.empty) {
                   container.innerHTML = `<p class="col-span-3 text-center text-slate-400 py-4 italic">Waiting for the first set of results...</p>`;
@@ -78,17 +92,13 @@
               
               snapshot.forEach(doc => {
                   const data = doc.data();
-                  const score = data.score || 0;
-                  // Dynamic total check based on saved data, else default to 120
-                  const totalPossible = data.totalQuestions || 120;
-
                   container.innerHTML += `
                       <div class="bg-white p-6 rounded-2xl border border-slate-100 flex items-center gap-4 shadow-sm hover:shadow-md transition transform hover:-translate-y-1">
                           <span class="text-3xl">${icons[i]}</span>
                           <div>
                               <p class="font-bold text-slate-900">${data.name || "Aspirant"}</p>
                               <p class="text-xs text-blue-600 font-bold uppercase tracking-tight">
-                                  Score: ${score.toFixed(2)} / ${totalPossible}
+                                  Score: ${(data.score || 0).toFixed(2)} / ${data.totalQuestions || 120}
                               </p>
                           </div>
                       </div>
