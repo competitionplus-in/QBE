@@ -10,6 +10,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 
     <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
@@ -55,10 +56,8 @@
                 </div>
 
                 <div class="p-6 md:p-10 flex-1">
-                    <div id="question-display" class="text-lg md:text-xl text-slate-800 font-semibold mb-8 leading-relaxed">
-                        </div>
-                    <div id="options-display" class="space-y-4">
-                        </div>
+                    <div id="question-display" class="text-lg md:text-xl text-slate-800 font-semibold mb-8 leading-relaxed"></div>
+                    <div id="options-display" class="space-y-4"></div>
                 </div>
 
                 <div class="bg-slate-50 p-6 border-t border-slate-200 flex flex-col sm:flex-row gap-4 justify-between items-center">
@@ -98,7 +97,7 @@
                     <i class="fas fa-file-signature text-2xl"></i>
                 </div>
                 <h3 class="text-2xl font-bold text-slate-900 mb-2">Submit Test?</h3>
-                <p class="text-slate-500 font-medium">Have you reviewed your answers? Your final score will be synced to the leaderboard.</p>
+                <p class="text-slate-500 font-medium">Your final score will be synced to the leaderboard.</p>
             </div>
             <div class="p-6 pt-0 flex gap-4">
                 <button onclick="closeModal()" class="flex-1 px-6 py-3 bg-slate-100 text-slate-600 font-bold rounded-xl hover:bg-slate-200 transition">CANCEL</button>
@@ -108,7 +107,6 @@
     </div>
 
     <script>
-        // MathJax Setup
         window.MathJax = { tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] } };
 
         // Firebase Config
@@ -122,11 +120,11 @@
         };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
+        const rtdb = firebase.database();
 
-        // State
         let allQuestions = [];
         let currentIndex = 0;
-        let testId = new URLSearchParams(window.location.search).get('testId') || 'default_test';
+        let testId = new URLSearchParams(window.location.search).get('testId');
         
         let studentAnswers = JSON.parse(localStorage.getItem('cp_answers')) || {}; 
         let reviewList = JSON.parse(localStorage.getItem('cp_reviews')) || {}; 
@@ -137,16 +135,25 @@
 
         async function loadTestData() {
             try {
-                // Fetch from Firestore collection 'tests' using the passed ID
-                const doc = await db.collection("tests").doc(testId).get();
-                if (!doc.exists) throw new Error("Exam data not found.");
+                if (!testId) {
+                    // Fallback to RTDB active check if no ID in URL
+                    const activeSnap = await rtdb.ref('current_active_test').once('value');
+                    testId = activeSnap.val();
+                }
+
+                if (!testId) throw new Error("No Active Exam ID found.");
                 
-                const data = doc.data();
-                allQuestions = data.questions;
-                document.getElementById("test-title").innerText = (data.title || "LIVE TEST").toUpperCase();
+                // Fetch from RTDB node
+                const snapshot = await rtdb.ref(testId).once('value');
+                const data = snapshot.val();
+                if (!data) throw new Error("Exam data not found in Database.");
+                
+                // Convert RTDB Object with IDs to Array
+                allQuestions = Object.values(data);
+                document.getElementById("test-title").innerText = testId.replace(/_/g, ' ').toUpperCase();
 
                 if (!timeInSeconds || isNaN(timeInSeconds)) {
-                    timeInSeconds = (data.duration || allQuestions.length) * 60;
+                    timeInSeconds = allQuestions.length * 60;
                     localStorage.setItem('cp_timer', timeInSeconds);
                 }
 
@@ -155,7 +162,7 @@
                 updatePalette();
             } catch (e) {
                 alert(e.message);
-                window.location.href = "test-list.html";
+                window.location.href = "index.html";
             }
         }
 
@@ -174,7 +181,6 @@
             const oDisplay = document.getElementById("options-display");
             oDisplay.innerHTML = "";
             
-            // Flexible option handling
             const options = q.options || [q.OptionA, q.OptionB, q.OptionC, q.OptionD];
 
             options.forEach((opt, idx) => {
@@ -191,7 +197,6 @@
                 oDisplay.appendChild(btn);
             });
 
-            // Re-render Math Formulas
             if (window.MathJax) {
                 MathJax.typesetPromise && MathJax.typesetPromise([oDisplay, document.getElementById("question-display")]);
             }
@@ -209,7 +214,6 @@
         function recordAnswer(idx) {
             studentAnswers[currentIndex] = idx;
             localStorage.setItem('cp_answers', JSON.stringify(studentAnswers));
-            // Slight delay for visual feedback before auto-next (optional)
             setTimeout(renderQuestion, 200); 
         }
 
@@ -286,7 +290,6 @@
                 const letterToIdx = { 'A': 0, 'B': 1, 'C': 2, 'D': 3 };
                 
                 const report = allQuestions.map((q, i) => {
-                    // Handle both numeric index or letter format for correct answer
                     const correctIdx = typeof q.correctAnswer === 'number' ? q.correctAnswer : letterToIdx[q.correctAnswer || q.CorrectAnswer || 'A'];
                     return { 
                         question: q.questionText || q.Question, 
@@ -301,7 +304,6 @@
                 const incorrectCount = report.filter(r => r.userAnswer !== undefined && !r.isCorrect).length;
                 const finalScore = (correctCount * 1) - (incorrectCount * (1/3));
 
-                // Save for Result Page
                 localStorage.setItem('detailedTestReport', JSON.stringify(report));
                 localStorage.setItem('lastTestResult', JSON.stringify({ 
                     total: finalScore.toFixed(2), 
@@ -310,7 +312,6 @@
                     totalQuestions: allQuestions.length
                 }));
 
-                // Add to Firestore Leaderboard
                 await db.collection("leaderboard").add({
                     name: localStorage.getItem('userName') || "Aspirant",
                     score: parseFloat(finalScore.toFixed(2)),
@@ -319,20 +320,19 @@
                     timestamp: firebase.firestore.FieldValue.serverTimestamp()
                 });
 
-                // Clear Local Storage
                 ['cp_answers', 'cp_reviews', 'cp_visited', 'cp_timer', 'cp_time_spent'].forEach(k => localStorage.removeItem(k));
                 
                 window.onbeforeunload = null;
                 window.location.href = "result.html";
             } catch (err) {
                 console.error(err);
-                alert("Submission failed. Please check your internet connection.");
+                alert("Submission failed. Check connection.");
                 btn.innerHTML = 'RETRY SUBMIT';
                 btn.disabled = false;
             }
         }
 
-        window.onbeforeunload = () => "Warning: Your exam progress will be lost if you leave this page.";
+        window.onbeforeunload = () => "Warning: Progress will be lost.";
         loadTestData();
     </script>
 </body>
