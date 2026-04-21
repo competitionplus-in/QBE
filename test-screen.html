@@ -102,6 +102,7 @@
     </div>
 
     <script>
+        <script>
         window.MathJax = {
             tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$']] }
         };
@@ -112,7 +113,8 @@
             projectId: "competition-plus-9996b",
             storageBucket: "competition-plus-9996b.firebasestorage.app",
             messagingSenderId: "49252651907",
-            appId: "1:49252651907:web:8a5162064aaf3e69bd1cb6"
+            appId: "1:49252651907:web:8a5162064aaf3e69bd1cb6",
+            databaseURL: "https://competition-plus-9996b-default-rtdb.asia-southeast1.firebasedatabase.app"
         };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
@@ -124,37 +126,75 @@
         let visitedList = JSON.parse(localStorage.getItem('cp_visited')) || {}; 
         let timeSpentPerQ = JSON.parse(localStorage.getItem('cp_time_spent')) || {};
         
-        // Timer will be initialized dynamically in loadTestData
         let timeInSeconds = parseInt(localStorage.getItem('cp_timer')); 
         let lastTime = Date.now();
 
+        // NEW: URL Parameter Handler
         async function loadTestData() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const testId = urlParams.get('testId');
+            const source = urlParams.get('source'); // 'rtdb' or 'firestore'
+
             try {
-                const activeRes = await fetch("https://competition-plus-9996b-default-rtdb.asia-southeast1.firebasedatabase.app/current_active_test.json");
-                const activeNode = await activeRes.json();
-                const response = await fetch(`https://competition-plus-9996b-default-rtdb.asia-southeast1.firebasedatabase.app/${activeNode}.json`);
-                const data = await response.json();
-                
-                allQuestions = Array.isArray(data) ? data : Object.values(data);
-                document.getElementById("test-title").innerText = activeNode.replace(/_/g, ' ').toUpperCase();
+                if (source === 'rtdb') {
+                    await fetchFromRTDB(testId);
+                } else if (source === 'firestore') {
+                    await fetchFromFirestore(testId);
+                } else {
+                    // Fallback to your original logic if no parameters exist
+                    await fetchDefaultRTDB();
+                }
 
                 if(allQuestions.length > 0) {
-                    // Logic: If no saved timer exists, assign 1 minute (60s) per question
                     if (!timeInSeconds || isNaN(timeInSeconds)) {
                         timeInSeconds = allQuestions.length * 60; 
                         localStorage.setItem('cp_timer', timeInSeconds);
                     }
-                    
                     renderQuestion();
                     startTimer();
                     updatePalette();
                 }
-            } catch (e) { console.error("Load error:", e); alert("Error loading test data."); }
+            } catch (e) { 
+                console.error("Load error:", e); 
+                alert("Error loading test data. Check connection or Test ID."); 
+            }
+        }
+
+        // SOURCE 1: Realtime Database (via Hero Button)
+        async function fetchFromRTDB(id) {
+            const response = await fetch(`https://competition-plus-9996b-default-rtdb.asia-southeast1.firebasedatabase.app/tests/${id}.json`);
+            const data = await response.json();
+            if(!data) throw new Error("Test not found in RTDB");
+            
+            allQuestions = Array.isArray(data.questions) ? data.questions : data;
+            document.getElementById("test-title").innerText = (id || "Live Test").replace(/_/g, ' ').toUpperCase();
+        }
+
+        // SOURCE 2: Firestore (via Test List)
+        async function fetchFromFirestore(id) {
+            const doc = await db.collection("tests").doc(id).get();
+            if (!doc.exists) throw new Error("Test not found in Firestore");
+            
+            const data = doc.data();
+            allQuestions = data.questions;
+            document.getElementById("test-title").innerText = (data.title || "Subject Test").toUpperCase();
+        }
+
+        // DEFAULT: Original Fallback
+        async function fetchDefaultRTDB() {
+            const activeRes = await fetch("https://competition-plus-9996b-default-rtdb.asia-southeast1.firebasedatabase.app/current_active_test.json");
+            const activeNode = await activeRes.json();
+            const response = await fetch(`https://competition-plus-9996b-default-rtdb.asia-southeast1.firebasedatabase.app/${activeNode}.json`);
+            const data = await response.json();
+            allQuestions = Array.isArray(data) ? data : Object.values(data);
+            document.getElementById("test-title").innerText = activeNode.replace(/_/g, ' ').toUpperCase();
         }
 
         function renderQuestion() {
             logTime();
             const q = allQuestions[currentIndex];
+            if(!q) return;
+            
             visitedList[currentIndex] = true;
             localStorage.setItem('cp_visited', JSON.stringify(visitedList));
 
@@ -262,8 +302,6 @@
                 const h = Math.floor(timeInSeconds / 3600);
                 const m = Math.floor((timeInSeconds % 3600) / 60);
                 const s = timeInSeconds % 60;
-                
-                // Format H:MM:SS
                 document.getElementById('timer').innerText = `${h}:${m < 10 ? '0' : ''}${m}:${s < 10 ? '0' : ''}${s}`;
                 
                 timeInSeconds--;
@@ -327,14 +365,14 @@
 
                 try {
                     await db.collection("leaderboard").add({
-                        name: localStorage.getItem('userName') || "Madhukar",
+                        name: localStorage.getItem('userName') || "Aspirant",
                         score: parseFloat(finalScore.toFixed(2)),
                         totalQ: allQuestions.length,
                         accuracy: accuracy,
                         subjects: subjectsMap,
                         timestamp: firebase.firestore.FieldValue.serverTimestamp()
                     });
-                } catch (fbErr) { console.warn("Cloud sync failed, using local backup."); }
+                } catch (fbErr) { console.warn("Cloud sync failed."); }
 
                 ['cp_answers', 'cp_reviews', 'cp_visited', 'cp_timer', 'cp_time_spent'].forEach(k => localStorage.removeItem(k));
                 window.onbeforeunload = null; 
@@ -342,7 +380,7 @@
 
             } catch (err) {
                 console.error("Submit Error:", err);
-                alert("Critical error during submission. Check console.");
+                alert("Critical error during submission.");
                 btn.innerHTML = "RETRY";
                 btn.disabled = false;
             }
