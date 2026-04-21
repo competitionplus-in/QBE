@@ -32,10 +32,11 @@
       async function loadTestList() {
           const container = document.getElementById('test-grid');
           try {
+              // Fetch only active tests
               const snapshot = await db.collection("tests").where("isActive", "==", true).get();
               
               if(snapshot.empty) {
-                  container.innerHTML = `<div class="col-span-full text-center py-20 text-slate-400 font-medium">No tests active. Please check back later.</div>`;
+                  container.innerHTML = `<div class="col-span-full text-center py-20 text-slate-400 font-medium italic">No exams are currently scheduled. Please check back later.</div>`;
                   return;
               }
 
@@ -44,10 +45,14 @@
                   const test = doc.data();
                   const testId = doc.id;
                   
+                  // Logic to color badges based on category
+                  const isGK = (test.category || '').toLowerCase().includes('gk');
+                  const badgeColor = isGK ? 'bg-orange-50 text-orange-700' : 'bg-blue-50 text-blue-700';
+                  
                   container.innerHTML += `
                     <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl hover:border-blue-200 transition-all group">
                         <div class="flex justify-between items-center mb-4">
-                            <span class="px-3 py-1 bg-blue-50 text-blue-700 text-[10px] font-bold uppercase rounded-lg tracking-wider">
+                            <span class="px-3 py-1 ${badgeColor} text-[10px] font-bold uppercase rounded-lg tracking-wider">
                                 ${test.category || 'Standard'}
                             </span>
                             <span class="text-xs text-slate-400 font-semibold">
@@ -68,17 +73,25 @@
               });
           } catch (e) {
               console.error(e);
-              container.innerHTML = `<p class="col-span-full text-center text-red-500">Failed to sync tests. Please refresh.</p>`;
+              container.innerHTML = `<p class="col-span-full text-center text-red-500 font-bold p-10 bg-red-50 rounded-2xl">Network Error: Failed to sync with exam server.</p>`;
           }
       }
 
       function goToTest(id) {
-          const userName = localStorage.getItem('userName');
+          if (!id) return alert("Error: Invalid Test ID.");
+
+          let userName = localStorage.getItem('userName');
           if (!userName) {
-              const name = prompt("Please enter your name for the leaderboard:");
-              if (!name) return;
-              localStorage.setItem('userName', name.trim());
+              userName = prompt("Enter your Full Name for the result certificate:", "");
+              if (userName === null) return; // User cancelled
+              
+              if (userName.trim() !== "") {
+                  localStorage.setItem('userName', userName.trim());
+              } else {
+                  return alert("Name is required to track your progress.");
+              }
           }
+          // PASSING THE ID: This is the correct execution logic
           window.location.href = `test-screen.html?testId=${id}`;
       }
 
@@ -93,16 +106,21 @@
                 <div class="bg-blue-700 text-white p-1.5 rounded-lg">
                     <i class="fas fa-graduation-cap"></i>
                 </div>
-                <h1 class="text-xl font-extrabold tracking-tight text-slate-900">COMPETITION <span class="text-blue-700">PLUS</span></h1>
+                <h1 class="text-xl font-extrabold tracking-tight text-slate-900 uppercase">COMPETITION <span class="text-blue-700">PLUS</span></h1>
             </div>
-            <a href="index.html" class="text-sm font-bold text-slate-600 hover:text-blue-700 transition">Back to Home</a>
+            <a href="index.html" class="text-sm font-bold text-slate-600 hover:text-blue-700 transition flex items-center gap-2">
+                <i class="fas fa-arrow-left"></i> Home
+            </a>
         </div>
     </nav>
 
     <header class="py-12 bg-white border-b border-slate-100">
         <div class="max-w-7xl mx-auto px-6">
-            <h2 class="text-3xl font-extrabold text-slate-900">Mock Test Series</h2>
-            <p class="text-slate-500 mt-2 font-medium">Select a paper to start your preparation for RSSB/RPSC exams.</p>
+            <div class="flex items-center gap-3 mb-2">
+                <span class="bg-blue-100 text-blue-700 text-[10px] font-black px-2 py-0.5 rounded uppercase">Rajasthan Civil Engineering</span>
+            </div>
+            <h2 class="text-3xl font-extrabold text-slate-900">Available Mock Tests</h2>
+            <p class="text-slate-500 mt-2 font-medium">Select a subject or full-length paper to begin your simulation.</p>
         </div>
     </header>
 
@@ -114,8 +132,8 @@
         </div>
     </main>
 
-    <footer class="py-10 text-center text-slate-400 text-sm">
-        &copy; 2026 Competition Plus | Rajasthan Civil JEn Experts
+    <footer class="py-10 text-center text-slate-400 text-xs font-bold uppercase tracking-widest">
+        &copy; 2026 Competition Plus | Rajasthan RSSB JEn Experts
     </footer>
 
 </body>
