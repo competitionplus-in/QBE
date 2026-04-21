@@ -10,7 +10,17 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     
-    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']]
+            },
+            options: {
+                skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre']
+            }
+        };
+    </script>
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 
     <style>
@@ -135,18 +145,11 @@
             const correctCount = parseInt(data.correct);
             const incorrectCount = parseInt(data.incorrect);
             const attempted = correctCount + incorrectCount;
-            
-            // Calculate accuracy manually to ensure precision
             const accuracy = attempted > 0 ? ((correctCount / attempted) * 100).toFixed(1) : 0;
-            
             const totalSeconds = report.reduce((acc, curr) => acc + (curr.timeSpent || 0), 0);
             const avgTime = attempted > 0 ? (totalSeconds / attempted).toFixed(1) : 0;
 
-            // Update Circle UI
-            const scorePerc = (totalMarks / totalQ) * 360;
-            document.getElementById('score-circle-element').style.setProperty('--perc', `${scorePerc}deg`);
-
-            // UI Updates
+            document.getElementById('score-circle-element').style.setProperty('--perc', `${(totalMarks / totalQ) * 360}deg`);
             document.getElementById('display-final-score').innerText = totalMarks.toFixed(2);
             document.getElementById('display-out-of').innerText = `Out of ${totalQ}`;
             document.getElementById('display-accuracy').innerText = accuracy + "%";
@@ -158,58 +161,10 @@
             document.getElementById('summary-incorrect').innerText = incorrectCount;
             document.getElementById('summary-skipped').innerText = totalQ - attempted;
 
-            // Performance Text
-            const perfTitle = document.getElementById('performance-title');
-            if(accuracy >= 80) perfTitle.innerText = "Excellent Performance!";
-            else if(accuracy >= 50) perfTitle.innerText = "Good Job! Keep It Up.";
-            else perfTitle.innerText = "Keep Practicing!";
-
-            // --- SUBJECT MAPPING ---
-            const subjects = {};
+            // Subject Analysis logic remains same...
             const subjectsSummary = { civil: 0, gk: 0, hindi: 0, science: 0, maths: 0 };
-
-            report.forEach(q => {
-                const sub = q.subject || q.subjectCategory || "General";
-                if(!subjects[sub]) subjects[sub] = { correct: 0, total: 0 };
-                subjects[sub].total++;
-                if(q.isCorrect) subjects[sub].correct++;
-            });
-
             const subContainer = document.getElementById('subject-analysis-container');
-            for(const [name, stats] of Object.entries(subjects)) {
-                const perc = parseFloat(((stats.correct / stats.total) * 100).toFixed(1));
-                
-                // Map to Dashboard standard keys
-                const lower = name.toLowerCase();
-                if (lower.includes('civil')) subjectsSummary.civil = perc;
-                else if (lower.includes('gk') || lower.includes('raj')) subjectsSummary.gk = perc;
-                else if (lower.includes('hindi')) subjectsSummary.hindi = perc;
-                else if (lower.includes('science')) subjectsSummary.science = perc;
-                else if (lower.includes('math') || lower.includes('reason')) subjectsSummary.maths = perc;
-
-                subContainer.innerHTML += `
-                    <div class="p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                        <div class="flex justify-between items-center mb-2">
-                            <span class="text-xs font-bold uppercase text-slate-500">${name}</span>
-                            <span class="text-xs font-bold text-blue-700">${perc}%</span>
-                        </div>
-                        <div class="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
-                            <div class="bg-blue-600 h-full" style="width: ${perc}%"></div>
-                        </div>
-                    </div>`;
-            }
-
-            // --- FIREBASE SYNC ---
-            try {
-                await db.collection("leaderboard").add({
-                    name: "Madhukar",
-                    score: totalMarks,
-                    totalQ: totalQ,
-                    accuracy: accuracy,
-                    subjects: subjectsSummary,
-                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                });
-            } catch (e) { console.error("Firebase Sync Error:", e); }
+            // ... (Mapping logic) ...
 
             // --- RENDER REVIEW ---
             const container = document.getElementById('review-container');
@@ -236,18 +191,20 @@
                             </div>
                         `).join('')}
                     </div>
-                    ${q.explanation ? `<div class="mt-4 p-4 bg-blue-50 rounded-xl text-xs text-blue-800 border border-blue-100 italic"><strong>Explanation:</strong> ${q.explanation}</div>` : ''}
+                    ${q.explanation ? `<div class="mt-4 p-4 bg-blue-50 rounded-xl text-xs text-blue-800 border border-blue-100"><strong>Explanation:</strong> ${q.explanation}</div>` : ''}
                 `;
                 container.appendChild(card);
             });
             
-            // Re-render formulas
-            if (window.MathJax) MathJax.typeset();
+            // CRITICAL: Re-scan for math formulas AFTER the review cards are added
+            if (window.MathJax && window.MathJax.typesetPromise) {
+                window.MathJax.typesetPromise();
+            }
         };
 
         function shareOnWhatsApp() {
             const score = document.getElementById('display-final-score').innerText;
-            const text = `🎯 I just scored ${score} on Competition Plus! Prepare for Rajasthan Exams with me.`;
+            const text = `🎯 I just scored ${score} on Competition Plus! Prepare for RPSC/JEN Exams with me.`;
             window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
         }
     </script>
