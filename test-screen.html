@@ -145,6 +145,7 @@
                     localStorage.setItem('cp_timer', timeInSeconds);
                 }
 
+                lastTime = Date.now(); // Initialize timing anchor
                 renderQuestion();
                 startTimer();
             } catch (e) {
@@ -153,8 +154,21 @@
             }
         }
 
+        /**
+         * Key Fix: logTime() is now only called when NAVIGATING AWAY.
+         * It adds current delta to current question and resets anchor.
+         */
+        function logTime() {
+            const now = Date.now();
+            const diff = Math.floor((now - lastTime) / 1000);
+            if(diff > 0) {
+                timeSpentPerQ[currentIndex] = (timeSpentPerQ[currentIndex] || 0) + diff;
+                localStorage.setItem('cp_time_spent', JSON.stringify(timeSpentPerQ));
+            }
+            lastTime = now;
+        }
+
         function renderQuestion() {
-            logTime();
             const q = allQuestions[currentIndex];
             if(!q) return;
 
@@ -188,16 +202,6 @@
             updatePalette();
         }
 
-        function logTime() {
-            const now = Date.now();
-            const diff = Math.floor((now - lastTime) / 1000);
-            if(diff > 0) {
-                timeSpentPerQ[currentIndex] = (timeSpentPerQ[currentIndex] || 0) + diff;
-                localStorage.setItem('cp_time_spent', JSON.stringify(timeSpentPerQ));
-            }
-            lastTime = now;
-        }
-
         function recordAnswer(idx) {
             studentAnswers[currentIndex] = idx;
             localStorage.setItem('cp_answers', JSON.stringify(studentAnswers));
@@ -214,7 +218,7 @@
         function markReview() {
             reviewList[currentIndex] = true;
             localStorage.setItem('cp_reviews', JSON.stringify(reviewList));
-            nextQuestion();
+            saveAndNext();
         }
 
         function saveAndNext() {
@@ -225,8 +229,29 @@
             nextQuestion();
         }
 
-        function nextQuestion() { if (currentIndex < allQuestions.length - 1) { currentIndex++; renderQuestion(); } }
-        function prevQuestion() { if (currentIndex > 0) { currentIndex--; renderQuestion(); } }
+        // Navigation helpers with integrated timing
+        function nextQuestion() { 
+            if (currentIndex < allQuestions.length - 1) { 
+                logTime(); // Commit time to current question before changing index
+                currentIndex++; 
+                renderQuestion(); 
+            } 
+        }
+        
+        function prevQuestion() { 
+            if (currentIndex > 0) { 
+                logTime(); 
+                currentIndex--; 
+                renderQuestion(); 
+            } 
+        }
+
+        function navigateTo(index) {
+            if (index === currentIndex) return;
+            logTime();
+            currentIndex = index;
+            renderQuestion();
+        }
 
         function updatePalette() {
             const palette = document.getElementById("palette-container");
@@ -242,7 +267,7 @@
                 const btn = document.createElement("button");
                 btn.className = `w-10 h-10 rounded-lg text-xs font-bold transition-all ${status} ${i === currentIndex ? 'selected-q' : ''}`;
                 btn.innerText = i + 1;
-                btn.onclick = () => { currentIndex = i; renderQuestion(); };
+                btn.onclick = () => navigateTo(i);
                 palette.appendChild(btn);
             });
 
@@ -267,12 +292,12 @@
         function closeModal() { document.getElementById('submitModal').classList.add('hidden'); }
 
         async function processSubmit() {
+            logTime(); // Log final question time
             const btn = document.getElementById('finalSubmitBtn');
             btn.innerHTML = '<i class="fas fa-spinner animate-spin"></i> SYNCING...';
             btn.disabled = true;
 
             try {
-                logTime();
                 const subjectStats = {};
                 let totalAttempted = 0;
                 let totalCorrect = 0;
