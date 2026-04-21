@@ -18,6 +18,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 
     <script>
+      // Firebase Configuration
       const firebaseConfig = {
         apiKey: "AIzaSyCAl9iSJhwn5IAUCA5LrgPK5FzFZPtWNZo",
         authDomain: "competition-plus-9996b.firebaseapp.com",
@@ -31,27 +32,43 @@
       const auth = firebase.auth();
       const db = firebase.firestore();
 
-      // Updated Function: Accepts a target page as an argument
+      /**
+       * Enhanced Start Test Logic
+       * Ensures a valid name is collected before proceeding to tests.
+       */
       function startTest(targetPage = 'test-screen.html') {
           let userName = localStorage.getItem('userName');
+          
           if (!userName) {
-              userName = prompt("Enter your Full Name for the State Leaderboard:", "Aspirant");
-              if (userName && userName.trim() !== "") {
+              userName = prompt("Enter your Full Name for the State Leaderboard:", "");
+              
+              // If user clicks "Cancel", stop execution
+              if (userName === null) return; 
+
+              if (userName.trim() !== "") {
                   localStorage.setItem('userName', userName.trim());
                   window.location.href = targetPage;
+              } else {
+                  alert("A valid name is required to participate in the Mock Tests.");
               }
           } else {
               window.location.href = targetPage;
           }
       }
 
+      /**
+       * Loads top 3 performers from Firestore
+       */
       async function loadLiveToppers() {
           const container = document.getElementById('toppers-container');
           try {
-              const snapshot = await db.collection("leaderboard").orderBy("score", "desc").limit(3).get();
+              const snapshot = await db.collection("leaderboard")
+                                     .orderBy("score", "desc")
+                                     .limit(3)
+                                     .get();
               
               if(snapshot.empty) {
-                  container.innerHTML = `<p class="col-span-3 text-center text-slate-400 py-4">No records found yet.</p>`;
+                  container.innerHTML = `<p class="col-span-3 text-center text-slate-400 py-4 italic">Waiting for the first set of results...</p>`;
                   return;
               }
               
@@ -62,15 +79,16 @@
               snapshot.forEach(doc => {
                   const data = doc.data();
                   const score = data.score || 0;
-                  const totalPossible = data.totalQ || data.totalQuestions || 120;
+                  // Dynamic total check based on saved data, else default to 120
+                  const totalPossible = data.totalQuestions || 120;
 
                   container.innerHTML += `
-                      <div class="bg-white p-6 rounded-2xl border border-slate-100 flex items-center gap-4 shadow-sm hover:shadow-md transition">
+                      <div class="bg-white p-6 rounded-2xl border border-slate-100 flex items-center gap-4 shadow-sm hover:shadow-md transition transform hover:-translate-y-1">
                           <span class="text-3xl">${icons[i]}</span>
                           <div>
                               <p class="font-bold text-slate-900">${data.name || "Aspirant"}</p>
                               <p class="text-xs text-blue-600 font-bold uppercase tracking-tight">
-                                Score: ${score.toFixed(1)} / ${totalPossible}
+                                  Score: ${score.toFixed(2)} / ${totalPossible}
                               </p>
                           </div>
                       </div>
@@ -79,9 +97,10 @@
               });
           } catch (e) { 
               console.error("Toppers fetch error", e);
-              container.innerHTML = `<p class="col-span-3 text-center text-red-400">Failed to load toppers.</p>`;
+              container.innerHTML = `<p class="col-span-3 text-center text-red-400">Failed to sync live rankings.</p>`;
           }
       }
+
       window.onload = loadLiveToppers;
     </script>
 </head>
@@ -146,12 +165,17 @@
             <h3 class="text-2xl font-[800] text-slate-900">Current Hall of Fame</h3>
             <p class="text-slate-500 text-sm mt-2 font-medium">Real-time toppers from the latest RSMSSB Mock Test</p>
         </div>
+        
         <div id="toppers-container" class="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div class="animate-pulse bg-white p-6 rounded-2xl border border-slate-100 h-24"></div>
             <div class="animate-pulse bg-white p-6 rounded-2xl border border-slate-100 h-24"></div>
             <div class="animate-pulse bg-white p-6 rounded-2xl border border-slate-100 h-24"></div>
         </div>
     </section>
+
+    <footer class="py-8 text-center text-slate-400 text-xs font-semibold uppercase tracking-widest">
+        &copy; 2026 Competition Plus Rajasthan
+    </footer>
 
 </body>
 </html>
