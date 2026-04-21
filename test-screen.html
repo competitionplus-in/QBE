@@ -137,6 +137,7 @@
                 const data = snapshot.val();
                 if (!data) throw new Error("Exam data not found.");
                 
+                // Keep the order as it is in Firebase
                 allQuestions = Array.isArray(data) ? data : Object.values(data);
                 document.getElementById("test-title").innerText = testId.replace(/_/g, ' ').toUpperCase();
 
@@ -161,21 +162,22 @@
             visitedList[currentIndex] = true;
             localStorage.setItem('cp_visited', JSON.stringify(visitedList));
 
-            document.getElementById("q-number-badge").innerText = `Question ${currentIndex + 1}`;
+            // Use q.questionNo if it exists, otherwise use Index
+            document.getElementById("q-number-badge").innerText = `Question ${q.questionNo || currentIndex + 1}`;
             document.getElementById("subject-tag").innerText = q.subject || "CIVIL ENGINEERING";
-            document.getElementById("question-display").innerHTML = q.questionText || q.Question;
+            document.getElementById("question-display").innerHTML = q.questionText;
 
             const oDisplay = document.getElementById("options-display");
             oDisplay.innerHTML = "";
             
-            const options = q.options || [q.OptionA, q.OptionB, q.OptionC, q.OptionD];
+            // Map specifically to your nested 'options' array
+            const options = q.options || [];
 
             options.forEach((opt, idx) => {
                 const isSelected = studentAnswers[currentIndex] === idx;
                 const letter = String.fromCharCode(65 + idx);
                 const btn = document.createElement("label");
                 
-                // Visual Fix: Background and ring classes update based on selection
                 btn.className = `flex items-center p-4 border-2 rounded-xl cursor-pointer transition-all ${isSelected ? 'border-blue-600 bg-blue-50 ring-1 ring-blue-600 shadow-inner' : 'border-slate-100 hover:bg-slate-50'}`;
                 
                 btn.innerHTML = `
@@ -187,7 +189,9 @@
                 oDisplay.appendChild(btn);
             });
 
-            if (window.MathJax && MathJax.typesetPromise) MathJax.typesetPromise();
+            if (window.MathJax && MathJax.typesetPromise) {
+                MathJax.typesetPromise().catch(err => console.log(err));
+            }
             updatePalette();
         }
 
@@ -205,8 +209,7 @@
             studentAnswers[currentIndex] = idx;
             localStorage.setItem('cp_answers', JSON.stringify(studentAnswers));
             if (reviewList[currentIndex]) delete reviewList[currentIndex];
-            // CRITICAL FIX: Re-render immediately to show the "checked" mark
-            renderQuestion(); 
+            renderQuestion(); // Forces UI update for radio button
         }
 
         function clearResponse() {
@@ -272,31 +275,41 @@
 
         async function processSubmit() {
             const btn = document.getElementById('finalSubmitBtn');
-            btn.innerHTML = 'SYNCING...';
+            btn.innerHTML = '<i class="fas fa-spinner animate-spin"></i> SYNCING...';
             btn.disabled = true;
 
             try {
                 logTime();
-                const letterToIdx = { 'A': 0, 'B': 1, 'C': 2, 'D': 3 };
                 const report = allQuestions.map((q, i) => {
-                    const correctIdx = typeof q.correctAnswer === 'number' ? q.correctAnswer : letterToIdx[q.correctAnswer || q.CorrectAnswer || 'A'];
-                    const options = q.options || [q.OptionA, q.OptionB, q.OptionC, q.OptionD];
+                    const options = q.options || [];
                     const userIdx = studentAnswers[i];
+                    
+                    // Maps to your specific correctIndex key
+                    const correctIdx = q.correctIndex; 
+
                     return { 
-                        question: q.questionText || q.Question, 
-                        userAnswer: userIdx !== undefined ? options[userIdx] : "Unattempted",
+                        question: q.questionText, 
+                        userAnswer: userIdx !== undefined ? options[userIdx] : "Not Attempted",
                         correctAnswer: options[correctIdx],
                         isCorrect: userIdx === correctIdx,
+                        explanation: q.explanation || "See standard reference.",
                         timeSpent: timeSpentPerQ[i] || 0 
                     };
                 });
 
-                const correctCount = report.filter(r => r.userAnswer !== "Unattempted" && r.isCorrect).length;
-                const incorrectCount = report.filter(r => r.userAnswer !== "Unattempted" && !r.isCorrect).length;
-                const finalScore = (correctCount * 1) - (incorrectCount * (1/3));
+                const correctCount = report.filter(r => r.userAnswer !== "Not Attempted" && r.isCorrect).length;
+                const incorrectCount = report.filter(r => r.userAnswer !== "Not Attempted" && !r.isCorrect).length;
+                
+                // Marks Calculation (Rajasthan AE/JE Standard)
+                const finalScore = (correctCount * 1) - (incorrectCount * 0.3333);
 
                 localStorage.setItem('detailedTestReport', JSON.stringify(report));
-                localStorage.setItem('lastTestResult', JSON.stringify({ total: finalScore.toFixed(2), correct: correctCount, incorrect: incorrectCount, totalQuestions: allQuestions.length }));
+                localStorage.setItem('lastTestResult', JSON.stringify({ 
+                    total: finalScore.toFixed(2), 
+                    correct: correctCount, 
+                    incorrect: incorrectCount, 
+                    totalQuestions: allQuestions.length 
+                }));
 
                 await db.collection("leaderboard").add({
                     name: localStorage.getItem('userName') || "Aspirant",
@@ -309,7 +322,9 @@
                 window.onbeforeunload = null;
                 window.location.href = "result.html";
             } catch (err) {
-                btn.innerHTML = 'RETRY'; btn.disabled = false;
+                console.error(err);
+                btn.innerHTML = 'RETRY'; 
+                btn.disabled = false;
             }
         }
 
