@@ -18,101 +18,106 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 
-    <script>
-      // Firebase Configuration
-      const firebaseConfig = {
-        apiKey: "AIzaSyCAl9iSJhwn5IAUCA5LrgPK5FzFZPtWNZo",
-        authDomain: "competition-plus-9996b.firebaseapp.com",
-        projectId: "competition-plus-9996b",
-        storageBucket: "competition-plus-9996b.firebasestorage.app",
-        messagingSenderId: "49252651907",
-        appId: "1:49252651907:web:8a5162064aaf3e69bd1cb6",
-        measurementId: "G-ESTWZJ5X0K"
-      };
+   <script>
+  // Firebase Configuration
+  const firebaseConfig = {
+    apiKey: "AIzaSyCAl9iSJhwn5IAUCA5LrgPK5FzFZPtWNZo",
+    authDomain: "competition-plus-9996b.firebaseapp.com",
+    projectId: "competition-plus-9996b",
+    storageBucket: "competition-plus-9996b.firebasestorage.app",
+    messagingSenderId: "49252651907",
+    appId: "1:49252651907:web:8a5162064aaf3e69bd1cb6",
+    measurementId: "G-ESTWZJ5X0K"
+  };
 
+  // Initialize Firebase (Check if already initialized)
+  if (!firebase.apps.length) {
       firebase.initializeApp(firebaseConfig);
-      const auth = firebase.auth();
-      const db = firebase.firestore();
-      const rtdb = firebase.database();
+  }
+  
+  const auth = firebase.auth();
+  const db = firebase.firestore();
+  const rtdb = firebase.database();
 
-      /**
-       * Enhanced Start Test Logic
-       * 1. Checks for User Name
-       * 2. Fetches current_active_test from RTDB
-       * 3. Redirects to test-screen with correct ID
-       */
-      async function startTest(targetPage = 'test-screen.html') {
-          let userName = localStorage.getItem('userName');
+  async function startTest(targetPage = 'test-screen.html') {
+      console.log("startTest function triggered");
+      
+      let userName = localStorage.getItem('userName');
+      
+      // 1. Name Handling
+      if (!userName || userName.trim() === "") {
+          userName = prompt("Enter your Full Name for the State Leaderboard:", "");
           
-          if (!userName) {
-              userName = prompt("Enter your Full Name for the State Leaderboard:", "");
-              if (userName === null) return; 
+          if (userName === null) return; // User clicked cancel
 
-              if (userName.trim() !== "") {
-                  localStorage.setItem('userName', userName.trim());
-              } else {
-                  alert("A valid name is required to participate in the Mock Tests.");
-                  return;
-              }
-          }
-
-          try {
-              // Fetch the active test key (e.g., "mock_test_2") from your RTDB root
-              const snapshot = await rtdb.ref('current_active_test').once('value');
-              const activeId = snapshot.val();
-
-              if (activeId) {
-                  // Redirect with the ID found in RTDB
-                  window.location.href = `${targetPage}?testId=${activeId}`;
-              } else {
-                  alert("Syncing Error: No active test found in the database.");
-              }
-          } catch (error) {
-              console.error("RTDB Fetch Error:", error);
-              alert("Failed to connect to the server. Please check your internet.");
+          if (userName.trim() !== "") {
+              localStorage.setItem('userName', userName.trim());
+          } else {
+              alert("A valid name is required to participate in the Mock Tests.");
+              return;
           }
       }
 
-      async function loadLiveToppers() {
-          const container = document.getElementById('toppers-container');
-          try {
-              const snapshot = await db.collection("leaderboard")
-                                       .orderBy("score", "desc")
-                                       .limit(3)
-                                       .get();
-              
-              if(snapshot.empty) {
-                  container.innerHTML = `<p class="col-span-3 text-center text-slate-400 py-4 italic">Waiting for the first set of results...</p>`;
-                  return;
-              }
-              
-              container.innerHTML = "";
-              const icons = ["🥇", "🥈", "🥉"];
-              let i = 0;
-              
-              snapshot.forEach(doc => {
-                  const data = doc.data();
-                  container.innerHTML += `
-                      <div class="bg-white p-6 rounded-2xl border border-slate-100 flex items-center gap-4 shadow-sm hover:shadow-md transition transform hover:-translate-y-1">
-                          <span class="text-3xl">${icons[i]}</span>
-                          <div>
-                              <p class="font-bold text-slate-900">${data.name || "Aspirant"}</p>
-                              <p class="text-xs text-blue-600 font-bold uppercase tracking-tight">
-                                  Score: ${(data.score || 0).toFixed(2)} / ${data.totalQuestions || 120}
-                              </p>
-                          </div>
+      // 2. Database Fetch
+      try {
+          // Pointing exactly to your root key 'current_active_test'
+          const snapshot = await rtdb.ref('current_active_test').once('value');
+          const activeId = snapshot.val();
+
+          console.log("RTDB Active ID:", activeId);
+
+          if (activeId) {
+              // Standard URL parameter passing
+              window.location.href = `${targetPage}?testId=${activeId}`;
+          } else {
+              alert("Wait! No active test is currently scheduled. Check the 'Mock Tests' list.");
+          }
+      } catch (error) {
+          console.error("Firebase Error:", error);
+          alert("Database connection failed. Please check your internet.");
+      }
+  }
+
+  async function loadLiveToppers() {
+      const container = document.getElementById('toppers-container');
+      try {
+          const snapshot = await db.collection("leaderboard")
+                                   .orderBy("score", "desc")
+                                   .limit(3)
+                                   .get();
+          
+          if(snapshot.empty) {
+              container.innerHTML = `<p class="col-span-3 text-center text-slate-400 py-4 italic">Waiting for results...</p>`;
+              return;
+          }
+          
+          container.innerHTML = "";
+          const icons = ["🥇", "🥈", "🥉"];
+          let i = 0;
+          
+          snapshot.forEach(doc => {
+              const data = doc.data();
+              container.innerHTML += `
+                  <div class="bg-white p-6 rounded-2xl border border-slate-100 flex items-center gap-4 shadow-sm hover:shadow-md transition transform hover:-translate-y-1">
+                      <span class="text-3xl">${icons[i]}</span>
+                      <div>
+                          <p class="font-bold text-slate-900">${data.name || "Aspirant"}</p>
+                          <p class="text-xs text-blue-600 font-bold uppercase tracking-tight">
+                              Score: ${(data.score || 0).toFixed(2)}
+                          </p>
                       </div>
-                  `;
-                  i++;
-              });
-          } catch (e) { 
-              console.error("Toppers fetch error", e);
-              container.innerHTML = `<p class="col-span-3 text-center text-red-400">Failed to sync live rankings.</p>`;
-          }
+                  </div>
+              `;
+              i++;
+          });
+      } catch (e) { 
+          console.error("Leaderboard Error", e);
+          container.innerHTML = `<p class="col-span-3 text-center text-red-400">Syncing issue.</p>`;
       }
+  }
 
-      window.onload = loadLiveToppers;
-    </script>
+  window.onload = loadLiveToppers;
+</script>
 </head>
 <body class="bg-slate-50 text-slate-900">
 
