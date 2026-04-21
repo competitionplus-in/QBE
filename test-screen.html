@@ -123,7 +123,9 @@
         let reviewList = JSON.parse(localStorage.getItem('cp_reviews')) || {}; 
         let visitedList = JSON.parse(localStorage.getItem('cp_visited')) || {}; 
         let timeSpentPerQ = JSON.parse(localStorage.getItem('cp_time_spent')) || {};
-        let timeInSeconds = parseInt(localStorage.getItem('cp_timer')) || 120 * 60; 
+        
+        // Timer will be initialized dynamically in loadTestData
+        let timeInSeconds = parseInt(localStorage.getItem('cp_timer')); 
         let lastTime = Date.now();
 
         async function loadTestData() {
@@ -137,6 +139,12 @@
                 document.getElementById("test-title").innerText = activeNode.replace(/_/g, ' ').toUpperCase();
 
                 if(allQuestions.length > 0) {
+                    // Logic: If no saved timer exists, assign 1 minute (60s) per question
+                    if (!timeInSeconds || isNaN(timeInSeconds)) {
+                        timeInSeconds = allQuestions.length * 60; 
+                        localStorage.setItem('cp_timer', timeInSeconds);
+                    }
+                    
                     renderQuestion();
                     startTimer();
                     updatePalette();
@@ -254,7 +262,10 @@
                 const h = Math.floor(timeInSeconds / 3600);
                 const m = Math.floor((timeInSeconds % 3600) / 60);
                 const s = timeInSeconds % 60;
+                
+                // Format H:MM:SS
                 document.getElementById('timer').innerText = `${h}:${m < 10 ? '0' : ''}${m}:${s < 10 ? '0' : ''}${s}`;
+                
                 timeInSeconds--;
                 if (timeInSeconds % 10 === 0) localStorage.setItem('cp_timer', timeInSeconds);
             }, 1000);
@@ -270,8 +281,6 @@
 
             try {
                 logTime();
-
-                // 1. DYNAMIC SUBJECT MAPPING LOGIC
                 let subjectsMap = {}; 
                 let subjectCorrectCounts = {};
                 let subjectTotalCounts = {};
@@ -280,8 +289,6 @@
                     const letterToIdx = { 'A': 0, 'B': 1, 'C': 2, 'D': 3 };
                     const correctIdx = typeof q.CorrectAnswer === 'string' ? letterToIdx[q.CorrectAnswer] : (q.correctIndex || 0);
                     const isCorrect = studentAnswers[i] === correctIdx;
-                    
-                    // Identify subject name and normalize to uppercase
                     const subName = (q.subjectCategory || q.subject || "GENERAL").toUpperCase();
                     
                     if (!subjectTotalCounts[subName]) {
@@ -299,7 +306,6 @@
                     };
                 });
 
-                // Calculate percentages for the Radar Chart
                 Object.keys(subjectTotalCounts).forEach(key => {
                     subjectsMap[key] = Math.round((subjectCorrectCounts[key] / subjectTotalCounts[key]) * 100);
                 });
@@ -310,7 +316,6 @@
                 const finalScore = (correctCount * 1) - (incorrectCount * 0.33);
                 const accuracy = answeredQs.length > 0 ? Math.round((correctCount / answeredQs.length) * 100) : 0;
 
-                // Save locally for result page
                 localStorage.setItem('detailedTestReport', JSON.stringify(report));
                 localStorage.setItem('lastTestResult', JSON.stringify({
                     total: finalScore.toFixed(2),
@@ -320,14 +325,13 @@
                     accuracy: accuracy
                 }));
 
-                // 2. SYNC TO FIRESTORE WITH SUBJECT DATA
                 try {
                     await db.collection("leaderboard").add({
                         name: localStorage.getItem('userName') || "Madhukar",
                         score: parseFloat(finalScore.toFixed(2)),
                         totalQ: allQuestions.length,
                         accuracy: accuracy,
-                        subjects: subjectsMap, // THIS POWERS THE RADAR CHART
+                        subjects: subjectsMap,
                         timestamp: firebase.firestore.FieldValue.serverTimestamp()
                     });
                 } catch (fbErr) { console.warn("Cloud sync failed, using local backup."); }
