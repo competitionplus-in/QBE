@@ -270,34 +270,64 @@
 
             try {
                 logTime();
+
+                // 1. DYNAMIC SUBJECT MAPPING LOGIC
+                let subjectsMap = {}; 
+                let subjectCorrectCounts = {};
+                let subjectTotalCounts = {};
+
                 const report = allQuestions.map((q, i) => {
                     const letterToIdx = { 'A': 0, 'B': 1, 'C': 2, 'D': 3 };
                     const correctIdx = typeof q.CorrectAnswer === 'string' ? letterToIdx[q.CorrectAnswer] : (q.correctIndex || 0);
+                    const isCorrect = studentAnswers[i] === correctIdx;
+                    
+                    // Identify subject name and normalize to uppercase
+                    const subName = (q.subjectCategory || q.subject || "GENERAL").toUpperCase();
+                    
+                    if (!subjectTotalCounts[subName]) {
+                        subjectTotalCounts[subName] = 0;
+                        subjectCorrectCounts[subName] = 0;
+                    }
+                    subjectTotalCounts[subName]++;
+                    if (isCorrect) subjectCorrectCounts[subName]++;
+
                     return {
                         ...q,
                         userAnswer: studentAnswers[i],
-                        isCorrect: studentAnswers[i] === correctIdx,
+                        isCorrect: isCorrect,
                         timeSpent: timeSpentPerQ[i] || 0
                     };
                 });
 
-                const answeredQs = report.filter(q => q.userAnswer !== undefined);
-                const correct = report.filter(q => q.userAnswer !== undefined && q.isCorrect).length;
-                const incorrect = answeredQs.length - correct;
-                const score = (correct * 1) - (incorrect * 0.33);
+                // Calculate percentages for the Radar Chart
+                Object.keys(subjectTotalCounts).forEach(key => {
+                    subjectsMap[key] = Math.round((subjectCorrectCounts[key] / subjectTotalCounts[key]) * 100);
+                });
 
-                // --- KEY CHANGE: Save locally FIRST ---
+                const answeredQs = report.filter(q => q.userAnswer !== undefined);
+                const correctCount = report.filter(q => q.userAnswer !== undefined && q.isCorrect).length;
+                const incorrectCount = answeredQs.length - correctCount;
+                const finalScore = (correctCount * 1) - (incorrectCount * 0.33);
+                const accuracy = answeredQs.length > 0 ? Math.round((correctCount / answeredQs.length) * 100) : 0;
+
+                // Save locally for result page
                 localStorage.setItem('detailedTestReport', JSON.stringify(report));
                 localStorage.setItem('lastTestResult', JSON.stringify({
-                    total: score.toFixed(2),
-                    correct, incorrect, totalQ: allQuestions.length
+                    total: finalScore.toFixed(2),
+                    correct: correctCount, 
+                    incorrect: incorrectCount, 
+                    totalQ: allQuestions.length,
+                    accuracy: accuracy
                 }));
 
-                // Attempt Firebase but don't let it hang the UI
+                // 2. SYNC TO FIRESTORE WITH SUBJECT DATA
                 try {
                     await db.collection("leaderboard").add({
                         name: localStorage.getItem('userName') || "Madhukar",
-                        score: parseFloat(score.toFixed(2)),
+                        score: parseFloat(finalScore.toFixed(2)),
+                        totalQ: allQuestions.length,
+                        accuracy: accuracy,
+                        subjects: subjectsMap, // THIS POWERS THE RADAR CHART
                         timestamp: firebase.firestore.FieldValue.serverTimestamp()
                     });
                 } catch (fbErr) { console.warn("Cloud sync failed, using local backup."); }
