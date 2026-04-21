@@ -12,7 +12,6 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 
-    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 
     <style>
@@ -109,16 +108,21 @@
     <script>
         window.MathJax = { tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] } };
 
-        // Firebase Config
+        // Firebase Configuration with Correct Regional Database URL
         const firebaseConfig = {
             apiKey: "AIzaSyCAl9iSJhwn5IAUCA5LrgPK5FzFZPtWNZo",
             authDomain: "competition-plus-9996b.firebaseapp.com",
             projectId: "competition-plus-9996b",
             storageBucket: "competition-plus-9996b.firebasestorage.app",
             messagingSenderId: "49252651907",
-            appId: "1:49252651907:web:8a5162064aaf3e69bd1cb6"
+            appId: "1:49252651907:web:8a5162064aaf3e69bd1cb6",
+            measurementId: "G-ESTWZJ5X0K",
+            databaseURL: "https://competition-plus-9996b-default-rtdb.asia-southeast1.firebasedatabase.app"
         };
-        firebase.initializeApp(firebaseConfig);
+
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
         const db = firebase.firestore();
         const rtdb = firebase.database();
 
@@ -136,20 +140,19 @@
         async function loadTestData() {
             try {
                 if (!testId) {
-                    // Fallback to RTDB active check if no ID in URL
                     const activeSnap = await rtdb.ref('current_active_test').once('value');
                     testId = activeSnap.val();
                 }
 
                 if (!testId) throw new Error("No Active Exam ID found.");
                 
-                // Fetch from RTDB node
                 const snapshot = await rtdb.ref(testId).once('value');
                 const data = snapshot.val();
                 if (!data) throw new Error("Exam data not found in Database.");
                 
-                // Convert RTDB Object with IDs to Array
-                allQuestions = Object.values(data);
+                // Convert to array regardless of how it's stored in RTDB
+                allQuestions = Array.isArray(data) ? data : Object.values(data);
+                
                 document.getElementById("test-title").innerText = testId.replace(/_/g, ' ').toUpperCase();
 
                 if (!timeInSeconds || isNaN(timeInSeconds)) {
@@ -161,6 +164,7 @@
                 startTimer();
                 updatePalette();
             } catch (e) {
+                console.error(e);
                 alert(e.message);
                 window.location.href = "index.html";
             }
@@ -197,8 +201,8 @@
                 oDisplay.appendChild(btn);
             });
 
-            if (window.MathJax) {
-                MathJax.typesetPromise && MathJax.typesetPromise([oDisplay, document.getElementById("question-display")]);
+            if (window.MathJax && MathJax.typesetPromise) {
+                MathJax.typesetPromise([oDisplay, document.getElementById("question-display")]);
             }
             updatePalette();
         }
@@ -206,15 +210,17 @@
         function logTime() {
             const now = Date.now();
             const diff = Math.floor((now - lastTime) / 1000);
-            timeSpentPerQ[currentIndex] = (timeSpentPerQ[currentIndex] || 0) + diff;
-            localStorage.setItem('cp_time_spent', JSON.stringify(timeSpentPerQ));
+            if(diff > 0) {
+                timeSpentPerQ[currentIndex] = (timeSpentPerQ[currentIndex] || 0) + diff;
+                localStorage.setItem('cp_time_spent', JSON.stringify(timeSpentPerQ));
+            }
             lastTime = now;
         }
 
         function recordAnswer(idx) {
             studentAnswers[currentIndex] = idx;
             localStorage.setItem('cp_answers', JSON.stringify(studentAnswers));
-            setTimeout(renderQuestion, 200); 
+            updatePalette();
         }
 
         function clearResponse() {
