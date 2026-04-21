@@ -155,19 +155,28 @@
                 }
             } catch (e) { 
                 console.error("Load Error:", e);
-                alert("Failed to load test data.");
+                alert("Failed to load test: " + e.message);
             }
         }
 
+        // Updated RTDB Fetch based on Image 1 (Root Level)
         async function fetchFromRTDB(id) {
-            const res = await fetch(`https://competition-plus-9996b-default-rtdb.asia-southeast1.firebasedatabase.app/tests/${id}.json`);
+            console.log("RTDB Path: Root Node ->", id);
+            const res = await fetch(`https://competition-plus-9996b-default-rtdb.asia-southeast1.firebasedatabase.app/${id}.json`);
             const data = await res.json();
-            allQuestions = data.questions || data;
+            if(!data) throw new Error("RTDB Data not found");
+            
+            // Handle both array format and object format with .questions
+            allQuestions = data.questions || (Array.isArray(data) ? data : Object.values(data));
             document.getElementById("test-title").innerText = id.replace(/_/g, ' ').toUpperCase();
         }
 
+        // Updated Firestore Fetch based on Image 2 (Collection 'tests')
         async function fetchFromFirestore(id) {
+            console.log("Firestore Path: Collection 'tests' -> Doc ID ->", id);
             const doc = await db.collection("tests").doc(id).get();
+            if (!doc.exists) throw new Error("Firestore Document not found");
+            
             const data = doc.data();
             allQuestions = data.questions;
             document.getElementById("test-title").innerText = (data.title || "LIVE TEST").toUpperCase();
@@ -176,9 +185,10 @@
         async function fetchDefaultRTDB() {
             const activeRes = await fetch("https://competition-plus-9996b-default-rtdb.asia-southeast1.firebasedatabase.app/current_active_test.json");
             const node = await activeRes.json();
+            console.log("Default Fetching Active Node:", node);
             const res = await fetch(`https://competition-plus-9996b-default-rtdb.asia-southeast1.firebasedatabase.app/${node}.json`);
             const data = await res.json();
-            allQuestions = Array.isArray(data) ? data : Object.values(data);
+            allQuestions = data.questions || (Array.isArray(data) ? data : Object.values(data));
             document.getElementById("test-title").innerText = node.replace(/_/g, ' ').toUpperCase();
         }
 
