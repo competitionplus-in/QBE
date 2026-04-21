@@ -16,6 +16,8 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
         body { font-family: 'Inter', sans-serif; }
         .chart-container { position: relative; height: 250px; width: 100%; }
+        .stat-card { transition: transform 0.2s; }
+        .stat-card:hover { transform: translateY(-5px); }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-900">
@@ -48,18 +50,18 @@
             </header>
 
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-                <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
+                <div class="stat-card bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
                     <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Tests Attempted</span>
-                    <h3 id="stat-total-tests" class="text-3xl font-extrabold">0</h3>
+                    <h3 id="stat-total-tests" class="text-3xl font-extrabold text-slate-800">0</h3>
                 </div>
-                <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
+                <div class="stat-card bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
                     <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-1">Average Score</span>
-                    <h3 id="stat-avg-score" class="text-3xl font-extrabold">0%</h3>
+                    <h3 id="stat-avg-score" class="text-3xl font-extrabold text-blue-600">0%</h3>
                 </div>
-                <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm bg-blue-600 text-white">
-                    <span class="text-[10px] font-bold text-blue-200 uppercase tracking-widest block mb-1">Active Streaks</span>
-                    <h3 class="text-3xl font-extrabold flex items-center gap-2">
-                        <i class="fas fa-fire text-orange-400"></i> Prep Mode
+                <div class="stat-card bg-blue-600 p-6 rounded-3xl shadow-lg text-white">
+                    <span class="text-[10px] font-bold text-blue-200 uppercase tracking-widest block mb-1">Current Focus</span>
+                    <h3 class="text-xl font-extrabold flex items-center gap-2">
+                        <i class="fas fa-fire text-orange-400"></i> Exam Ready
                     </h3>
                 </div>
             </div>
@@ -67,7 +69,7 @@
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10">
                 <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
                     <h3 class="font-bold text-sm mb-6 flex items-center gap-2 uppercase tracking-wide">
-                        <i class="fas fa-chart-area text-blue-600"></i> Performance Trend
+                        <i class="fas fa-chart-area text-blue-600"></i> Performance Trend (%)
                     </h3>
                     <div class="chart-container">
                         <canvas id="performanceChart"></canvas>
@@ -87,7 +89,6 @@
             <div class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
                 <div class="p-6 border-b border-slate-50 flex justify-between items-center">
                     <h3 class="font-bold text-lg">Recent Test History</h3>
-                    <button class="text-xs font-bold text-blue-600 hover:underline">View All</button>
                 </div>
                 <div class="overflow-x-auto">
                     <table class="w-full text-left border-collapse">
@@ -100,7 +101,7 @@
                             </tr>
                         </thead>
                         <tbody id="recent-attempts-body" class="text-sm">
-                            <tr><td colspan="4" class="px-6 py-10 text-center text-slate-400 italic">Initializing dashboard data...</td></tr>
+                            <tr><td colspan="4" class="px-6 py-10 text-center text-slate-400 italic">Loading your progress...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -109,7 +110,6 @@
     </div>
 
     <script>
-        // Firebase Config
         const firebaseConfig = {
             apiKey: "AIzaSyCAl9iSJhwn5IAUCA5LrgPK5FzFZPtWNZo",
             authDomain: "competition-plus-9996b.firebaseapp.com",
@@ -121,7 +121,6 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
-        // Chart Rendering Functions
         function renderPerformanceChart(labels, dataPoints) {
             const ctx = document.getElementById('performanceChart').getContext('2d');
             new Chart(ctx, {
@@ -129,21 +128,31 @@
                 data: {
                     labels: labels,
                     datasets: [{
-                        label: 'Score %',
+                        label: 'Your Score',
                         data: dataPoints,
                         borderColor: '#2563eb',
+                        backgroundColor: 'rgba(37, 99, 235, 0.05)',
                         borderWidth: 3,
-                        pointRadius: 4,
                         tension: 0.4,
-                        fill: true,
-                        backgroundColor: 'rgba(37, 99, 235, 0.05)'
+                        fill: true
+                    }, {
+                        label: 'Target (75%)',
+                        data: new Array(labels.length).fill(75),
+                        borderColor: 'rgba(239, 68, 68, 0.3)',
+                        borderDash: [5, 5],
+                        borderWidth: 1,
+                        fill: false,
+                        pointRadius: 0
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: { legend: { display: false } },
-                    scales: { y: { beginAtZero: true, max: 100 }, x: { grid: { display: false } } }
+                    scales: { 
+                        y: { beginAtZero: true, max: 100, ticks: { callback: v => v + '%' } },
+                        x: { grid: { display: false } }
+                    }
                 }
             });
         }
@@ -167,12 +176,13 @@
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: { legend: { display: false } },
-                    scales: { r: { suggestedMin: 0, suggestedMax: 100, ticks: { display: false } } }
+                    scales: { 
+                        r: { suggestedMin: 0, suggestedMax: 100, ticks: { display: false }, angleLines: { color: '#e2e8f0' } } 
+                    }
                 }
             });
         }
 
-        // Main Loader
         async function loadDashboard() {
             const tableBody = document.getElementById('recent-attempts-body');
             let chartLabels = [];
@@ -187,7 +197,7 @@
                     .get();
 
                 if (snapshot.empty) {
-                    tableBody.innerHTML = `<tr><td colspan="4" class="px-6 py-10 text-center">No data yet. Take your first test!</td></tr>`;
+                    tableBody.innerHTML = `<tr><td colspan="4" class="px-6 py-10 text-center">No tests taken yet. Start practicing!</td></tr>`;
                     return;
                 }
 
@@ -197,14 +207,16 @@
 
                 snapshot.forEach(doc => {
                     const data = doc.data();
-                    const date = data.timestamp ? new Date(data.timestamp.seconds * 1000).toLocaleDateString() : 'Today';
-                    const scorePerc = (data.score / (data.totalQ || 1)) * 100;
+                    const dateObj = data.timestamp ? new Date(data.timestamp.seconds * 1000) : new Date();
+                    const dateStr = dateObj.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' });
+                    
+                    const scorePerc = (Number(data.score) / (Number(data.totalQ) || 1)) * 100;
 
-                    // Prep Trend Data
-                    chartLabels.unshift(date);
+                    // Prep Chart Data (Chronological)
+                    chartLabels.unshift(dateStr);
                     chartData.unshift(scorePerc.toFixed(1));
 
-                    // Aggregate Mastery Data
+                    // Aggregate Mastery (only if subjects data exists)
                     if (data.subjects) {
                         for (let key in subTotals) {
                             if (data.subjects[key] !== undefined) {
@@ -214,29 +226,29 @@
                         }
                     }
 
-                    // Table Row
+                    // Populate Table (Latest 5)
                     if (testCount < 5) {
                         tableBody.innerHTML += `
                             <tr class="border-b border-slate-50 hover:bg-slate-50 transition">
-                                <td class="px-6 py-4 font-medium text-slate-700">${date}</td>
-                                <td class="px-6 py-4 font-bold text-blue-700">${Number(data.score).toFixed(2)}</td>
+                                <td class="px-6 py-4 font-medium text-slate-700">${dateStr}</td>
+                                <td class="px-6 py-4 font-bold text-blue-700">${Number(data.score).toFixed(2)} <span class="text-slate-400 font-normal">/ ${data.totalQ}</span></td>
                                 <td class="px-6 py-4">
                                     <span class="px-2 py-1 ${data.accuracy >= 70 ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'} rounded-md text-[10px] font-bold">
                                         ${data.accuracy}% Accuracy
                                     </span>
                                 </td>
-                                <td class="px-6 py-4 text-xs font-bold text-slate-400">COMPLETED</td>
+                                <td class="px-6 py-4 text-[10px] font-extrabold text-slate-400 uppercase tracking-tighter">Completed</td>
                             </tr>`;
                     }
                     totalScorePerc += scorePerc;
                     testCount++;
                 });
 
-                // Update UI Stats
+                // Update Stats
                 document.getElementById('stat-total-tests').innerText = testCount;
                 document.getElementById('stat-avg-score').innerText = (totalScorePerc / testCount).toFixed(1) + "%";
 
-                // Final Mastery Array
+                // Final Mastery Array for Radar
                 const finalMastery = [
                     subCounts.civil > 0 ? (subTotals.civil / subCounts.civil) : 0,
                     subCounts.gk > 0 ? (subTotals.gk / subCounts.gk) : 0,
@@ -249,8 +261,8 @@
                 renderMasteryChart(finalMastery);
 
             } catch (err) {
-                console.error(err);
-                tableBody.innerHTML = `<tr><td colspan="4" class="text-center text-red-500 py-10">Sync Error. Please check connection.</td></tr>`;
+                console.error("Dashboard Error:", err);
+                tableBody.innerHTML = `<tr><td colspan="4" class="text-center text-red-500 py-10">Failed to sync data.</td></tr>`;
             }
         }
 
