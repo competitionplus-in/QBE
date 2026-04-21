@@ -33,14 +33,14 @@
     <nav class="bg-slate-900 text-white px-6 py-3 flex justify-between items-center shadow-lg">
         <div class="flex items-center gap-4">
             <h1 class="text-xl font-bold border-r border-slate-700 pr-4 uppercase tracking-tight">Competition <span class="text-blue-400">Plus</span></h1>
-            <span id="test-title" class="text-sm text-slate-400 hidden md:inline">LOADING TEST...</span>
+            <span id="test-title" class="text-sm text-slate-400 hidden md:inline tracking-widest font-bold">LOADING TEST...</span>
         </div>
         <div class="flex items-center gap-6">
             <div class="flex items-center gap-2 bg-slate-800 px-4 py-1.5 rounded-full border border-slate-700">
                 <i class="fas fa-clock text-blue-400"></i>
                 <span id="timer" class="font-mono text-lg font-bold">00:00:00</span>
             </div>
-            <button onclick="confirmSubmit()" class="bg-red-600 hover:bg-red-700 text-white px-6 py-1.5 rounded-lg font-bold transition">SUBMIT TEST</button>
+            <button onclick="confirmSubmit()" class="bg-red-600 hover:bg-red-700 text-white px-6 py-1.5 rounded-lg font-bold transition text-xs md:text-sm">SUBMIT TEST</button>
         </div>
     </nav>
 
@@ -55,16 +55,22 @@
                 </div>
 
                 <div class="p-6 md:p-10 flex-1">
-                    <div id="question-display" class="text-lg md:text-xl text-slate-800 font-semibold mb-8 leading-relaxed">Preparing questions...</div>
-                    <div id="options-display" class="space-y-4"></div>
+                    <div id="question-display" class="text-lg md:text-xl text-slate-800 font-semibold mb-8 leading-relaxed">
+                        </div>
+                    <div id="options-display" class="space-y-4">
+                        </div>
                 </div>
 
-                <div class="bg-slate-50 p-6 border-t border-slate-200 flex justify-between items-center">
-                    <button onclick="prevQuestion()" class="text-slate-500 hover:text-slate-800 font-bold flex items-center gap-2 transition"><i class="fas fa-chevron-left"></i> Previous</button>
-                    <div class="flex gap-2">
-                        <button onclick="clearResponse()" class="bg-white border border-slate-200 text-slate-500 px-4 py-2 rounded-lg font-bold text-sm hover:bg-slate-100 transition">CLEAR</button>
-                        <button onclick="markReview()" class="bg-orange-100 text-orange-700 px-4 py-2 rounded-lg font-bold text-sm hover:bg-orange-200 transition">REVIEW</button>
-                        <button onclick="saveAndNext()" class="bg-blue-700 text-white px-8 py-2 rounded-lg font-bold hover:bg-blue-800 shadow-lg flex items-center gap-2 transition">SAVE & NEXT <i class="fas fa-chevron-right"></i></button>
+                <div class="bg-slate-50 p-6 border-t border-slate-200 flex flex-col sm:flex-row gap-4 justify-between items-center">
+                    <button onclick="prevQuestion()" class="w-full sm:w-auto text-slate-500 hover:text-slate-800 font-bold flex items-center justify-center gap-2 transition">
+                        <i class="fas fa-chevron-left"></i> Previous
+                    </button>
+                    <div class="flex gap-2 w-full sm:w-auto">
+                        <button onclick="clearResponse()" class="flex-1 sm:flex-none bg-white border border-slate-200 text-slate-500 px-4 py-2 rounded-lg font-bold text-xs hover:bg-slate-100 transition">CLEAR</button>
+                        <button onclick="markReview()" class="flex-1 sm:flex-none bg-orange-100 text-orange-700 px-4 py-2 rounded-lg font-bold text-xs hover:bg-orange-200 transition">REVIEW</button>
+                        <button onclick="saveAndNext()" class="flex-[2] sm:flex-none bg-blue-700 text-white px-8 py-2 rounded-lg font-bold hover:bg-blue-800 shadow-lg flex items-center justify-center gap-2 transition">
+                            SAVE & NEXT <i class="fas fa-chevron-right"></i>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -76,7 +82,7 @@
                 <div id="palette-container" class="grid grid-cols-5 gap-2 overflow-y-auto pr-2 mb-4"></div>
             </div>
             
-            <div class="p-6 bg-slate-50 border-t border-slate-200 grid grid-cols-2 gap-4 text-xs font-bold">
+            <div class="p-6 bg-slate-50 border-t border-slate-200 grid grid-cols-2 gap-4 text-[10px] font-bold uppercase tracking-tight">
                 <div class="flex items-center gap-2"><span class="w-3 h-3 bg-green-600 rounded-full"></span> <span id="stat-answered">0</span> Answered</div>
                 <div class="flex items-center gap-2"><span class="w-3 h-3 bg-orange-500 rounded-full"></span> <span id="stat-review">0</span> Review</div>
                 <div class="flex items-center gap-2"><span class="w-3 h-3 bg-slate-300 rounded-full"></span> <span id="stat-not-visited">0</span> Visited</div>
@@ -92,7 +98,7 @@
                     <i class="fas fa-file-signature text-2xl"></i>
                 </div>
                 <h3 class="text-2xl font-bold text-slate-900 mb-2">Submit Test?</h3>
-                <p class="text-slate-500 font-medium">Your final results will be calculated and saved.</p>
+                <p class="text-slate-500 font-medium">Have you reviewed your answers? Your final score will be synced to the leaderboard.</p>
             </div>
             <div class="p-6 pt-0 flex gap-4">
                 <button onclick="closeModal()" class="flex-1 px-6 py-3 bg-slate-100 text-slate-600 font-bold rounded-xl hover:bg-slate-200 transition">CANCEL</button>
@@ -102,27 +108,26 @@
     </div>
 
     <script>
-        // 1. MathJax Settings
-        window.MathJax = {
-            tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$']] }
-        };
+        // MathJax Setup
+        window.MathJax = { tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] } };
 
-        // 2. Firebase Init
+        // Firebase Config
         const firebaseConfig = {
             apiKey: "AIzaSyCAl9iSJhwn5IAUCA5LrgPK5FzFZPtWNZo",
             authDomain: "competition-plus-9996b.firebaseapp.com",
             projectId: "competition-plus-9996b",
             storageBucket: "competition-plus-9996b.firebasestorage.app",
             messagingSenderId: "49252651907",
-            appId: "1:49252651907:web:8a5162064aaf3e69bd1cb6",
-            databaseURL: "https://competition-plus-9996b-default-rtdb.asia-southeast1.firebasedatabase.app"
+            appId: "1:49252651907:web:8a5162064aaf3e69bd1cb6"
         };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
-        // 3. App State
+        // State
         let allQuestions = [];
         let currentIndex = 0;
+        let testId = new URLSearchParams(window.location.search).get('testId') || 'default_test';
+        
         let studentAnswers = JSON.parse(localStorage.getItem('cp_answers')) || {}; 
         let reviewList = JSON.parse(localStorage.getItem('cp_reviews')) || {}; 
         let visitedList = JSON.parse(localStorage.getItem('cp_visited')) || {}; 
@@ -131,65 +136,27 @@
         let lastTime = Date.now();
 
         async function loadTestData() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const testId = urlParams.get('testId');
-            const source = urlParams.get('source');
-
             try {
-                if (source === 'rtdb' && testId) {
-                    await fetchFromRTDB(testId);
-                } else if (source === 'firestore' && testId) {
-                    await fetchFromFirestore(testId);
-                } else {
-                    await fetchDefaultRTDB();
+                // Fetch from Firestore collection 'tests' using the passed ID
+                const doc = await db.collection("tests").doc(testId).get();
+                if (!doc.exists) throw new Error("Exam data not found.");
+                
+                const data = doc.data();
+                allQuestions = data.questions;
+                document.getElementById("test-title").innerText = (data.title || "LIVE TEST").toUpperCase();
+
+                if (!timeInSeconds || isNaN(timeInSeconds)) {
+                    timeInSeconds = (data.duration || allQuestions.length) * 60;
+                    localStorage.setItem('cp_timer', timeInSeconds);
                 }
 
-                if(allQuestions.length > 0) {
-                    if (!timeInSeconds || isNaN(timeInSeconds)) {
-                        timeInSeconds = allQuestions.length * 60; 
-                        localStorage.setItem('cp_timer', timeInSeconds);
-                    }
-                    renderQuestion();
-                    startTimer();
-                    updatePalette();
-                }
-            } catch (e) { 
-                console.error("Load Error:", e);
-                alert("Failed to load test: " + e.message);
+                renderQuestion();
+                startTimer();
+                updatePalette();
+            } catch (e) {
+                alert(e.message);
+                window.location.href = "test-list.html";
             }
-        }
-
-        // Updated RTDB Fetch based on Image 1 (Root Level)
-        async function fetchFromRTDB(id) {
-            console.log("RTDB Path: Root Node ->", id);
-            const res = await fetch(`https://competition-plus-9996b-default-rtdb.asia-southeast1.firebasedatabase.app/${id}.json`);
-            const data = await res.json();
-            if(!data) throw new Error("RTDB Data not found");
-            
-            // Handle both array format and object format with .questions
-            allQuestions = data.questions || (Array.isArray(data) ? data : Object.values(data));
-            document.getElementById("test-title").innerText = id.replace(/_/g, ' ').toUpperCase();
-        }
-
-        // Updated Firestore Fetch based on Image 2 (Collection 'tests')
-        async function fetchFromFirestore(id) {
-            console.log("Firestore Path: Collection 'tests' -> Doc ID ->", id);
-            const doc = await db.collection("tests").doc(id).get();
-            if (!doc.exists) throw new Error("Firestore Document not found");
-            
-            const data = doc.data();
-            allQuestions = data.questions;
-            document.getElementById("test-title").innerText = (data.title || "LIVE TEST").toUpperCase();
-        }
-
-        async function fetchDefaultRTDB() {
-            const activeRes = await fetch("https://competition-plus-9996b-default-rtdb.asia-southeast1.firebasedatabase.app/current_active_test.json");
-            const node = await activeRes.json();
-            console.log("Default Fetching Active Node:", node);
-            const res = await fetch(`https://competition-plus-9996b-default-rtdb.asia-southeast1.firebasedatabase.app/${node}.json`);
-            const data = await res.json();
-            allQuestions = data.questions || (Array.isArray(data) ? data : Object.values(data));
-            document.getElementById("test-title").innerText = node.replace(/_/g, ' ').toUpperCase();
         }
 
         function renderQuestion() {
@@ -201,11 +168,13 @@
             localStorage.setItem('cp_visited', JSON.stringify(visitedList));
 
             document.getElementById("q-number-badge").innerText = `Question ${currentIndex + 1}`;
-            document.getElementById("subject-tag").innerText = q.subjectCategory || q.subject || "CIVIL ENGINEERING";
+            document.getElementById("subject-tag").innerText = q.subject || "CIVIL ENGINEERING";
             document.getElementById("question-display").innerHTML = q.questionText || q.Question;
 
             const oDisplay = document.getElementById("options-display");
             oDisplay.innerHTML = "";
+            
+            // Flexible option handling
             const options = q.options || [q.OptionA, q.OptionB, q.OptionC, q.OptionD];
 
             options.forEach((opt, idx) => {
@@ -222,8 +191,9 @@
                 oDisplay.appendChild(btn);
             });
 
-            if (window.MathJax && MathJax.typesetPromise) {
-                MathJax.typesetPromise().catch(err => console.log("MathJax Render Error"));
+            // Re-render Math Formulas
+            if (window.MathJax) {
+                MathJax.typesetPromise && MathJax.typesetPromise([oDisplay, document.getElementById("question-display")]);
             }
             updatePalette();
         }
@@ -239,7 +209,8 @@
         function recordAnswer(idx) {
             studentAnswers[currentIndex] = idx;
             localStorage.setItem('cp_answers', JSON.stringify(studentAnswers));
-            setTimeout(renderQuestion, 150);
+            // Slight delay for visual feedback before auto-next (optional)
+            setTimeout(renderQuestion, 200); 
         }
 
         function clearResponse() {
@@ -288,12 +259,15 @@
         }
 
         function startTimer() {
-            setInterval(() => {
-                if (timeInSeconds <= 0) processSubmit();
+            const timerInterval = setInterval(() => {
+                if (timeInSeconds <= 0) {
+                    clearInterval(timerInterval);
+                    processSubmit();
+                }
                 const h = Math.floor(timeInSeconds / 3600);
                 const m = Math.floor((timeInSeconds % 3600) / 60);
                 const s = timeInSeconds % 60;
-                document.getElementById('timer').innerText = `${h}:${m < 10 ? '0' : ''}${m}:${s < 10 ? '0' : ''}${s}`;
+                document.getElementById('timer').innerText = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
                 timeInSeconds--;
                 if (timeInSeconds % 10 === 0) localStorage.setItem('cp_timer', timeInSeconds);
             }, 1000);
@@ -304,7 +278,7 @@
 
         async function processSubmit() {
             const btn = document.getElementById('finalSubmitBtn');
-            btn.innerHTML = '<i class="fas fa-spinner animate-spin"></i> SAVING...';
+            btn.innerHTML = '<i class="fas fa-spinner animate-spin"></i> SYNCING...';
             btn.disabled = true;
 
             try {
@@ -312,33 +286,53 @@
                 const letterToIdx = { 'A': 0, 'B': 1, 'C': 2, 'D': 3 };
                 
                 const report = allQuestions.map((q, i) => {
-                    const correctIdx = typeof q.CorrectAnswer === 'string' ? letterToIdx[q.CorrectAnswer] : (q.correctIndex || 0);
-                    return { ...q, userAnswer: studentAnswers[i], isCorrect: studentAnswers[i] === correctIdx, timeSpent: timeSpentPerQ[i] || 0 };
+                    // Handle both numeric index or letter format for correct answer
+                    const correctIdx = typeof q.correctAnswer === 'number' ? q.correctAnswer : letterToIdx[q.correctAnswer || q.CorrectAnswer || 'A'];
+                    return { 
+                        question: q.questionText || q.Question, 
+                        userAnswer: studentAnswers[i], 
+                        isCorrect: studentAnswers[i] === correctIdx,
+                        correctIdx: correctIdx,
+                        timeSpent: timeSpentPerQ[i] || 0 
+                    };
                 });
 
                 const correctCount = report.filter(r => r.userAnswer !== undefined && r.isCorrect).length;
                 const incorrectCount = report.filter(r => r.userAnswer !== undefined && !r.isCorrect).length;
-                const finalScore = (correctCount * 1) - (incorrectCount * 0.33);
+                const finalScore = (correctCount * 1) - (incorrectCount * (1/3));
 
+                // Save for Result Page
                 localStorage.setItem('detailedTestReport', JSON.stringify(report));
-                localStorage.setItem('lastTestResult', JSON.stringify({ total: finalScore.toFixed(2), correct: correctCount, incorrect: incorrectCount }));
+                localStorage.setItem('lastTestResult', JSON.stringify({ 
+                    total: finalScore.toFixed(2), 
+                    correct: correctCount, 
+                    incorrect: incorrectCount,
+                    totalQuestions: allQuestions.length
+                }));
 
+                // Add to Firestore Leaderboard
                 await db.collection("leaderboard").add({
-                    name: localStorage.getItem('userName') || "Madhukar",
+                    name: localStorage.getItem('userName') || "Aspirant",
                     score: parseFloat(finalScore.toFixed(2)),
+                    totalQuestions: allQuestions.length,
+                    testId: testId,
                     timestamp: firebase.firestore.FieldValue.serverTimestamp()
                 });
 
+                // Clear Local Storage
                 ['cp_answers', 'cp_reviews', 'cp_visited', 'cp_timer', 'cp_time_spent'].forEach(k => localStorage.removeItem(k));
+                
                 window.onbeforeunload = null;
                 window.location.href = "result.html";
             } catch (err) {
-                alert("Submission failed. Check connection.");
+                console.error(err);
+                alert("Submission failed. Please check your internet connection.");
+                btn.innerHTML = 'RETRY SUBMIT';
                 btn.disabled = false;
             }
         }
 
-        window.onbeforeunload = () => "Warning: Progress will be lost!";
+        window.onbeforeunload = () => "Warning: Your exam progress will be lost if you leave this page.";
         loadTestData();
     </script>
 </body>
