@@ -14,10 +14,7 @@
         window.MathJax = {
             tex: {
                 inlineMath: [['$', '$'], ['\\(', '\\)']],
-                displayMath: [['$$', '$$'], ['\\[', '\\]']]
-            },
-            options: {
-                skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre']
+                displayMath: [['$$', '$$']]
             }
         };
     </script>
@@ -27,7 +24,7 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
         body { font-family: 'Inter', sans-serif; }
         .score-circle { transition: all 0.8s ease-in-out; background: conic-gradient(#1e40af var(--perc), #e2e8f0 0deg); }
-        @media print { .print-hidden { display: none; } }
+        @media print { .print-hidden { display: none; } .print-m-0 { margin: 0 !important; border: none; } }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-900 pb-20">
@@ -50,7 +47,7 @@
                 <i class="fas fa-check-circle text-3xl"></i>
             </div>
             <h2 class="text-3xl font-extrabold tracking-tight">Test Successfully Submitted</h2>
-            <p class="text-slate-500 mt-2">Detailed performance analysis for Madhukar</p>
+            <p class="text-slate-500 mt-2">Detailed performance analysis for <span id="user-name-display" class="font-bold text-slate-700">Aspirant</span></p>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
@@ -58,11 +55,11 @@
                 <div id="score-circle-element" class="relative w-40 h-40 rounded-full flex items-center justify-center score-circle" style="--perc: 0deg;">
                     <div class="absolute inset-2 bg-white rounded-full flex flex-col items-center justify-center">
                         <span id="display-final-score" class="text-4xl font-extrabold text-blue-800">0.0</span>
-                        <span id="display-out-of" class="text-xs font-bold text-slate-400 uppercase tracking-widest">Out of 0</span>
+                        <span id="display-out-of" class="text-xs font-bold text-slate-400 uppercase tracking-widest text-center px-4">Out of 0</span>
                     </div>
                 </div>
                 <div class="flex-1 space-y-4">
-                    <h3 id="performance-title" class="text-xl font-bold text-slate-800 text-center md:text-left tracking-tight">Analyzing...</h3>
+                    <h3 id="performance-title" class="text-xl font-bold text-slate-800 text-center md:text-left tracking-tight">Well Done!</h3>
                     <div class="grid grid-cols-3 gap-2">
                         <div class="bg-slate-50 p-3 rounded-xl text-center border border-slate-100">
                             <span id="display-accuracy" class="block text-lg font-bold">0%</span>
@@ -98,12 +95,13 @@
             <h3 class="text-lg font-bold mb-4 flex items-center gap-2">
                 <i class="fas fa-chart-pie text-blue-600"></i> Subject-Wise Analysis
             </h3>
-            <div id="subject-analysis-container" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+            <div id="subject-analysis-container" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                </div>
         </div>
 
         <div class="flex justify-between items-end mb-6">
             <h3 class="text-xl font-extrabold flex items-center gap-2">
-                <i class="fas fa-list-check text-blue-600"></i> Detailed Review
+                <i class="fas fa-list-check text-blue-600"></i> Detailed Question Review
             </h3>
         </div>
         <div id="review-container" class="space-y-6"></div>
@@ -119,39 +117,35 @@
     </main>
 
     <script>
-        const firebaseConfig = {
-            apiKey: "AIzaSyCAl9iSJhwn5IAUCA5LrgPK5FzFZPtWNZo",
-            authDomain: "competition-plus-9996b.firebaseapp.com",
-            projectId: "competition-plus-9996b",
-            storageBucket: "competition-plus-9996b.firebasestorage.app",
-            messagingSenderId: "49252651907",
-            appId: "1:49252651907:web:8a5162064aaf3e69bd1cb6"
-        };
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
-
-        window.onload = async function() {
-            const rawResult = localStorage.getItem('lastTestResult');
+        window.onload = function() {
+            const resultData = JSON.parse(localStorage.getItem('lastTestResult'));
             const report = JSON.parse(localStorage.getItem('detailedTestReport'));
+            const userName = localStorage.getItem('userName') || "Madhukar";
 
-            if(!rawResult || !report) {
-                document.querySelector('main').innerHTML = `<div class="text-center py-20"><h2 class="text-2xl font-bold text-slate-400">No data found.</h2></div>`;
+            if (!resultData || !report) {
+                document.querySelector('main').innerHTML = `<div class="text-center py-20"><h2 class="text-2xl font-bold text-slate-400">No recent test data found.</h2></div>`;
                 return;
             }
 
-            const data = JSON.parse(rawResult);
-            const totalMarks = parseFloat(data.total);
-            const totalQ = parseInt(data.totalQ);
-            const correctCount = parseInt(data.correct);
-            const incorrectCount = parseInt(data.incorrect);
+            document.getElementById('user-name-display').innerText = userName;
+
+            // Calculations
+            const totalScore = parseFloat(resultData.total);
+            const totalQ = resultData.totalQuestions || report.length;
+            const correctCount = resultData.correct;
+            const incorrectCount = resultData.incorrect;
             const attempted = correctCount + incorrectCount;
             const accuracy = attempted > 0 ? ((correctCount / attempted) * 100).toFixed(1) : 0;
             const totalSeconds = report.reduce((acc, curr) => acc + (curr.timeSpent || 0), 0);
             const avgTime = attempted > 0 ? (totalSeconds / attempted).toFixed(1) : 0;
 
-            document.getElementById('score-circle-element').style.setProperty('--perc', `${(totalMarks / totalQ) * 360}deg`);
-            document.getElementById('display-final-score').innerText = totalMarks.toFixed(2);
+            // Update UI Score Circle
+            const percentage = Math.max(0, (totalScore / totalQ) * 100);
+            document.getElementById('score-circle-element').style.setProperty('--perc', `${(percentage / 100) * 360}deg`);
+            document.getElementById('display-final-score').innerText = totalScore;
             document.getElementById('display-out-of').innerText = `Out of ${totalQ}`;
+            
+            // Stats
             document.getElementById('display-accuracy').innerText = accuracy + "%";
             document.getElementById('display-attempted-count').innerText = attempted;
             document.getElementById('display-avg-time').innerText = avgTime + "s";
@@ -161,50 +155,93 @@
             document.getElementById('summary-incorrect').innerText = incorrectCount;
             document.getElementById('summary-skipped').innerText = totalQ - attempted;
 
-            // Subject Analysis logic remains same...
-            const subjectsSummary = { civil: 0, gk: 0, hindi: 0, science: 0, maths: 0 };
-            const subContainer = document.getElementById('subject-analysis-container');
-            // ... (Mapping logic) ...
+            // Performance Title Logic
+            const pTitle = document.getElementById('performance-title');
+            if(accuracy >= 80) pTitle.innerText = "Excellent Work! 🚀";
+            else if(accuracy >= 50) pTitle.innerText = "Good Effort! 👍";
+            else pTitle.innerText = "Keep Practicing! 📚";
 
-            // --- RENDER REVIEW ---
-            const container = document.getElementById('review-container');
+            // Subject Analysis
+            const subjectData = {};
+            report.forEach(q => {
+                const sub = q.subjectCategory || "General";
+                if(!subjectData[sub]) subjectData[sub] = { correct: 0, total: 0 };
+                subjectData[sub].total++;
+                if(q.isCorrect) subjectData[sub].correct++;
+            });
+
+            const subContainer = document.getElementById('subject-analysis-container');
+            Object.keys(subjectData).forEach(sub => {
+                const perc = ((subjectData[sub].correct / subjectData[sub].total) * 100).toFixed(0);
+                const row = document.createElement('div');
+                row.className = "space-y-1";
+                row.innerHTML = `
+                    <div class="flex justify-between text-xs font-bold uppercase text-slate-500">
+                        <span>${sub}</span>
+                        <span>${perc}%</span>
+                    </div>
+                    <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                        <div class="bg-blue-600 h-full" style="width: ${perc}%"></div>
+                    </div>
+                `;
+                subContainer.appendChild(row);
+            });
+
+            // Review Rendering
+            const reviewContainer = document.getElementById('review-container');
             report.forEach((q, i) => {
-                const options = q.options || [q.OptionA, q.OptionB, q.OptionC, q.OptionD];
-                const letterToIdx = { 'A': 0, 'B': 1, 'C': 2, 'D': 3 };
-                const correctIdx = typeof q.CorrectAnswer === 'string' ? letterToIdx[q.CorrectAnswer] : (q.correctIndex || 0);
-                
                 const card = document.createElement('div');
-                card.className = `p-6 rounded-2xl border-2 bg-white ${q.isCorrect ? 'border-green-100' : (q.userAnswer !== undefined ? 'border-red-100' : 'border-slate-100')}`;
+                card.className = `p-6 rounded-2xl border-2 bg-white transition-all ${q.isCorrect ? 'border-green-100' : (q.userAnswer === undefined ? 'border-slate-100' : 'border-red-100')}`;
+                
+                const options = q.options || ["Option A", "Option B", "Option C", "Option D"];
                 
                 card.innerHTML = `
-                    <div class="flex justify-between items-start mb-2">
-                        <span class="text-xs font-bold text-slate-400 uppercase">Question ${i+1}</span>
-                        <span class="text-xs font-bold ${q.isCorrect ? 'text-green-600' : 'text-red-500'}">
-                            ${q.isCorrect ? '+1.00' : (q.userAnswer === undefined ? '0.00' : '-0.33')}
-                        </span>
+                    <div class="flex justify-between items-start mb-3">
+                        <span class="bg-slate-100 text-slate-500 px-3 py-1 rounded-lg text-[10px] font-bold uppercase">Question ${i + 1}</span>
+                        <div class="flex items-center gap-2">
+                            ${q.isCorrect ? 
+                                '<span class="text-green-600 text-xs font-bold"><i class="fas fa-plus"></i> 1.00</span>' : 
+                                (q.userAnswer === undefined ? '<span class="text-slate-400 text-xs font-bold">0.00</span>' : '<span class="text-red-500 text-xs font-bold"><i class="fas fa-minus"></i> 0.33</span>')}
+                        </div>
                     </div>
-                    <p class="font-bold mb-4">${q.questionText || q.Question}</p>
+                    <p class="font-semibold text-slate-800 mb-6 leading-relaxed">${q.question || q.questionText}</p>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        ${options.map((opt, idx) => `
-                            <div class="p-3 rounded-xl text-sm border ${idx === correctIdx ? 'bg-green-50 border-green-200 font-bold text-green-800' : (idx === q.userAnswer ? 'bg-red-50 border-red-200 text-red-700' : 'bg-slate-50 border-slate-100')}">
-                                ${String.fromCharCode(65 + idx)}. ${opt}
-                            </div>
-                        `).join('')}
+                        ${options.map((opt, idx) => {
+                            let style = "border-slate-100 bg-slate-50 text-slate-600";
+                            let icon = "";
+                            
+                            if (idx === q.correctIdx) {
+                                style = "border-green-200 bg-green-50 text-green-700 font-bold";
+                                icon = '<i class="fas fa-check-circle ml-auto"></i>';
+                            } else if (idx === q.userAnswer && !q.isCorrect) {
+                                style = "border-red-200 bg-red-50 text-red-700 font-bold";
+                                icon = '<i class="fas fa-times-circle ml-auto"></i>';
+                            }
+
+                            return `<div class="flex items-center p-3 rounded-xl border text-sm ${style}">
+                                        <span class="mr-3 opacity-50">${String.fromCharCode(65 + idx)}.</span> ${opt} ${icon}
+                                    </div>`;
+                        }).join('')}
                     </div>
-                    ${q.explanation ? `<div class="mt-4 p-4 bg-blue-50 rounded-xl text-xs text-blue-800 border border-blue-100"><strong>Explanation:</strong> ${q.explanation}</div>` : ''}
+                    ${q.explanation ? `
+                        <div class="mt-4 p-4 bg-blue-50/50 rounded-xl border border-blue-100">
+                            <span class="text-[10px] font-bold text-blue-600 uppercase block mb-1">Solution Explanation</span>
+                            <p class="text-xs text-blue-800 leading-relaxed">${q.explanation}</p>
+                        </div>
+                    ` : ''}
                 `;
-                container.appendChild(card);
+                reviewContainer.appendChild(card);
             });
-            
-            // CRITICAL: Re-scan for math formulas AFTER the review cards are added
-            if (window.MathJax && window.MathJax.typesetPromise) {
-                window.MathJax.typesetPromise();
+
+            // Trigger MathJax
+            if (window.MathJax && MathJax.typesetPromise) {
+                MathJax.typesetPromise();
             }
         };
 
         function shareOnWhatsApp() {
             const score = document.getElementById('display-final-score').innerText;
-            const text = `🎯 I just scored ${score} on Competition Plus! Prepare for RPSC/JEN Exams with me.`;
+            const text = `🎯 I scored ${score} on Competition Plus! Prepare for Rajasthan AEN/JEN exams with high-quality mock tests.`;
             window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
         }
     </script>
