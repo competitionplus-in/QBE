@@ -20,12 +20,7 @@
         .no-select { user-select: none; -webkit-user-select: none; }
         #palette-container::-webkit-scrollbar { width: 4px; }
         #palette-container::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-        
-        .selected-q {
-            box-shadow: 0 0 0 2px white, 0 0 0 4px #1d4ed8 !important;
-            transform: scale(1.05);
-            z-index: 10;
-        }
+        .selected-q { box-shadow: 0 0 0 2px white, 0 0 0 4px #1d4ed8 !important; transform: scale(1.05); z-index: 10; }
     </style>
 </head>
 <body class="bg-slate-100 h-screen flex flex-col overflow-hidden no-select">
@@ -33,7 +28,7 @@
     <nav class="bg-slate-900 text-white px-6 py-3 flex justify-between items-center shadow-lg">
         <div class="flex items-center gap-4">
             <h1 class="text-xl font-bold border-r border-slate-700 pr-4 uppercase tracking-tight">Competition <span class="text-blue-400">Plus</span></h1>
-            <span id="test-title" class="text-sm text-slate-400 hidden md:inline tracking-widest font-bold">LOADING TEST...</span>
+            <span id="test-title" class="text-sm text-slate-400 hidden md:inline tracking-widest font-bold">LOADING...</span>
         </div>
         <div class="flex items-center gap-6">
             <div class="flex items-center gap-2 bg-slate-800 px-4 py-1.5 rounded-full border border-slate-700">
@@ -49,8 +44,8 @@
             <div class="max-w-3xl mx-auto bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col min-h-[550px]">
                 <div class="bg-slate-50 p-4 border-b border-slate-200 flex justify-between items-center">
                     <div class="flex items-center gap-2">
-                        <span id="q-number-badge" class="bg-blue-700 text-white px-3 py-1 rounded text-xs font-bold uppercase">Question</span>
-                        <span id="subject-tag" class="bg-slate-200 text-slate-600 px-3 py-1 rounded text-xs font-bold uppercase tracking-wider">CIVIL ENGINEERING</span>
+                        <span id="q-number-badge" class="bg-blue-700 text-white px-3 py-1 rounded text-xs font-bold uppercase">Question 1</span>
+                        <span id="subject-tag" class="bg-slate-200 text-slate-600 px-3 py-1 rounded text-xs font-bold uppercase tracking-wider">GENERAL STUDIES</span>
                     </div>
                 </div>
 
@@ -79,12 +74,10 @@
                 <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Question Palette</h4>
                 <div id="palette-container" class="grid grid-cols-5 gap-2 overflow-y-auto pr-2 mb-4"></div>
             </div>
-            
             <div class="p-6 bg-slate-50 border-t border-slate-200 grid grid-cols-2 gap-4 text-[10px] font-bold uppercase tracking-tight">
                 <div class="flex items-center gap-2"><span class="w-3 h-3 bg-green-600 rounded-full"></span> <span id="stat-answered">0</span> Answered</div>
                 <div class="flex items-center gap-2"><span class="w-3 h-3 bg-orange-500 rounded-full"></span> <span id="stat-review">0</span> Review</div>
                 <div class="flex items-center gap-2"><span class="w-3 h-3 bg-slate-300 rounded-full"></span> <span id="stat-not-visited">0</span> Visited</div>
-                <div class="flex items-center gap-2"><span class="w-3 h-3 bg-slate-100 border rounded-full"></span> <span id="stat-not-visited-total">0</span> Remaining</div>
             </div>
         </aside>
     </main>
@@ -96,7 +89,7 @@
                     <i class="fas fa-file-signature text-2xl"></i>
                 </div>
                 <h3 class="text-2xl font-bold text-slate-900 mb-2">Submit Test?</h3>
-                <p class="text-slate-500 font-medium">Your final score will be synced to the leaderboard.</p>
+                <p class="text-slate-500 font-medium">Final score will be synced to the leaderboard.</p>
             </div>
             <div class="p-6 pt-0 flex gap-4">
                 <button onclick="closeModal()" class="flex-1 px-6 py-3 bg-slate-100 text-slate-600 font-bold rounded-xl hover:bg-slate-200 transition">CANCEL</button>
@@ -108,7 +101,6 @@
     <script>
         window.MathJax = { tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] } };
 
-        // Firebase Configuration with Correct Regional Database URL
         const firebaseConfig = {
             apiKey: "AIzaSyCAl9iSJhwn5IAUCA5LrgPK5FzFZPtWNZo",
             authDomain: "competition-plus-9996b.firebaseapp.com",
@@ -120,9 +112,7 @@
             databaseURL: "https://competition-plus-9996b-default-rtdb.asia-southeast1.firebasedatabase.app"
         };
 
-        if (!firebase.apps.length) {
-            firebase.initializeApp(firebaseConfig);
-        }
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
         const rtdb = firebase.database();
 
@@ -143,16 +133,11 @@
                     const activeSnap = await rtdb.ref('current_active_test').once('value');
                     testId = activeSnap.val();
                 }
-
-                if (!testId) throw new Error("No Active Exam ID found.");
-                
                 const snapshot = await rtdb.ref(testId).once('value');
                 const data = snapshot.val();
-                if (!data) throw new Error("Exam data not found in Database.");
+                if (!data) throw new Error("Exam data not found.");
                 
-                // Convert to array regardless of how it's stored in RTDB
                 allQuestions = Array.isArray(data) ? data : Object.values(data);
-                
                 document.getElementById("test-title").innerText = testId.replace(/_/g, ' ').toUpperCase();
 
                 if (!timeInSeconds || isNaN(timeInSeconds)) {
@@ -162,9 +147,7 @@
 
                 renderQuestion();
                 startTimer();
-                updatePalette();
             } catch (e) {
-                console.error(e);
                 alert(e.message);
                 window.location.href = "index.html";
             }
@@ -191,19 +174,20 @@
                 const isSelected = studentAnswers[currentIndex] === idx;
                 const letter = String.fromCharCode(65 + idx);
                 const btn = document.createElement("label");
-                btn.className = `flex items-center p-4 border-2 rounded-xl cursor-pointer transition-all ${isSelected ? 'border-blue-600 bg-blue-50' : 'border-slate-100 hover:bg-slate-50'}`;
+                
+                // Visual Fix: Background and ring classes update based on selection
+                btn.className = `flex items-center p-4 border-2 rounded-xl cursor-pointer transition-all ${isSelected ? 'border-blue-600 bg-blue-50 ring-1 ring-blue-600 shadow-inner' : 'border-slate-100 hover:bg-slate-50'}`;
+                
                 btn.innerHTML = `
                     <div class="flex items-center gap-4 w-full">
                         <div class="w-8 h-8 rounded-full border-2 flex items-center justify-center font-bold text-sm ${isSelected ? 'bg-blue-600 border-blue-600 text-white' : 'border-slate-300 text-slate-500'}">${letter}</div>
                         <input type="radio" name="option" class="hidden" onchange="recordAnswer(${idx})" ${isSelected ? 'checked' : ''}>
-                        <span class="font-medium">${opt}</span>
+                        <span class="font-medium ${isSelected ? 'text-blue-900' : 'text-slate-700'}">${opt}</span>
                     </div>`;
                 oDisplay.appendChild(btn);
             });
 
-            if (window.MathJax && MathJax.typesetPromise) {
-                MathJax.typesetPromise([oDisplay, document.getElementById("question-display")]);
-            }
+            if (window.MathJax && MathJax.typesetPromise) MathJax.typesetPromise();
             updatePalette();
         }
 
@@ -220,7 +204,9 @@
         function recordAnswer(idx) {
             studentAnswers[currentIndex] = idx;
             localStorage.setItem('cp_answers', JSON.stringify(studentAnswers));
-            updatePalette();
+            if (reviewList[currentIndex]) delete reviewList[currentIndex];
+            // CRITICAL FIX: Re-render immediately to show the "checked" mark
+            renderQuestion(); 
         }
 
         function clearResponse() {
@@ -236,8 +222,10 @@
         }
 
         function saveAndNext() {
-            if (studentAnswers[currentIndex] !== undefined) delete reviewList[currentIndex];
-            localStorage.setItem('cp_reviews', JSON.stringify(reviewList));
+            if (studentAnswers[currentIndex] !== undefined) {
+                delete reviewList[currentIndex];
+                localStorage.setItem('cp_reviews', JSON.stringify(reviewList));
+            }
             nextQuestion();
         }
 
@@ -265,15 +253,11 @@
             document.getElementById("stat-answered").innerText = ans;
             document.getElementById("stat-review").innerText = rev;
             document.getElementById("stat-not-visited").innerText = vis;
-            document.getElementById("stat-not-visited-total").innerText = allQuestions.length - (vis + ans + rev);
         }
 
         function startTimer() {
-            const timerInterval = setInterval(() => {
-                if (timeInSeconds <= 0) {
-                    clearInterval(timerInterval);
-                    processSubmit();
-                }
+            setInterval(() => {
+                if (timeInSeconds <= 0) processSubmit();
                 const h = Math.floor(timeInSeconds / 3600);
                 const m = Math.floor((timeInSeconds % 3600) / 60);
                 const s = timeInSeconds % 60;
@@ -288,57 +272,48 @@
 
         async function processSubmit() {
             const btn = document.getElementById('finalSubmitBtn');
-            btn.innerHTML = '<i class="fas fa-spinner animate-spin"></i> SYNCING...';
+            btn.innerHTML = 'SYNCING...';
             btn.disabled = true;
 
             try {
                 logTime();
                 const letterToIdx = { 'A': 0, 'B': 1, 'C': 2, 'D': 3 };
-                
                 const report = allQuestions.map((q, i) => {
                     const correctIdx = typeof q.correctAnswer === 'number' ? q.correctAnswer : letterToIdx[q.correctAnswer || q.CorrectAnswer || 'A'];
+                    const options = q.options || [q.OptionA, q.OptionB, q.OptionC, q.OptionD];
+                    const userIdx = studentAnswers[i];
                     return { 
                         question: q.questionText || q.Question, 
-                        userAnswer: studentAnswers[i], 
-                        isCorrect: studentAnswers[i] === correctIdx,
-                        correctIdx: correctIdx,
+                        userAnswer: userIdx !== undefined ? options[userIdx] : "Unattempted",
+                        correctAnswer: options[correctIdx],
+                        isCorrect: userIdx === correctIdx,
                         timeSpent: timeSpentPerQ[i] || 0 
                     };
                 });
 
-                const correctCount = report.filter(r => r.userAnswer !== undefined && r.isCorrect).length;
-                const incorrectCount = report.filter(r => r.userAnswer !== undefined && !r.isCorrect).length;
+                const correctCount = report.filter(r => r.userAnswer !== "Unattempted" && r.isCorrect).length;
+                const incorrectCount = report.filter(r => r.userAnswer !== "Unattempted" && !r.isCorrect).length;
                 const finalScore = (correctCount * 1) - (incorrectCount * (1/3));
 
                 localStorage.setItem('detailedTestReport', JSON.stringify(report));
-                localStorage.setItem('lastTestResult', JSON.stringify({ 
-                    total: finalScore.toFixed(2), 
-                    correct: correctCount, 
-                    incorrect: incorrectCount,
-                    totalQuestions: allQuestions.length
-                }));
+                localStorage.setItem('lastTestResult', JSON.stringify({ total: finalScore.toFixed(2), correct: correctCount, incorrect: incorrectCount, totalQuestions: allQuestions.length }));
 
                 await db.collection("leaderboard").add({
                     name: localStorage.getItem('userName') || "Aspirant",
                     score: parseFloat(finalScore.toFixed(2)),
-                    totalQuestions: allQuestions.length,
                     testId: testId,
                     timestamp: firebase.firestore.FieldValue.serverTimestamp()
                 });
 
                 ['cp_answers', 'cp_reviews', 'cp_visited', 'cp_timer', 'cp_time_spent'].forEach(k => localStorage.removeItem(k));
-                
                 window.onbeforeunload = null;
                 window.location.href = "result.html";
             } catch (err) {
-                console.error(err);
-                alert("Submission failed. Check connection.");
-                btn.innerHTML = 'RETRY SUBMIT';
-                btn.disabled = false;
+                btn.innerHTML = 'RETRY'; btn.disabled = false;
             }
         }
 
-        window.onbeforeunload = () => "Warning: Progress will be lost.";
+        window.onbeforeunload = () => "Progress will be lost!";
         loadTestData();
     </script>
 </body>
