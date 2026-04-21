@@ -102,7 +102,6 @@
     </div>
 
     <script>
-        // --- MathJax Configuration ---
         window.MathJax = {
             tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$']] }
         };
@@ -129,11 +128,8 @@
 
         async function loadTestData() {
             try {
-                // Fetch the active test node name (e.g., mock_test_2)
                 const activeRes = await fetch("https://competition-plus-9996b-default-rtdb.asia-southeast1.firebasedatabase.app/current_active_test.json");
                 const activeNode = await activeRes.json();
-                
-                // Fetch the actual test data
                 const response = await fetch(`https://competition-plus-9996b-default-rtdb.asia-southeast1.firebasedatabase.app/${activeNode}.json`);
                 const data = await response.json();
                 
@@ -145,7 +141,7 @@
                     startTimer();
                     updatePalette();
                 }
-            } catch (e) { alert("Network Error. Please try again."); }
+            } catch (e) { console.error("Load error:", e); alert("Error loading test data."); }
         }
 
         function renderQuestion() {
@@ -155,17 +151,16 @@
             localStorage.setItem('cp_visited', JSON.stringify(visitedList));
 
             document.getElementById("q-number-badge").innerText = `Question ${currentIndex + 1}`;
-            document.getElementById("subject-tag").innerText = q.subjectCategory || q.subject || "GENERAL";
+            document.getElementById("subject-tag").innerText = q.subjectCategory || q.subject || "CIVIL ENGINEERING";
             document.getElementById("question-display").innerHTML = q.questionText || q.Question;
 
             const oDisplay = document.getElementById("options-display");
             oDisplay.innerHTML = "";
-            
             const options = q.options || [q.OptionA, q.OptionB, q.OptionC, q.OptionD];
 
             options.forEach((opt, index) => {
                 const isSelected = studentAnswers[currentIndex] === index;
-                const letter = String.fromCharCode(65 + index); // A, B, C, D
+                const letter = String.fromCharCode(65 + index);
                 const btn = document.createElement("label");
                 btn.className = `flex items-center p-4 border-2 rounded-xl cursor-pointer transition-all ${isSelected ? 'border-blue-600 bg-blue-50' : 'border-slate-100 hover:bg-slate-50'}`;
                 btn.innerHTML = `
@@ -177,7 +172,6 @@
                 oDisplay.appendChild(btn);
             });
 
-            // Trigger MathJax rendering
             if (window.MathJax && MathJax.typesetPromise) {
                 MathJax.typesetPromise();
             }
@@ -195,7 +189,6 @@
         function recordAnswer(index) {
             studentAnswers[currentIndex] = index;
             localStorage.setItem('cp_answers', JSON.stringify(studentAnswers));
-            // Tiny delay to let user see selection before refreshing UI
             setTimeout(renderQuestion, 150); 
         }
 
@@ -272,45 +265,53 @@
 
         async function processSubmit() {
             const btn = document.getElementById('finalSubmitBtn');
-            btn.innerHTML = '<i class="fas fa-spinner animate-spin"></i> SAVING...';
+            btn.innerHTML = '<i class="fas fa-spinner animate-spin"></i> FINALIZING...';
             btn.disabled = true;
 
-            logTime();
-            
-            const report = allQuestions.map((q, i) => {
-                // Handle Correct Answer Index conversion (A=0, B=1...)
-                const letterToIdx = { 'A': 0, 'B': 1, 'C': 2, 'D': 3 };
-                const correctIdx = typeof q.CorrectAnswer === 'string' ? letterToIdx[q.CorrectAnswer] : (q.correctIndex || 0);
-
-                return {
-                    ...q,
-                    userAnswer: studentAnswers[i],
-                    isCorrect: studentAnswers[i] === correctIdx,
-                    timeSpent: timeSpentPerQ[i] || 0
-                };
-            });
-
-            const answeredQs = report.filter(q => q.userAnswer !== undefined);
-            const correct = report.filter(q => q.userAnswer !== undefined && q.isCorrect).length;
-            const incorrect = answeredQs.length - correct;
-            const score = (correct * 1) - (incorrect * 0.33);
-
-            localStorage.setItem('detailedTestReport', JSON.stringify(report));
-            localStorage.setItem('lastTestResult', JSON.stringify({
-                total: score.toFixed(2),
-                correct, incorrect, totalQ: allQuestions.length
-            }));
-
             try {
-                await db.collection("leaderboard").add({
-                    name: localStorage.getItem('userName') || "Madhukar",
-                    score: parseFloat(score.toFixed(2)),
-                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                logTime();
+                const report = allQuestions.map((q, i) => {
+                    const letterToIdx = { 'A': 0, 'B': 1, 'C': 2, 'D': 3 };
+                    const correctIdx = typeof q.CorrectAnswer === 'string' ? letterToIdx[q.CorrectAnswer] : (q.correctIndex || 0);
+                    return {
+                        ...q,
+                        userAnswer: studentAnswers[i],
+                        isCorrect: studentAnswers[i] === correctIdx,
+                        timeSpent: timeSpentPerQ[i] || 0
+                    };
                 });
-            } catch (e) { console.warn("Sync failed."); }
-            
-            ['cp_answers', 'cp_reviews', 'cp_visited', 'cp_timer', 'cp_time_spent'].forEach(k => localStorage.removeItem(k));
-            window.location.href = "result.html";
+
+                const answeredQs = report.filter(q => q.userAnswer !== undefined);
+                const correct = report.filter(q => q.userAnswer !== undefined && q.isCorrect).length;
+                const incorrect = answeredQs.length - correct;
+                const score = (correct * 1) - (incorrect * 0.33);
+
+                // --- KEY CHANGE: Save locally FIRST ---
+                localStorage.setItem('detailedTestReport', JSON.stringify(report));
+                localStorage.setItem('lastTestResult', JSON.stringify({
+                    total: score.toFixed(2),
+                    correct, incorrect, totalQ: allQuestions.length
+                }));
+
+                // Attempt Firebase but don't let it hang the UI
+                try {
+                    await db.collection("leaderboard").add({
+                        name: localStorage.getItem('userName') || "Madhukar",
+                        score: parseFloat(score.toFixed(2)),
+                        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                } catch (fbErr) { console.warn("Cloud sync failed, using local backup."); }
+
+                ['cp_answers', 'cp_reviews', 'cp_visited', 'cp_timer', 'cp_time_spent'].forEach(k => localStorage.removeItem(k));
+                window.onbeforeunload = null; 
+                window.location.href = "result.html";
+
+            } catch (err) {
+                console.error("Submit Error:", err);
+                alert("Critical error during submission. Check console.");
+                btn.innerHTML = "RETRY";
+                btn.disabled = false;
+            }
         }
 
         window.onbeforeunload = function() { return "Progress will be lost!"; };
