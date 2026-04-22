@@ -12,6 +12,18 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']],
+                processEscapes: true
+            },
+            options: {
+                enableMenu: false 
+            }
+        };
+    </script>
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 
     <style>
@@ -21,21 +33,59 @@
         #palette-container::-webkit-scrollbar { width: 4px; }
         #palette-container::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
         .selected-q { box-shadow: 0 0 0 2px white, 0 0 0 4px #1d4ed8 !important; transform: scale(1.05); z-index: 10; }
+
+        /* --- GOOGLE TRANSLATE ULTIMATE FIXES --- */
+        #google_translate_element {
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            min-width: 140px !important;
+        }
+
+        /* Force dropdown styling and visibility */
+        select.goog-te-combo {
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            background-color: #1e293b !important; /* slate-800 */
+            color: #38bdf8 !important; /* blue-400 */
+            border: 1px solid #334155 !important;
+            border-radius: 0.5rem !important;
+            padding: 4px 8px !important;
+            font-size: 12px !important;
+            font-weight: 600 !important;
+            outline: none !important;
+        }
+
+        /* Hide Google Branding & Toolbars */
+        .goog-te-gadget { font-size: 0 !important; color: transparent !important; }
+        .goog-te-gadget img, .goog-logo-link, .goog-te-banner-frame, #goog-gt-tt { display: none !important; }
+        .skiptranslate.goog-te-gadget > span { display: none !important; }
+        body { top: 0px !important; }
     </style>
 </head>
 <body class="bg-slate-100 h-screen flex flex-col overflow-hidden no-select">
 
-    <nav class="bg-slate-900 text-white px-6 py-3 flex justify-between items-center shadow-lg">
-        <div class="flex items-center gap-4">
-            <h1 class="text-xl font-bold border-r border-slate-700 pr-4 uppercase tracking-tight">Competition <span class="text-blue-400">Plus</span></h1>
-            <span id="test-title" class="text-sm text-slate-400 hidden md:inline tracking-widest font-bold">LOADING...</span>
-        </div>
-        <div class="flex items-center gap-6">
-            <div class="flex items-center gap-2 bg-slate-800 px-4 py-1.5 rounded-full border border-slate-700">
-                <i class="fas fa-clock text-blue-400"></i>
-                <span id="timer" class="font-mono text-lg font-bold">00:00:00</span>
+    <nav class="bg-slate-900 text-white px-4 md:px-6 py-3 flex justify-between items-center shadow-lg">
+        <div class="flex items-center gap-3 md:gap-4">
+            <h1 class="text-lg md:text-xl font-bold border-r border-slate-700 pr-4 uppercase tracking-tight">
+                Competition <span class="text-blue-400">Plus</span>
+            </h1>
+            
+            <div class="flex items-center gap-2 bg-slate-800/50 px-2 py-1 rounded-lg border border-slate-700" style="overflow: visible !important;">
+                <i class="fas fa-language text-blue-400 text-lg"></i>
+                <div id="google_translate_element"></div>
             </div>
-            <button onclick="confirmSubmit()" class="bg-red-600 hover:bg-red-700 text-white px-6 py-1.5 rounded-lg font-bold transition text-xs md:text-sm">SUBMIT TEST</button>
+
+            <span id="test-title" class="text-sm text-slate-400 hidden lg:inline tracking-widest font-bold uppercase">LOADING...</span>
+        </div>
+
+        <div class="flex items-center gap-3 md:gap-6">
+            <div class="flex items-center gap-2 bg-slate-800 px-3 md:px-4 py-1.5 rounded-full border border-slate-700">
+                <i class="fas fa-clock text-blue-400"></i>
+                <span id="timer" class="font-mono text-base md:text-lg font-bold">00:00:00</span>
+            </div>
+            <button onclick="confirmSubmit()" class="bg-red-600 hover:bg-red-700 text-white px-4 md:px-6 py-1.5 rounded-lg font-bold transition text-[10px] md:text-sm">SUBMIT</button>
         </div>
     </nav>
 
@@ -98,9 +148,33 @@
         </div>
     </div>
 
-    <script>
-        window.MathJax = { tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] } };
+    <script type="text/javascript">
+        function googleTranslateElementInit() {
+            new google.translate.TranslateElement({
+                pageLanguage: 'en',
+                includedLanguages: 'hi,en',
+                layout: google.translate.TranslateElement.InlineLayout.SIMPLE,
+                autoDisplay: false
+            }, 'google_translate_element');
 
+            // FORCE VISIBILITY LOOP: Handles cases where script loads late or is blocked by local security
+            let attempts = 0;
+            const forceInterval = setInterval(() => {
+                const combo = document.querySelector('.goog-te-combo');
+                if (combo) {
+                    combo.style.setProperty('display', 'block', 'important');
+                    combo.style.setProperty('visibility', 'visible', 'important');
+                    combo.style.setProperty('opacity', '1', 'important');
+                }
+                attempts++;
+                if (attempts > 40) clearInterval(forceInterval); // Stop after 20 seconds
+            }, 500);
+        }
+    </script>
+    <script type="text/javascript" src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+
+    <script>
+        // --- Firebase Configuration ---
         const firebaseConfig = {
             apiKey: "AIzaSyCAl9iSJhwn5IAUCA5LrgPK5FzFZPtWNZo",
             authDomain: "competition-plus-9996b.firebaseapp.com",
@@ -145,7 +219,7 @@
                     localStorage.setItem('cp_timer', timeInSeconds);
                 }
 
-                lastTime = Date.now(); // Initialize timing anchor
+                lastTime = Date.now();
                 renderQuestion();
                 startTimer();
             } catch (e) {
@@ -154,10 +228,6 @@
             }
         }
 
-        /**
-         * Key Fix: logTime() is now only called when NAVIGATING AWAY.
-         * It adds current delta to current question and resets anchor.
-         */
         function logTime() {
             const now = Date.now();
             const diff = Math.floor((now - lastTime) / 1000);
@@ -177,10 +247,13 @@
 
             document.getElementById("q-number-badge").innerText = `Question ${q.questionNo || currentIndex + 1}`;
             document.getElementById("subject-tag").innerText = q.subject || "GENERAL STUDIES";
-            document.getElementById("question-display").innerHTML = q.questionText;
-
+            
+            const qDisplay = document.getElementById("question-display");
             const oDisplay = document.getElementById("options-display");
+            
+            qDisplay.innerHTML = q.questionText;
             oDisplay.innerHTML = "";
+            
             const options = q.options || [];
 
             options.forEach((opt, idx) => {
@@ -198,7 +271,10 @@
                 oDisplay.appendChild(btn);
             });
 
-            if (window.MathJax && MathJax.typesetPromise) MathJax.typesetPromise().catch(err => console.log(err));
+            if (window.MathJax && MathJax.typesetPromise) {
+                MathJax.typesetPromise([qDisplay, oDisplay]).catch(err => console.log('MathJax error:', err));
+            }
+
             updatePalette();
         }
 
@@ -229,10 +305,9 @@
             nextQuestion();
         }
 
-        // Navigation helpers with integrated timing
         function nextQuestion() { 
             if (currentIndex < allQuestions.length - 1) { 
-                logTime(); // Commit time to current question before changing index
+                logTime();
                 currentIndex++; 
                 renderQuestion(); 
             } 
@@ -292,7 +367,7 @@
         function closeModal() { document.getElementById('submitModal').classList.add('hidden'); }
 
         async function processSubmit() {
-            logTime(); // Log final question time
+            logTime(); 
             const btn = document.getElementById('finalSubmitBtn');
             btn.innerHTML = '<i class="fas fa-spinner animate-spin"></i> SYNCING...';
             btn.disabled = true;
