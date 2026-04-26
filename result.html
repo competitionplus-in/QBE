@@ -136,9 +136,24 @@
             </div>
 
             <div class="mb-8 print-hidden">
-                <h3 class="text-2xl font-extrabold text-slate-800 flex items-center gap-2 mb-6">
-                    <i class="fas fa-file-invoice text-blue-600"></i> Solution & Detailed Review
-                </h3>
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+        <h3 class="text-2xl font-extrabold text-slate-800 flex items-center gap-2">
+            <i class="fas fa-file-invoice text-blue-600"></i> Solution & Detailed Review
+        </h3>
+        
+        <div class="flex bg-slate-200 p-1 rounded-xl w-fit">
+            <button onclick="setLanguage('en')" id="lang-en" 
+                class="px-4 py-1.5 rounded-lg text-[11px] font-bold transition-all duration-200 bg-blue-600 text-white shadow-sm">
+                ENGLISH
+            </button>
+            <button onclick="setLanguage('hi')" id="lang-hi" 
+                class="px-4 py-1.5 rounded-lg text-[11px] font-bold transition-all duration-200 text-slate-600 hover:bg-slate-300">
+                हिन्दी
+            </button>
+        </div>
+    </div>
+
+    <div class="flex border-b border-slate-200 overflow-x-auto whitespace-nowrap gap-4" id="tab-nav">
                 <div class="flex border-b border-slate-200 overflow-x-auto whitespace-nowrap gap-4" id="tab-nav">
                     <button onclick="filterResults('all')" id="btn-all" class="px-4 py-3 text-sm font-bold tab-active">All Questions</button>
                     <button onclick="filterResults('correct')" id="btn-correct" class="px-4 py-3 text-sm font-bold text-slate-500">Correct</button>
@@ -155,144 +170,110 @@
     </main>
 
     <script>
-        let fullReport = [];
+        **Add these variables and functions inside your `<script>` tag:**
 
-        window.onload = function() {
-            const resultData = JSON.parse(localStorage.getItem('lastTestResult'));
-            fullReport = JSON.parse(localStorage.getItem('detailedTestReport'));
-            const userName = localStorage.getItem('userName') || "Aspirant";
+```javascript
+let fullReport = [];
+let currentLanguage = 'en'; // Global tracker for language
 
-            if (!resultData || !fullReport) {
-                document.getElementById('content-area').classList.add('hidden');
-                document.getElementById('loading-state').classList.remove('hidden');
-                return;
-            }
+// Function to handle switching and UI updates
+function setLanguage(lang) {
+    currentLanguage = lang;
+    
+    const btnEn = document.getElementById('lang-en');
+    const btnHi = document.getElementById('lang-hi');
+    
+    const active = "bg-blue-600 text-white shadow-sm";
+    const inactive = "text-slate-600 hover:bg-slate-300";
 
-            document.getElementById('test-title-display').innerText = resultData.testName || "Performance Report";
-            document.getElementById('user-name-display').innerText = userName;
+    if(lang === 'en') {
+        btnEn.className = `px-4 py-1.5 rounded-lg text-[11px] font-bold transition-all duration-200 ${active}`;
+        btnHi.className = `px-4 py-1.5 rounded-lg text-[11px] font-bold transition-all duration-200 ${inactive}`;
+    } else {
+        btnEn.className = `px-4 py-1.5 rounded-lg text-[11px] font-bold transition-all duration-200 ${inactive}`;
+        btnHi.className = `px-4 py-1.5 rounded-lg text-[11px] font-bold transition-all duration-200 ${active}`;
+    }
 
-            // Calculations
-            const totalScore = parseFloat(resultData.total) || 0;
-            const totalQ = resultData.totalQuestions || fullReport.length;
-            const attempted = resultData.correct + resultData.incorrect;
-            const accuracy = attempted > 0 ? Math.round((resultData.correct / attempted) * 100) : 0;
-            const totalSeconds = fullReport.reduce((acc, curr) => acc + (parseInt(curr.timeSpent) || 0), 0);
-            const avgTime = attempted > 0 ? (totalSeconds / attempted).toFixed(1) : 0;
+    // Identify which tab is currently active to maintain the filter
+    const activeTab = document.querySelector('.tab-active').id.replace('btn-', '');
+    filterResults(activeTab);
+}
 
-            // UI Updates
-            const perc = Math.max(0, (totalScore / totalQ) * 100);
-            document.getElementById('score-circle-element').style.setProperty('--perc', `${(perc / 100) * 360}deg`);
-            document.getElementById('display-final-score').innerText = totalScore.toFixed(2);
-            document.getElementById('display-out-of').innerText = `Out of ${totalQ}`;
-            document.getElementById('display-accuracy').innerText = accuracy + "%";
-            document.getElementById('display-attempted-count').innerText = attempted;
-            document.getElementById('display-avg-time').innerText = avgTime + "s";
+// Modify your filterResults function to look like this:
+function filterResults(type) {
+    const container = document.getElementById('review-container');
+    container.innerHTML = "";
+    
+    document.querySelectorAll('#tab-nav button').forEach(b => b.classList.remove('tab-active', 'text-slate-500'));
+    const activeBtn = document.getElementById(`btn-${type}`);
+    if(activeBtn) activeBtn.classList.add('tab-active');
 
-            const pTitle = document.getElementById('performance-title');
-            if(perc >= 75) pTitle.innerHTML = `<span class="text-green-600">Exceptional Merit Grade! 🏆</span>`;
-            else if(perc >= 40) pTitle.innerHTML = `<span class="text-blue-600">Qualified for Next Stage. 👍</span>`;
-            else pTitle.innerHTML = `<span class="text-red-500">Keep Grinding! 📚</span>`;
+    let displayList = [...fullReport];
+    if (type === 'time') displayList.sort((a, b) => (b.timeSpent || 0) - (a.timeSpent || 0));
 
-            // Subject Analysis with Strength/Weakness Logic
-            const subjectStats = {};
-            fullReport.forEach(q => {
-                const sub = q.subject || "GENERAL STUDIES";
-                if(!subjectStats[sub]) subjectStats[sub] = { correct: 0, total: 0 };
-                subjectStats[sub].total++;
-                if(q.isCorrect) subjectStats[sub].correct++;
-            });
-
-            const subContainer = document.getElementById('subject-analysis-container');
-            subContainer.innerHTML = "";
-            Object.keys(subjectStats).forEach(sub => {
-                const subPerc = Math.round((subjectStats[sub].correct / subjectStats[sub].total) * 100);
-                let statusTag = subPerc < 40 ? '🔴 Needs Focus' : (subPerc > 80 ? '🟢 Strong' : '🟡 Average');
-                
-                subContainer.innerHTML += `
-                    <div class="space-y-1 mb-2">
-                        <div class="flex justify-between text-xs font-bold uppercase">
-                            <span class="text-slate-500">${sub} <span class="ml-2 text-[9px] opacity-70">${statusTag}</span></span>
-                            <span class="text-slate-900">${subPerc}%</span>
-                        </div>
-                        <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                            <div class="bg-blue-600 h-full transition-all duration-1000" style="width: ${subPerc}%"></div>
-                        </div>
-                    </div>`;
-            });
-
-            const sortedByTime = [...fullReport].sort((a, b) => (b.timeSpent || 0) - (a.timeSpent || 0)).slice(0, 3);
-            const timeBox = document.getElementById('top-time-consumers');
-            timeBox.innerHTML = "";
-            sortedByTime.forEach(q => {
-                const qIdx = fullReport.findIndex(item => item.question === q.question) + 1;
-                timeBox.innerHTML += `
-                    <div class="flex justify-between items-center bg-slate-800/50 p-2 rounded-lg border border-slate-700 text-xs">
-                        <span class="text-slate-400 font-bold uppercase">Q. No ${qIdx}</span>
-                        <span class="text-blue-400 font-mono font-bold">${q.timeSpent || 0}s</span>
-                    </div>`;
-            });
-
-            filterResults('all');
-        };
-
-        function filterResults(type) {
-            const container = document.getElementById('review-container');
-            container.innerHTML = "";
-            
-            document.querySelectorAll('#tab-nav button').forEach(b => b.classList.remove('tab-active', 'text-slate-500'));
-            const activeBtn = document.getElementById(`btn-${type}`);
-            if(activeBtn) activeBtn.classList.add('tab-active');
-
-            let displayList = [...fullReport];
-            if (type === 'time') displayList.sort((a, b) => (b.timeSpent || 0) - (a.timeSpent || 0));
-
-            displayList.forEach((q) => {
-                const originalIndex = fullReport.findIndex(item => item.question === q.question);
-                const isSkipped = q.userAnswer === "Not Attempted" || !q.userAnswer;
-                
-                if (type === 'correct' && !q.isCorrect) return;
-                if (type === 'incorrect' && (q.isCorrect || isSkipped)) return;
-                if (type === 'skipped' && !isSkipped) return;
-
-                const statusColor = q.isCorrect ? 'border-green-100' : (isSkipped ? 'border-slate-100' : 'border-red-100');
-                const timeHighlight = type === 'time' ? 'bg-amber-50 ring-2 ring-amber-200' : '';
-                
-                // Status Icon Logic
-                const statusIcon = q.isCorrect ? 'fa-check-circle text-green-500' : 
-                                  (isSkipped ? 'fa-minus-circle text-slate-300' : 'fa-times-circle text-red-500');
-
-                const card = `
-                    <div class="p-6 rounded-3xl border-2 bg-white ${statusColor} ${timeHighlight} shadow-sm transition-all">
-                        <div class="flex justify-between items-start mb-4">
-                            <div class="flex items-center gap-2">
-                                <i class="fas ${statusIcon}"></i>
-                                <span class="bg-slate-100 text-slate-500 px-3 py-1 rounded-lg text-[10px] font-bold uppercase">Question ${originalIndex + 1}</span>
-                                <span class="${(q.timeSpent > 60) ? 'text-red-500 font-bold' : 'text-slate-400'} text-[10px]">
-                                    <i class="far fa-clock"></i> ${q.timeSpent || 0}s
-                                </span>
-                            </div>
-                            <div class="text-xs font-bold">
-                                ${q.isCorrect ? '<span class="text-green-600">+1.00</span>' : (isSkipped ? '<span class="text-slate-400">0.00</span>' : '<span class="text-red-500">-0.33</span>')}
-                            </div>
-                        </div>
-                        <div class="font-semibold text-slate-800 mb-6 leading-relaxed">${q.question}</div>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div class="p-4 rounded-2xl border text-sm ${q.isCorrect ? 'bg-green-50 border-green-200 text-green-700' : (isSkipped ? 'bg-slate-50 border-slate-200 text-slate-500' : 'bg-red-50 border-red-200 text-red-700')}">
-                                <span class="font-bold uppercase text-[9px] block opacity-60 mb-1">Your Selection</span>
-                                <span class="font-bold">${q.userAnswer || 'Not Attempted'}</span>
-                            </div>
-                            <div class="p-4 rounded-2xl border border-green-200 bg-green-50 text-green-700 text-sm">
-                                <span class="font-bold uppercase text-[9px] block opacity-60 mb-1">Correct Answer</span>
-                                <span class="font-bold">${q.correctAnswer}</span>
-                            </div>
-                        </div>
-                        ${q.explanation ? `<div class="mt-4 p-5 bg-blue-50/50 rounded-2xl border border-blue-100 text-xs text-blue-800 leading-relaxed"><span class="text-[10px] font-bold text-blue-600 uppercase block mb-1">Solution Explanation</span>${q.explanation}</div>` : ''}
-                    </div>`;
-                container.innerHTML += card;
-            });
-
-            if (window.MathJax && MathJax.typesetPromise) MathJax.typesetPromise();
+    displayList.forEach((item) => {
+        const originalIndex = fullReport.findIndex(r => r === item);
+        
+        // 1. SELECT DATA BASED ON LANGUAGE
+        // Checks if 'pair' exists, then checks hi/en. Fallback to item level if pair is missing.
+        let qData;
+        if(item.pair) {
+            qData = (currentLanguage === 'hi' && item.pair.hi) ? item.pair.hi : item.pair.en;
+            // Fallback if one language is missing within the pair
+            if(!qData) qData = item.pair.en || item.pair.hi;
+        } else {
+            qData = item; // Legacy support
         }
+
+        const isSkipped = item.userAnswer === "Not Attempted" || !item.userAnswer;
+        
+        if (type === 'correct' && !item.isCorrect) return;
+        if (type === 'incorrect' && (item.isCorrect || isSkipped)) return;
+        if (type === 'skipped' && !isSkipped) return;
+
+        const statusColor = item.isCorrect ? 'border-green-100' : (isSkipped ? 'border-slate-100' : 'border-red-100');
+        const statusIcon = item.isCorrect ? 'fa-check-circle text-green-500' : 
+                          (isSkipped ? 'fa-minus-circle text-slate-300' : 'fa-times-circle text-red-500');
+
+        // Note: userSelectedIndex should be used to map to the translated options
+        const userIdx = item.userSelectedIndex; // Assuming this was saved in test-screen
+        const correctIdx = parseInt(qData.correct);
+
+        const card = `
+            <div class="p-6 rounded-3xl border-2 bg-white ${statusColor} shadow-sm mb-6">
+                <div class="flex justify-between items-start mb-4">
+                    <div class="flex items-center gap-2">
+                        <i class="fas ${statusIcon}"></i>
+                        <span class="bg-slate-100 text-slate-500 px-3 py-1 rounded-lg text-[10px] font-bold uppercase">Question ${originalIndex + 1}</span>
+                        <span class="text-slate-400 text-[10px]"><i class="far fa-clock"></i> ${item.timeSpent || 0}s</span>
+                    </div>
+                </div>
+
+                <div class="font-semibold text-slate-800 mb-6 leading-relaxed">${qData.questionText || qData.question}</div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="p-4 rounded-2xl border text-sm ${item.isCorrect ? 'bg-green-50 border-green-200 text-green-700' : (isSkipped ? 'bg-slate-50 border-slate-200 text-slate-500' : 'bg-red-50 border-red-200 text-red-700')}">
+                        <span class="font-bold uppercase text-[9px] block opacity-60 mb-1">Your Selection</span>
+                        <span class="font-bold">${(userIdx !== null && qData.options) ? qData.options[userIdx] : (item.userAnswer || 'Not Attempted')}</span>
+                    </div>
+                    <div class="p-4 rounded-2xl border border-green-200 bg-green-50 text-green-700 text-sm">
+                        <span class="font-bold uppercase text-[9px] block opacity-60 mb-1">Correct Answer</span>
+                        <span class="font-bold">${qData.options ? qData.options[correctIdx] : (qData.correctAnswer || item.correctAnswer)}</span>
+                    </div>
+                </div>
+
+                ${qData.explanation ? `
+                    <div class="mt-4 p-5 bg-blue-50/50 rounded-2xl border border-blue-100 text-xs text-blue-800 leading-relaxed">
+                        <span class="text-[10px] font-bold text-blue-600 uppercase block mb-1">Solution Explanation</span>
+                        ${qData.explanation}
+                    </div>` : ''}
+            </div>`;
+        
+        container.innerHTML += card;
+    });
+
+    if (window.MathJax && MathJax.typesetPromise) MathJax.typesetPromise();
+}
 
         async function handleGeneralShare(event) {
             const score = document.getElementById('display-final-score').innerText;
