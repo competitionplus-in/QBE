@@ -337,6 +337,14 @@
                 });
 
                 allQuestions = Object.values(grouped);
+                window.timeSpentPerQuestion = JSON.parse(localStorage.getItem('cp_time_spent')) || new Array(allQuestions.length).fill(0);
+        setInterval(() => {
+            if (timerRunning && allQuestions.length > 0) {
+                window.timeSpentPerQuestion[currentIndex]++;
+                localStorage.setItem('cp_time_spent', JSON.stringify(window.timeSpentPerQuestion));
+            }
+        }, 1000);
+                
                 renderQuestion();
                 startTimer();
                 updatePalette();
@@ -557,54 +565,48 @@
         }
 
         function finalSubmit() {
-    // 1. Map through allQuestions to build the final report
     const detailedReport = allQuestions.map((pair, index) => {
-        // Use your global studentAnswers variable (the { index: choice } object)
         const userIdx = studentAnswers[index]; 
+        const q = pair.en || pair.hi;
         
-        // Use English as the primary reference for correctness logic
-        const q = pair.en || pair.hi; 
-        const correctIdx = parseInt(q.correct);
+        // FIX: Your Firebase uses 'correctIndex'. If that's missing, it checks 'correct'.
+        const correctIdx = q.hasOwnProperty('correctIndex') ? parseInt(q.correctIndex) : parseInt(q.correct);
         
-        // Determine status
-        const isCorrect = (userIdx !== undefined && userIdx !== null) && (parseInt(userIdx) === correctIdx);
-        const isSkipped = (userIdx === undefined || userIdx === null);
+        const isAnswered = (userIdx !== undefined && userIdx !== null);
+        const isCorrect = isAnswered && (parseInt(userIdx) === correctIdx);
 
         return {
-            pair: pair, // Saves both languages
-            userSelectedIndex: !isSkipped ? parseInt(userIdx) : null,
+            pair: pair, 
+            userSelectedIndex: isAnswered ? parseInt(userIdx) : null,
             isCorrect: isCorrect,
             subject: q.subject || "General",
-            // If you aren't tracking per-question time yet, we set 0
-            timeSpent: (typeof timeSpentPerQuestion !== 'undefined') ? timeSpentPerQuestion[index] : 0
+            // Pulls from the time tracker we'll add to loadTestData
+            timeSpent: (window.timeSpentPerQuestion) ? window.timeSpentPerQuestion[index] : 0
         };
     });
+            
 
-    // 2. Calculate Totals
     const correctCount = detailedReport.filter(item => item.isCorrect).length;
     const attemptedCount = detailedReport.filter(item => item.userSelectedIndex !== null).length;
     const incorrectCount = attemptedCount - correctCount;
-    const finalScore = correctCount - (incorrectCount * 0.33);
+    
+    // Rajasthan Exam Style: 1/3 Negative Marking
+    const finalScore = correctCount - (incorrectCount * 0.333);
 
-    // 3. Create the Summary Object result.html is looking for
     const summaryResult = {
-        testName: document.getElementById('test-title-display')?.innerText || "Test Report",
+        testName: document.getElementById('test-title-display')?.innerText || "Competition Plus Test",
         totalQuestions: allQuestions.length,
         correct: correctCount,
         incorrect: incorrectCount,
-        total: finalScore,
-        testId: testId
+        total: parseFloat(finalScore.toFixed(2)) // Rounding to 2 decimal places
     };
 
-    // 4. Save to LocalStorage
     localStorage.setItem('detailedTestReport', JSON.stringify(detailedReport));
     localStorage.setItem('lastTestResult', JSON.stringify(summaryResult));
 
-    // 5. Cleanup Firebase/Local progress keys
     const keysToRemove = ['cp_answers', 'cp_reviews', 'cp_visited', 'cp_timer'];
     keysToRemove.forEach(key => localStorage.removeItem(key));
 
-    // 6. Go to results
     window.location.href = "result.html";
 }
 
