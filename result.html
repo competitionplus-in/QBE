@@ -170,19 +170,92 @@
     </main>
 
     <script>
-        **Add these variables and functions inside your `<script>` tag:**
-
-```javascript
+       // Global State
 let fullReport = [];
-let currentLanguage = 'en'; // Global tracker for language
+let currentLanguage = 'en';
 
-// Function to handle switching and UI updates
+window.onload = function() {
+    const reportData = localStorage.getItem('detailedTestReport');
+    const summaryData = localStorage.getItem('lastTestResult');
+
+    if (!reportData || !summaryData) {
+        document.getElementById('loading-state').classList.remove('hidden');
+        document.getElementById('content-area').classList.add('hidden');
+        return;
+    }
+
+    fullReport = JSON.parse(reportData);
+    const summary = JSON.parse(summaryData);
+
+    // 1. Update Basic UI
+    document.getElementById('test-title-display').innerText = summary.testName || "Performance Report";
+    document.getElementById('display-final-score').innerText = summary.total.toFixed(2);
+    document.getElementById('display-out-of').innerText = `Out of ${summary.totalQuestions}`;
+    document.getElementById('display-attempted-count').innerText = (summary.correct + summary.incorrect);
+    
+    const totalAttempted = summary.correct + summary.incorrect;
+    const accuracy = totalAttempted > 0 ? ((summary.correct / totalAttempted) * 100).toFixed(1) : 0;
+    document.getElementById('display-accuracy').innerText = accuracy + "%";
+
+    // 2. Set Circle Percentage
+    const perc = (summary.total / summary.totalQuestions) * 360;
+    document.getElementById('score-circle-element').style.setProperty('--perc', `${perc}deg`);
+
+    // 3. Set Performance Message
+    const perfTitle = document.getElementById('performance-title');
+    if (accuracy >= 80) perfTitle.innerText = "Excellent Work! 🚀";
+    else if (accuracy >= 60) perfTitle.innerText = "Good Job! Keep Pushing. 👍";
+    else perfTitle.innerText = "Needs More Practice. 📚";
+
+    renderSubjectAnalysis();
+    renderTimeConsumers();
+    filterResults('all');
+};
+
+function renderSubjectAnalysis() {
+    const subjects = {};
+    let totalTime = 0;
+
+    fullReport.forEach(item => {
+        const sub = item.subject || "General";
+        if (!subjects[sub]) subjects[sub] = { correct: 0, total: 0 };
+        subjects[sub].total++;
+        if (item.isCorrect) subjects[sub].correct++;
+        totalTime += (item.timeSpent || 0);
+    });
+
+    const avgTime = fullReport.length > 0 ? Math.round(totalTime / fullReport.length) : 0;
+    document.getElementById('display-avg-time').innerText = avgTime + "s";
+
+    const container = document.getElementById('subject-analysis-container');
+    container.innerHTML = Object.entries(subjects).map(([name, data]) => `
+        <div class="space-y-1">
+            <div class="flex justify-between text-[11px] font-bold uppercase tracking-wide">
+                <span class="text-slate-600">${name}</span>
+                <span class="${(data.correct/data.total) > 0.6 ? 'text-green-600' : 'text-amber-600'}">${data.correct}/${data.total}</span>
+            </div>
+            <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                <div class="bg-blue-600 h-full transition-all duration-1000" style="width: ${(data.correct/data.total)*100}%"></div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function renderTimeConsumers() {
+    const sorted = [...fullReport].sort((a, b) => (b.timeSpent || 0) - (a.timeSpent || 0)).slice(0, 3);
+    const container = document.getElementById('top-time-consumers');
+    container.innerHTML = sorted.map((item, i) => `
+        <div class="flex justify-between items-center bg-white/5 p-2 rounded-lg border border-white/10 text-xs">
+            <span class="text-slate-300">Q. ${fullReport.findIndex(r => r === item) + 1}</span>
+            <span class="font-mono text-blue-400 font-bold">${item.timeSpent || 0} Sec</span>
+        </div>
+    `).join('');
+}
+
 function setLanguage(lang) {
     currentLanguage = lang;
-    
     const btnEn = document.getElementById('lang-en');
     const btnHi = document.getElementById('lang-hi');
-    
     const active = "bg-blue-600 text-white shadow-sm";
     const inactive = "text-slate-600 hover:bg-slate-300";
 
@@ -193,54 +266,39 @@ function setLanguage(lang) {
         btnEn.className = `px-4 py-1.5 rounded-lg text-[11px] font-bold transition-all duration-200 ${inactive}`;
         btnHi.className = `px-4 py-1.5 rounded-lg text-[11px] font-bold transition-all duration-200 ${active}`;
     }
-
-    // Identify which tab is currently active to maintain the filter
-    const activeTab = document.querySelector('.tab-active').id.replace('btn-', '');
+    const activeTab = document.querySelector('.tab-active')?.id.replace('btn-', '') || 'all';
     filterResults(activeTab);
 }
 
-// Modify your filterResults function to look like this:
 function filterResults(type) {
     const container = document.getElementById('review-container');
     container.innerHTML = "";
     
     document.querySelectorAll('#tab-nav button').forEach(b => b.classList.remove('tab-active', 'text-slate-500'));
-    const activeBtn = document.getElementById(`btn-${type}`);
-    if(activeBtn) activeBtn.classList.add('tab-active');
+    document.getElementById(`btn-${type}`)?.classList.add('tab-active');
 
     let displayList = [...fullReport];
     if (type === 'time') displayList.sort((a, b) => (b.timeSpent || 0) - (a.timeSpent || 0));
 
     displayList.forEach((item) => {
         const originalIndex = fullReport.findIndex(r => r === item);
-        
-        // 1. SELECT DATA BASED ON LANGUAGE
-        // Checks if 'pair' exists, then checks hi/en. Fallback to item level if pair is missing.
-        let qData;
-        if(item.pair) {
-            qData = (currentLanguage === 'hi' && item.pair.hi) ? item.pair.hi : item.pair.en;
-            // Fallback if one language is missing within the pair
-            if(!qData) qData = item.pair.en || item.pair.hi;
-        } else {
-            qData = item; // Legacy support
-        }
+        let qData = (item.pair) ? ((currentLanguage === 'hi' && item.pair.hi) ? item.pair.hi : item.pair.en) : item;
+        if(!qData) qData = item.pair?.en || item.pair?.hi || item;
 
-        const isSkipped = item.userAnswer === "Not Attempted" || !item.userAnswer;
+        const isSkipped = item.userSelectedIndex === null || item.userSelectedIndex === undefined;
         
         if (type === 'correct' && !item.isCorrect) return;
         if (type === 'incorrect' && (item.isCorrect || isSkipped)) return;
         if (type === 'skipped' && !isSkipped) return;
 
-        const statusColor = item.isCorrect ? 'border-green-100' : (isSkipped ? 'border-slate-100' : 'border-red-100');
-        const statusIcon = item.isCorrect ? 'fa-check-circle text-green-500' : 
-                          (isSkipped ? 'fa-minus-circle text-slate-300' : 'fa-times-circle text-red-500');
+        const statusColor = item.isCorrect ? 'border-green-100 bg-white' : (isSkipped ? 'border-slate-100 bg-slate-50/50' : 'border-red-100 bg-white');
+        const statusIcon = item.isCorrect ? 'fa-check-circle text-green-500' : (isSkipped ? 'fa-minus-circle text-slate-300' : 'fa-times-circle text-red-500');
 
-        // Note: userSelectedIndex should be used to map to the translated options
-        const userIdx = item.userSelectedIndex; // Assuming this was saved in test-screen
-        const correctIdx = parseInt(qData.correct);
+        const userIdx = item.userSelectedIndex;
+        const correctIdx = qData.hasOwnProperty('correctIndex') ? parseInt(qData.correctIndex) : parseInt(qData.correct);
 
-        const card = `
-            <div class="p-6 rounded-3xl border-2 bg-white ${statusColor} shadow-sm mb-6">
+        container.innerHTML += `
+            <div class="p-6 rounded-3xl border-2 ${statusColor} shadow-sm mb-6 transition-all duration-300">
                 <div class="flex justify-between items-start mb-4">
                     <div class="flex items-center gap-2">
                         <i class="fas ${statusIcon}"></i>
@@ -248,53 +306,41 @@ function filterResults(type) {
                         <span class="text-slate-400 text-[10px]"><i class="far fa-clock"></i> ${item.timeSpent || 0}s</span>
                     </div>
                 </div>
-
                 <div class="font-semibold text-slate-800 mb-6 leading-relaxed">${qData.questionText || qData.question}</div>
-                
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div class="p-4 rounded-2xl border text-sm ${item.isCorrect ? 'bg-green-50 border-green-200 text-green-700' : (isSkipped ? 'bg-slate-50 border-slate-200 text-slate-500' : 'bg-red-50 border-red-200 text-red-700')}">
                         <span class="font-bold uppercase text-[9px] block opacity-60 mb-1">Your Selection</span>
-                        <span class="font-bold">${(userIdx !== null && qData.options) ? qData.options[userIdx] : (item.userAnswer || 'Not Attempted')}</span>
+                        <span class="font-bold">${(userIdx !== null && qData.options) ? qData.options[userIdx] : 'Not Attempted'}</span>
                     </div>
                     <div class="p-4 rounded-2xl border border-green-200 bg-green-50 text-green-700 text-sm">
                         <span class="font-bold uppercase text-[9px] block opacity-60 mb-1">Correct Answer</span>
-                        <span class="font-bold">${qData.options ? qData.options[correctIdx] : (qData.correctAnswer || item.correctAnswer)}</span>
+                        <span class="font-bold">${qData.options ? qData.options[correctIdx] : 'N/A'}</span>
                     </div>
                 </div>
-
-                ${qData.explanation ? `
-                    <div class="mt-4 p-5 bg-blue-50/50 rounded-2xl border border-blue-100 text-xs text-blue-800 leading-relaxed">
-                        <span class="text-[10px] font-bold text-blue-600 uppercase block mb-1">Solution Explanation</span>
-                        ${qData.explanation}
-                    </div>` : ''}
+                ${qData.explanation ? `<div class="mt-4 p-5 bg-blue-50/30 rounded-2xl border border-blue-100 text-[13px] text-slate-700">${qData.explanation}</div>` : ''}
             </div>`;
-        
-        container.innerHTML += card;
     });
-
-    if (window.MathJax && MathJax.typesetPromise) MathJax.typesetPromise();
+    if (window.MathJax) MathJax.typesetPromise();
 }
 
-        async function handleGeneralShare(event) {
-            const score = document.getElementById('display-final-score').innerText;
-            const testName = document.getElementById('test-title-display').innerText;
-            const shareData = {
-                title: 'Test Result | Competition Plus',
-                text: `🎯 I scored ${score} in "${testName}" on Competition Plus!`,
-                url: window.location.href
-            };
-
-            try {
-                if (navigator.share) await navigator.share(shareData);
-                else {
-                    await navigator.clipboard.writeText(`${shareData.text}\n${shareData.url}`);
-                    const btn = event.currentTarget;
-                    const oldText = btn.innerHTML;
-                    btn.innerHTML = '<i class="fas fa-check"></i> COPIED';
-                    setTimeout(() => btn.innerHTML = oldText, 2000);
-                }
-            } catch (err) { console.error(err); }
+async function handleGeneralShare(event) {
+    const score = document.getElementById('display-final-score').innerText;
+    const testName = document.getElementById('test-title-display').innerText;
+    const shareData = {
+        title: 'Test Result | Competition Plus',
+        text: `🎯 I scored ${score} in "${testName}" on Competition Plus!`,
+        url: window.location.href
+    };
+    try {
+        if (navigator.share) await navigator.share(shareData);
+        else {
+            await navigator.clipboard.writeText(`${shareData.text}\n${shareData.url}`);
+            const btn = event.currentTarget;
+            btn.innerHTML = '<i class="fas fa-check"></i> COPIED';
+            setTimeout(() => btn.innerHTML = '<i class="fas fa-share-nodes"></i> SHARE', 2000);
         }
+    } catch (err) { console.error(err); }
+}
     </script>
 </body>
 </html>
