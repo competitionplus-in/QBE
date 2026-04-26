@@ -36,6 +36,7 @@
             .rounded-3xl { border-radius: 1rem; border: 1px solid #e2e8f0; }
             #tab-nav { display: none !important; }
             .score-circle { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            #review-container > div { break-inside: avoid; page-break-inside: avoid; margin-bottom: 20px; }
         }
     </style>
 </head>
@@ -152,14 +153,21 @@
         let fullReport = [];
         const NEGATIVE_MARK_FACTOR = 0.33;
 
-        // Enhanced Math Cleaner for RTDB $Delimiters and backslashes
+        const subjectIcons = {
+            "CIVIL ENGINEERING": "fa-trowel-bricks",
+            "RAJASTHAN GK": "fa-fort-awesome",
+            "GENERAL STUDIES": "fa-book-open-reader",
+            "MATHEMATICS": "fa-calculator",
+            "HINDI": "fa-language"
+        };
+
         function cleanMath(str) {
             if (!str || str === "undefined" || str === "N/A") return "";
             try {
                 return str
-                    .replace(/\$(.*?)\$/g, '\\($1\\)') // Convert $math$ to \(math\)
-                    .replace(/\\{2,}/g, '\\')          // Fix double backslashes
-                    .replace(/₹/g, '<span>₹</span>')   // Protect Rupee symbol
+                    .replace(/\$(.*?)\$/g, '\\($1\\)') 
+                    .replace(/\\{2,}/g, '\\')          
+                    .replace(/₹/g, '\\text{₹}')       
                     .trim();
             } catch (e) { return str; }
         }
@@ -172,7 +180,6 @@
             let resultData = JSON.parse(localStorage.getItem('lastTestResult'));
             fullReport = JSON.parse(localStorage.getItem('detailedTestReport'));
             
-            // RECOVERY: If main result object is missing, build it from the report
             if (!resultData && localStorage.getItem('lastScore')) {
                 const score = parseFloat(localStorage.getItem('lastScore')) || 0;
                 let c = 0, inc = 0;
@@ -198,7 +205,6 @@
                 return;
             }
 
-            // Populate UI Stats
             document.getElementById('test-title-display').innerText = resultData.testName;
             document.getElementById('user-name-display').innerText = localStorage.getItem('userName') || "Aspirant";
             document.getElementById('display-final-score').innerText = resultData.total.toFixed(2);
@@ -223,7 +229,6 @@
             else if(perc >= 40) pTitle.innerHTML = `<span class="text-blue-600">Qualified for Next Stage. 👍</span>`;
             else pTitle.innerHTML = `<span class="text-red-500">Keep Grinding! 📚</span>`;
 
-            // Subject Wise Analysis
             const subjectStats = {};
             fullReport.forEach(q => {
                 const sub = q.subject || "GENERAL STUDIES";
@@ -236,10 +241,11 @@
             subContainer.innerHTML = "";
             Object.keys(subjectStats).forEach(sub => {
                 const subPerc = Math.round((subjectStats[sub].correct / subjectStats[sub].total) * 100);
+                const icon = subjectIcons[sub.toUpperCase()] || 'fa-chart-pie';
                 subContainer.innerHTML += `
                     <div class="mb-3">
                         <div class="flex justify-between text-[10px] font-bold uppercase mb-1">
-                            <span class="text-slate-500">${sub}</span>
+                            <span class="text-slate-500 flex items-center gap-1"><i class="fas ${icon} text-blue-400"></i> ${sub}</span>
                             <span class="text-slate-900">${subPerc}%</span>
                         </div>
                         <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
@@ -248,7 +254,6 @@
                     </div>`;
             });
 
-            // Time Consumers
             const sortedByTime = [...fullReport].sort((a, b) => (b.timeSpent || 0) - (a.timeSpent || 0)).slice(0, 3);
             const timeBox = document.getElementById('top-time-consumers');
             timeBox.innerHTML = "";
@@ -286,6 +291,12 @@
                 const statusColor = q.isCorrect ? 'border-green-100' : (isSkipped ? 'border-slate-100' : 'border-red-100');
                 const statusIcon = q.isCorrect ? 'fa-check-circle text-green-500' : (isSkipped ? 'fa-minus-circle text-slate-300' : 'fa-times-circle text-red-500');
 
+                // Logic Refinement: Map index to text if necessary
+                let correctAnsText = q.correctAnswer;
+                if (typeof q.correctAnswer === 'number' && q.options) {
+                    correctAnsText = q.options[q.correctAnswer];
+                }
+
                 const card = `
                     <div class="p-6 rounded-3xl border-2 bg-white ${statusColor} shadow-sm">
                         <div class="flex justify-between items-start mb-4">
@@ -306,7 +317,7 @@
                             </div>
                             <div class="p-4 rounded-2xl border border-green-200 bg-green-50 text-green-700 text-sm">
                                 <span class="font-bold uppercase text-[9px] block opacity-60 mb-1">Correct Answer</span>
-                                <span class="font-bold">${formatDisplay(q.correctAnswer)}</span>
+                                <span class="font-bold">${formatDisplay(correctAnsText)}</span>
                             </div>
                         </div>
                         ${q.explanation ? `<div class="mt-4 p-5 bg-blue-50/50 rounded-2xl border border-blue-100 text-xs text-blue-800"><span class="text-[10px] font-bold text-blue-600 uppercase block mb-1">Solution Explanation</span>${formatDisplay(q.explanation)}</div>` : ''}
@@ -314,7 +325,6 @@
                 container.innerHTML += card;
             });
 
-            // Refresh MathJax rendering
             if (window.MathJax && MathJax.typesetPromise) {
                 setTimeout(() => {
                     MathJax.typesetPromise([container]).catch(err => console.log(err));
