@@ -557,40 +557,35 @@
         }
 
         function finalSubmit() {
-        // 1. Prepare the detailed report array for result.html
-        const detailedReport = allQuestions.map((pair, index) => {
-            // Use English as the primary data source for the report, fallback to Hindi
-            const q = pair.en || pair.hi; 
-            
-            const userIdx = studentAnswers[index];
-            const correctIdx = parseInt(q.correct); // Ensure it's a number
+    // 1. Prepare the detailed report saving BOTH languages
+    const detailedReport = allQuestions.map((pair, index) => {
+        const userIdx = studentAnswers[index];
+        
+        return {
+            pair: pair, // This contains { en: {...}, hi: {...} }
+            userSelectedIndex: userIdx !== undefined ? userIdx : null,
+            subject: (pair.en || pair.hi).subject || "General"
+        };
+    });
 
-            return {
-                question: q.questionText,
-                options: q.options || [], // CRITICAL: This is what was missing
-                userAnswer: userIdx !== undefined ? q.options[userIdx] : null,
-                correctAnswer: q.options[correctIdx],
-                explanation: q.explanation || "No explanation provided.",
-                isCorrect: userIdx === correctIdx,
-                subject: q.subject || "General"
-            };
-        });
+    // 2. Save to LocalStorage
+    localStorage.setItem('detailedTestReport', JSON.stringify(detailedReport));
+    localStorage.setItem('lastTestId', testId);
 
-        // 2. Save to LocalStorage for the Result Page to pick up
-        localStorage.setItem('detailedTestReport', JSON.stringify(detailedReport));
-        localStorage.setItem('lastTestId', testId);
+    // 3. Calculate basic score
+    const score = detailedReport.filter(item => {
+        const q = item.pair.en || item.pair.hi;
+        return item.userSelectedIndex === parseInt(q.correct);
+    }).length;
+    localStorage.setItem('lastScore', score);
 
-        // 3. Optional: Calculate basic stats to save time on next page
-        const score = detailedReport.filter(r => r.isCorrect).length;
-        localStorage.setItem('lastScore', score);
+    // 4. Clean up exam progress
+    const keysToRemove = ['cp_answers', 'cp_reviews', 'cp_visited', 'cp_timer'];
+    keysToRemove.forEach(key => localStorage.removeItem(key));
 
-        // 4. Clean up exam progress so they can't re-enter the same test state
-        const keysToRemove = ['cp_answers', 'cp_reviews', 'cp_visited', 'cp_timer'];
-        keysToRemove.forEach(key => localStorage.removeItem(key));
-
-        // 5. Redirect
-        window.location.href = "result.html"; 
-    }
+    // 5. Redirect
+    window.location.href = "result.html"; 
+}
 
     // Initialize
     loadTestData();
