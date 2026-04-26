@@ -158,28 +158,54 @@
         let fullReport = [];
 
         window.onload = function() {
-            const resultData = JSON.parse(localStorage.getItem('lastTestResult'));
+            // 1. DATA RETRIEVAL (with fallbacks for your specific storage keys)
+            let resultData = JSON.parse(localStorage.getItem('lastTestResult'));
             fullReport = JSON.parse(localStorage.getItem('detailedTestReport'));
             const userName = localStorage.getItem('userName') || "Aspirant";
+            
+            // Fallback: If 'lastTestResult' is missing but we have 'lastScore'
+            if (!resultData && localStorage.getItem('lastScore')) {
+                const score = parseFloat(localStorage.getItem('lastScore'));
+                const testId = localStorage.getItem('lastTestId') || "Performance Report";
+                
+                // Calculate counts from the report if available
+                let c = 0, inc = 0;
+                if (fullReport) {
+                    fullReport.forEach(q => {
+                        if (q.isCorrect) c++;
+                        else if (q.userAnswer && q.userAnswer !== "Not Attempted") inc++;
+                    });
+                }
 
+                resultData = {
+                    total: score,
+                    testName: testId.replace(/_/g, ' ').toUpperCase(),
+                    correct: c,
+                    incorrect: inc,
+                    totalQuestions: fullReport ? fullReport.length : 0
+                };
+            }
+
+            // 2. SAFETY CHECK
             if (!resultData || !fullReport) {
                 document.getElementById('content-area').classList.add('hidden');
                 document.getElementById('loading-state').classList.remove('hidden');
                 return;
             }
 
-            document.getElementById('test-title-display').innerText = resultData.testName || "Performance Report";
+            // 3. UI UPDATES
+            document.getElementById('test-title-display').innerText = resultData.testName;
             document.getElementById('user-name-display').innerText = userName;
 
             // Calculations
             const totalScore = parseFloat(resultData.total) || 0;
             const totalQ = resultData.totalQuestions || fullReport.length;
-            const attempted = resultData.correct + resultData.incorrect;
+            const attempted = (resultData.correct + resultData.incorrect) || 0;
             const accuracy = attempted > 0 ? Math.round((resultData.correct / attempted) * 100) : 0;
             const totalSeconds = fullReport.reduce((acc, curr) => acc + (parseInt(curr.timeSpent) || 0), 0);
             const avgTime = attempted > 0 ? (totalSeconds / attempted).toFixed(1) : 0;
 
-            // UI Updates
+            // Progress Circle Logic
             const perc = Math.max(0, (totalScore / totalQ) * 100);
             document.getElementById('score-circle-element').style.setProperty('--perc', `${(perc / 100) * 360}deg`);
             document.getElementById('display-final-score').innerText = totalScore.toFixed(2);
@@ -193,7 +219,7 @@
             else if(perc >= 40) pTitle.innerHTML = `<span class="text-blue-600">Qualified for Next Stage. 👍</span>`;
             else pTitle.innerHTML = `<span class="text-red-500">Keep Grinding! 📚</span>`;
 
-            // Subject Analysis with Strength/Weakness Logic
+            // 4. SUBJECT ANALYSIS
             const subjectStats = {};
             fullReport.forEach(q => {
                 const sub = q.subject || "GENERAL STUDIES";
@@ -220,6 +246,7 @@
                     </div>`;
             });
 
+            // 5. TIME ANALYSIS
             const sortedByTime = [...fullReport].sort((a, b) => (b.timeSpent || 0) - (a.timeSpent || 0)).slice(0, 3);
             const timeBox = document.getElementById('top-time-consumers');
             timeBox.innerHTML = "";
@@ -256,8 +283,6 @@
 
                 const statusColor = q.isCorrect ? 'border-green-100' : (isSkipped ? 'border-slate-100' : 'border-red-100');
                 const timeHighlight = type === 'time' ? 'bg-amber-50 ring-2 ring-amber-200' : '';
-                
-                // Status Icon Logic
                 const statusIcon = q.isCorrect ? 'fa-check-circle text-green-500' : 
                                   (isSkipped ? 'fa-minus-circle text-slate-300' : 'fa-times-circle text-red-500');
 
