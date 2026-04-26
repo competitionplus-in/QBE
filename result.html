@@ -31,7 +31,6 @@
         }
         .tab-active { border-bottom: 3px solid #1e40af; color: #1e40af; }
         
-        /* Print Optimizations */
         @media print { 
             .print-hidden { display: none !important; } 
             body { background: white; padding-bottom: 0; }
@@ -157,18 +156,21 @@
     <script>
         let fullReport = [];
 
+        // CRITICAL FIX: Ensures LaTeX backslashes are preserved
+        function cleanMath(str) {
+            if (!str) return "";
+            // Replace double backslashes with single ones if JSON stringification doubled them
+            return str.replace(/\\\\/g, '\\');
+        }
+
         window.onload = function() {
-            // 1. DATA RETRIEVAL (with fallbacks for your specific storage keys)
             let resultData = JSON.parse(localStorage.getItem('lastTestResult'));
             fullReport = JSON.parse(localStorage.getItem('detailedTestReport'));
             const userName = localStorage.getItem('userName') || "Aspirant";
             
-            // Fallback: If 'lastTestResult' is missing but we have 'lastScore'
             if (!resultData && localStorage.getItem('lastScore')) {
                 const score = parseFloat(localStorage.getItem('lastScore'));
                 const testId = localStorage.getItem('lastTestId') || "Performance Report";
-                
-                // Calculate counts from the report if available
                 let c = 0, inc = 0;
                 if (fullReport) {
                     fullReport.forEach(q => {
@@ -176,7 +178,6 @@
                         else if (q.userAnswer && q.userAnswer !== "Not Attempted") inc++;
                     });
                 }
-
                 resultData = {
                     total: score,
                     testName: testId.replace(/_/g, ' ').toUpperCase(),
@@ -186,18 +187,15 @@
                 };
             }
 
-            // 2. SAFETY CHECK
             if (!resultData || !fullReport) {
                 document.getElementById('content-area').classList.add('hidden');
                 document.getElementById('loading-state').classList.remove('hidden');
                 return;
             }
 
-            // 3. UI UPDATES
             document.getElementById('test-title-display').innerText = resultData.testName;
             document.getElementById('user-name-display').innerText = userName;
 
-            // Calculations
             const totalScore = parseFloat(resultData.total) || 0;
             const totalQ = resultData.totalQuestions || fullReport.length;
             const attempted = (resultData.correct + resultData.incorrect) || 0;
@@ -205,7 +203,6 @@
             const totalSeconds = fullReport.reduce((acc, curr) => acc + (parseInt(curr.timeSpent) || 0), 0);
             const avgTime = attempted > 0 ? (totalSeconds / attempted).toFixed(1) : 0;
 
-            // Progress Circle Logic
             const perc = Math.max(0, (totalScore / totalQ) * 100);
             document.getElementById('score-circle-element').style.setProperty('--perc', `${(perc / 100) * 360}deg`);
             document.getElementById('display-final-score').innerText = totalScore.toFixed(2);
@@ -219,10 +216,9 @@
             else if(perc >= 40) pTitle.innerHTML = `<span class="text-blue-600">Qualified for Next Stage. 👍</span>`;
             else pTitle.innerHTML = `<span class="text-red-500">Keep Grinding! 📚</span>`;
 
-            // 4. SUBJECT ANALYSIS
             const subjectStats = {};
             fullReport.forEach(q => {
-                const sub = q.subject || "GENERAL STUDIES";
+                const sub = q.subject || "CIVIL ENGINEERING";
                 if(!subjectStats[sub]) subjectStats[sub] = { correct: 0, total: 0 };
                 subjectStats[sub].total++;
                 if(q.isCorrect) subjectStats[sub].correct++;
@@ -233,7 +229,6 @@
             Object.keys(subjectStats).forEach(sub => {
                 const subPerc = Math.round((subjectStats[sub].correct / subjectStats[sub].total) * 100);
                 let statusTag = subPerc < 40 ? '🔴 Needs Focus' : (subPerc > 80 ? '🟢 Strong' : '🟡 Average');
-                
                 subContainer.innerHTML += `
                     <div class="space-y-1 mb-2">
                         <div class="flex justify-between text-xs font-bold uppercase">
@@ -246,7 +241,6 @@
                     </div>`;
             });
 
-            // 5. TIME ANALYSIS
             const sortedByTime = [...fullReport].sort((a, b) => (b.timeSpent || 0) - (a.timeSpent || 0)).slice(0, 3);
             const timeBox = document.getElementById('top-time-consumers');
             timeBox.innerHTML = "";
@@ -286,6 +280,12 @@
                 const statusIcon = q.isCorrect ? 'fa-check-circle text-green-500' : 
                                   (isSkipped ? 'fa-minus-circle text-slate-300' : 'fa-times-circle text-red-500');
 
+                // INTEGRATED FIX: Apply cleanMath to all text fields
+                const cleanQ = cleanMath(q.question);
+                const cleanUA = cleanMath(q.userAnswer || 'Not Attempted');
+                const cleanCA = cleanMath(q.correctAnswer || 'N/A');
+                const cleanExp = cleanMath(q.explanation);
+
                 const card = `
                     <div class="p-6 rounded-3xl border-2 bg-white ${statusColor} ${timeHighlight} shadow-sm transition-all">
                         <div class="flex justify-between items-start mb-4">
@@ -300,18 +300,18 @@
                                 ${q.isCorrect ? '<span class="text-green-600">+1.00</span>' : (isSkipped ? '<span class="text-slate-400">0.00</span>' : '<span class="text-red-500">-0.33</span>')}
                             </div>
                         </div>
-                        <div class="font-semibold text-slate-800 mb-6 leading-relaxed">${q.question}</div>
+                        <div class="font-semibold text-slate-800 mb-6 leading-relaxed">${cleanQ}</div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div class="p-4 rounded-2xl border text-sm ${q.isCorrect ? 'bg-green-50 border-green-200 text-green-700' : (isSkipped ? 'bg-slate-50 border-slate-200 text-slate-500' : 'bg-red-50 border-red-200 text-red-700')}">
                                 <span class="font-bold uppercase text-[9px] block opacity-60 mb-1">Your Selection</span>
-                                <span class="font-bold">${q.userAnswer || 'Not Attempted'}</span>
+                                <span class="font-bold">${cleanUA}</span>
                             </div>
                             <div class="p-4 rounded-2xl border border-green-200 bg-green-50 text-green-700 text-sm">
                                 <span class="font-bold uppercase text-[9px] block opacity-60 mb-1">Correct Answer</span>
-                                <span class="font-bold">${q.correctAnswer}</span>
+                                <span class="font-bold">${cleanCA}</span>
                             </div>
                         </div>
-                        ${q.explanation ? `<div class="mt-4 p-5 bg-blue-50/50 rounded-2xl border border-blue-100 text-xs text-blue-800 leading-relaxed"><span class="text-[10px] font-bold text-blue-600 uppercase block mb-1">Solution Explanation</span>${q.explanation}</div>` : ''}
+                        ${q.explanation ? `<div class="mt-4 p-5 bg-blue-50/50 rounded-2xl border border-blue-100 text-xs text-blue-800 leading-relaxed"><span class="text-[10px] font-bold text-blue-600 uppercase block mb-1">Solution Explanation</span>${cleanExp}</div>` : ''}
                     </div>`;
                 container.innerHTML += card;
             });
@@ -327,7 +327,6 @@
                 text: `🎯 I scored ${score} in "${testName}" on Competition Plus!`,
                 url: window.location.href
             };
-
             try {
                 if (navigator.share) await navigator.share(shareData);
                 else {
