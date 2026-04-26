@@ -155,11 +155,11 @@
 
     <script>
         let fullReport = [];
+        const NEGATIVE_MARK_FACTOR = 0.33; // Standard 1/3 negative marking
 
-        // CRITICAL FIX: Ensures LaTeX backslashes are preserved
         function cleanMath(str) {
-            if (!str) return "";
-            // Replace double backslashes with single ones if JSON stringification doubled them
+            if (!str || str === "undefined") return "";
+            // Preserves single backslashes for MathJax
             return str.replace(/\\\\/g, '\\');
         }
 
@@ -218,7 +218,7 @@
 
             const subjectStats = {};
             fullReport.forEach(q => {
-                const sub = q.subject || "CIVIL ENGINEERING";
+                const sub = q.subject || "GENERAL STUDIES";
                 if(!subjectStats[sub]) subjectStats[sub] = { correct: 0, total: 0 };
                 subjectStats[sub].total++;
                 if(q.isCorrect) subjectStats[sub].correct++;
@@ -228,14 +228,14 @@
             subContainer.innerHTML = "";
             Object.keys(subjectStats).forEach(sub => {
                 const subPerc = Math.round((subjectStats[sub].correct / subjectStats[sub].total) * 100);
-                let statusTag = subPerc < 40 ? '🔴 Needs Focus' : (subPerc > 80 ? '🟢 Strong' : '🟡 Average');
+                let statusTag = subPerc < 40 ? '🔴 Focus' : (subPerc > 80 ? '🟢 Strong' : '🟡 Avg');
                 subContainer.innerHTML += `
                     <div class="space-y-1 mb-2">
-                        <div class="flex justify-between text-xs font-bold uppercase">
-                            <span class="text-slate-500">${sub} <span class="ml-2 text-[9px] opacity-70">${statusTag}</span></span>
+                        <div class="flex justify-between text-[10px] font-bold uppercase">
+                            <span class="text-slate-500">${sub} <span class="ml-1 opacity-70">${statusTag}</span></span>
                             <span class="text-slate-900">${subPerc}%</span>
                         </div>
-                        <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                        <div class="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
                             <div class="bg-blue-600 h-full transition-all duration-1000" style="width: ${subPerc}%"></div>
                         </div>
                     </div>`;
@@ -248,7 +248,7 @@
                 const qIdx = fullReport.findIndex(item => item.question === q.question) + 1;
                 timeBox.innerHTML += `
                     <div class="flex justify-between items-center bg-slate-800/50 p-2 rounded-lg border border-slate-700 text-xs">
-                        <span class="text-slate-400 font-bold uppercase">Q. No ${qIdx}</span>
+                        <span class="text-slate-400 font-bold uppercase text-[10px]">Q. No ${qIdx}</span>
                         <span class="text-blue-400 font-mono font-bold">${q.timeSpent || 0}s</span>
                     </div>`;
             });
@@ -276,18 +276,10 @@
                 if (type === 'skipped' && !isSkipped) return;
 
                 const statusColor = q.isCorrect ? 'border-green-100' : (isSkipped ? 'border-slate-100' : 'border-red-100');
-                const timeHighlight = type === 'time' ? 'bg-amber-50 ring-2 ring-amber-200' : '';
-                const statusIcon = q.isCorrect ? 'fa-check-circle text-green-500' : 
-                                  (isSkipped ? 'fa-minus-circle text-slate-300' : 'fa-times-circle text-red-500');
-
-                // INTEGRATED FIX: Apply cleanMath to all text fields
-                const cleanQ = cleanMath(q.question);
-                const cleanUA = cleanMath(q.userAnswer || 'Not Attempted');
-                const cleanCA = cleanMath(q.correctAnswer || 'N/A');
-                const cleanExp = cleanMath(q.explanation);
+                const statusIcon = q.isCorrect ? 'fa-check-circle text-green-500' : (isSkipped ? 'fa-minus-circle text-slate-300' : 'fa-times-circle text-red-500');
 
                 const card = `
-                    <div class="p-6 rounded-3xl border-2 bg-white ${statusColor} ${timeHighlight} shadow-sm transition-all">
+                    <div class="p-6 rounded-3xl border-2 bg-white ${statusColor} shadow-sm transition-all">
                         <div class="flex justify-between items-start mb-4">
                             <div class="flex items-center gap-2">
                                 <i class="fas ${statusIcon}"></i>
@@ -297,21 +289,21 @@
                                 </span>
                             </div>
                             <div class="text-xs font-bold">
-                                ${q.isCorrect ? '<span class="text-green-600">+1.00</span>' : (isSkipped ? '<span class="text-slate-400">0.00</span>' : '<span class="text-red-500">-0.33</span>')}
+                                ${q.isCorrect ? '<span class="text-green-600">+1.00</span>' : (isSkipped ? '<span class="text-slate-400">0.00</span>' : '<span class="text-red-500">-' + NEGATIVE_MARK_FACTOR + '</span>')}
                             </div>
                         </div>
-                        <div class="font-semibold text-slate-800 mb-6 leading-relaxed">${cleanQ}</div>
+                        <div class="font-semibold text-slate-800 mb-6 leading-relaxed">${cleanMath(q.question)}</div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div class="p-4 rounded-2xl border text-sm ${q.isCorrect ? 'bg-green-50 border-green-200 text-green-700' : (isSkipped ? 'bg-slate-50 border-slate-200 text-slate-500' : 'bg-red-50 border-red-200 text-red-700')}">
                                 <span class="font-bold uppercase text-[9px] block opacity-60 mb-1">Your Selection</span>
-                                <span class="font-bold">${cleanUA}</span>
+                                <span class="font-bold">${cleanMath(q.userAnswer || 'Not Attempted')}</span>
                             </div>
                             <div class="p-4 rounded-2xl border border-green-200 bg-green-50 text-green-700 text-sm">
                                 <span class="font-bold uppercase text-[9px] block opacity-60 mb-1">Correct Answer</span>
-                                <span class="font-bold">${cleanCA}</span>
+                                <span class="font-bold">${cleanMath(q.correctAnswer || 'N/A')}</span>
                             </div>
                         </div>
-                        ${q.explanation ? `<div class="mt-4 p-5 bg-blue-50/50 rounded-2xl border border-blue-100 text-xs text-blue-800 leading-relaxed"><span class="text-[10px] font-bold text-blue-600 uppercase block mb-1">Solution Explanation</span>${cleanExp}</div>` : ''}
+                        ${q.explanation ? `<div class="mt-4 p-5 bg-blue-50/50 rounded-2xl border border-blue-100 text-xs text-blue-800 leading-relaxed"><span class="text-[10px] font-bold text-blue-600 uppercase block mb-1">Solution Explanation</span>${cleanMath(q.explanation)}</div>` : ''}
                     </div>`;
                 container.innerHTML += card;
             });
