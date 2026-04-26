@@ -13,10 +13,8 @@
                 inlineMath: [['$', '$'], ['\\(', '\\)']],
                 displayMath: [['$$', '$$']]
             },
-            startup: {
-                pageReady: () => {
-                    return MathJax.startup.defaultPageReady();
-                }
+            options: {
+                processHtmlClass: 'tex2jax_process'
             }
         };
     </script>
@@ -38,12 +36,10 @@
             .rounded-3xl { border-radius: 1rem; border: 1px solid #e2e8f0; }
             #tab-nav { display: none !important; }
             .score-circle { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-            #review-container { display: block !important; }
         }
-        #review-container { scroll-behavior: smooth; }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-900 pb-20">
+<body class="bg-slate-50 text-slate-900 pb-20 tex2jax_process">
 
     <nav class="bg-white p-3 sticky top-0 z-50 print-hidden border-b border-slate-200 shadow-sm">
         <div class="max-w-7xl mx-auto flex justify-between items-center px-2">
@@ -78,8 +74,7 @@
 
     <main class="max-w-4xl mx-auto px-4 mt-10">
         <div id="loading-state" class="text-center py-20 hidden">
-            <h2 class="text-2xl font-bold text-slate-400">No recent test data found.</h2>
-            <a href="index.html" class="text-blue-600 underline mt-4 inline-block">Return to Test</a>
+            <h2 class="text-2xl font-bold text-slate-400">Loading your performance data...</h2>
         </div>
 
         <div id="content-area">
@@ -155,22 +150,31 @@
 
     <script>
         let fullReport = [];
-        const NEGATIVE_MARK_FACTOR = 0.33; // Standard 1/3 negative marking
+        const NEGATIVE_MARK_FACTOR = 0.33;
 
+        // Enhanced Math Cleaner for RTDB $Delimiters and backslashes
         function cleanMath(str) {
-            if (!str || str === "undefined") return "";
-            // Preserves single backslashes for MathJax
-            return str.replace(/\\\\/g, '\\');
+            if (!str || str === "undefined" || str === "N/A") return "";
+            try {
+                return str
+                    .replace(/\$(.*?)\$/g, '\\($1\\)') // Convert $math$ to \(math\)
+                    .replace(/\\{2,}/g, '\\')          // Fix double backslashes
+                    .replace(/₹/g, '<span>₹</span>')   // Protect Rupee symbol
+                    .trim();
+            } catch (e) { return str; }
+        }
+
+        function formatDisplay(val, fallback = "N/A") {
+            return (!val || val === "undefined" || val === null) ? fallback : cleanMath(val);
         }
 
         window.onload = function() {
             let resultData = JSON.parse(localStorage.getItem('lastTestResult'));
             fullReport = JSON.parse(localStorage.getItem('detailedTestReport'));
-            const userName = localStorage.getItem('userName') || "Aspirant";
             
+            // RECOVERY: If main result object is missing, build it from the report
             if (!resultData && localStorage.getItem('lastScore')) {
-                const score = parseFloat(localStorage.getItem('lastScore'));
-                const testId = localStorage.getItem('lastTestId') || "Performance Report";
+                const score = parseFloat(localStorage.getItem('lastScore')) || 0;
                 let c = 0, inc = 0;
                 if (fullReport) {
                     fullReport.forEach(q => {
@@ -180,42 +184,46 @@
                 }
                 resultData = {
                     total: score,
-                    testName: testId.replace(/_/g, ' ').toUpperCase(),
+                    testName: (localStorage.getItem('lastTestId') || "Mock Test").replace(/_/g, ' ').toUpperCase(),
                     correct: c,
                     incorrect: inc,
                     totalQuestions: fullReport ? fullReport.length : 0
                 };
             }
 
-            if (!resultData || !fullReport) {
+            if (!fullReport || fullReport.length === 0) {
                 document.getElementById('content-area').classList.add('hidden');
                 document.getElementById('loading-state').classList.remove('hidden');
+                document.getElementById('loading-state').innerHTML = '<h2 class="text-2xl font-bold text-slate-400">No test data found in storage.</h2>';
                 return;
             }
 
+            // Populate UI Stats
             document.getElementById('test-title-display').innerText = resultData.testName;
-            document.getElementById('user-name-display').innerText = userName;
-
-            const totalScore = parseFloat(resultData.total) || 0;
-            const totalQ = resultData.totalQuestions || fullReport.length;
-            const attempted = (resultData.correct + resultData.incorrect) || 0;
+            document.getElementById('user-name-display').innerText = localStorage.getItem('userName') || "Aspirant";
+            document.getElementById('display-final-score').innerText = resultData.total.toFixed(2);
+            document.getElementById('display-out-of').innerText = `Out of ${resultData.totalQuestions}`;
+            
+            const totalScore = resultData.total;
+            const totalQ = resultData.totalQuestions;
+            const attempted = resultData.correct + resultData.incorrect;
             const accuracy = attempted > 0 ? Math.round((resultData.correct / attempted) * 100) : 0;
             const totalSeconds = fullReport.reduce((acc, curr) => acc + (parseInt(curr.timeSpent) || 0), 0);
             const avgTime = attempted > 0 ? (totalSeconds / attempted).toFixed(1) : 0;
 
-            const perc = Math.max(0, (totalScore / totalQ) * 100);
-            document.getElementById('score-circle-element').style.setProperty('--perc', `${(perc / 100) * 360}deg`);
-            document.getElementById('display-final-score').innerText = totalScore.toFixed(2);
-            document.getElementById('display-out-of').innerText = `Out of ${totalQ}`;
             document.getElementById('display-accuracy').innerText = accuracy + "%";
             document.getElementById('display-attempted-count').innerText = attempted;
             document.getElementById('display-avg-time').innerText = avgTime + "s";
+
+            const perc = Math.max(0, (totalScore / totalQ) * 100);
+            document.getElementById('score-circle-element').style.setProperty('--perc', `${(perc / 100) * 360}deg`);
 
             const pTitle = document.getElementById('performance-title');
             if(perc >= 75) pTitle.innerHTML = `<span class="text-green-600">Exceptional Merit Grade! 🏆</span>`;
             else if(perc >= 40) pTitle.innerHTML = `<span class="text-blue-600">Qualified for Next Stage. 👍</span>`;
             else pTitle.innerHTML = `<span class="text-red-500">Keep Grinding! 📚</span>`;
 
+            // Subject Wise Analysis
             const subjectStats = {};
             fullReport.forEach(q => {
                 const sub = q.subject || "GENERAL STUDIES";
@@ -228,27 +236,27 @@
             subContainer.innerHTML = "";
             Object.keys(subjectStats).forEach(sub => {
                 const subPerc = Math.round((subjectStats[sub].correct / subjectStats[sub].total) * 100);
-                let statusTag = subPerc < 40 ? '🔴 Focus' : (subPerc > 80 ? '🟢 Strong' : '🟡 Avg');
                 subContainer.innerHTML += `
-                    <div class="space-y-1 mb-2">
-                        <div class="flex justify-between text-[10px] font-bold uppercase">
-                            <span class="text-slate-500">${sub} <span class="ml-1 opacity-70">${statusTag}</span></span>
+                    <div class="mb-3">
+                        <div class="flex justify-between text-[10px] font-bold uppercase mb-1">
+                            <span class="text-slate-500">${sub}</span>
                             <span class="text-slate-900">${subPerc}%</span>
                         </div>
-                        <div class="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
-                            <div class="bg-blue-600 h-full transition-all duration-1000" style="width: ${subPerc}%"></div>
+                        <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                            <div class="bg-blue-600 h-full" style="width: ${subPerc}%"></div>
                         </div>
                     </div>`;
             });
 
+            // Time Consumers
             const sortedByTime = [...fullReport].sort((a, b) => (b.timeSpent || 0) - (a.timeSpent || 0)).slice(0, 3);
             const timeBox = document.getElementById('top-time-consumers');
             timeBox.innerHTML = "";
             sortedByTime.forEach(q => {
                 const qIdx = fullReport.findIndex(item => item.question === q.question) + 1;
                 timeBox.innerHTML += `
-                    <div class="flex justify-between items-center bg-slate-800/50 p-2 rounded-lg border border-slate-700 text-xs">
-                        <span class="text-slate-400 font-bold uppercase text-[10px]">Q. No ${qIdx}</span>
+                    <div class="flex justify-between items-center bg-slate-800/50 p-2 rounded-lg text-xs">
+                        <span class="text-slate-400 font-bold uppercase text-[9px]">Q. ${qIdx}</span>
                         <span class="text-blue-400 font-mono font-bold">${q.timeSpent || 0}s</span>
                     </div>`;
             });
@@ -269,7 +277,7 @@
 
             displayList.forEach((q) => {
                 const originalIndex = fullReport.findIndex(item => item.question === q.question);
-                const isSkipped = q.userAnswer === "Not Attempted" || !q.userAnswer;
+                const isSkipped = !q.userAnswer || q.userAnswer === "Not Attempted";
                 
                 if (type === 'correct' && !q.isCorrect) return;
                 if (type === 'incorrect' && (q.isCorrect || isSkipped)) return;
@@ -279,36 +287,39 @@
                 const statusIcon = q.isCorrect ? 'fa-check-circle text-green-500' : (isSkipped ? 'fa-minus-circle text-slate-300' : 'fa-times-circle text-red-500');
 
                 const card = `
-                    <div class="p-6 rounded-3xl border-2 bg-white ${statusColor} shadow-sm transition-all">
+                    <div class="p-6 rounded-3xl border-2 bg-white ${statusColor} shadow-sm">
                         <div class="flex justify-between items-start mb-4">
                             <div class="flex items-center gap-2">
                                 <i class="fas ${statusIcon}"></i>
                                 <span class="bg-slate-100 text-slate-500 px-3 py-1 rounded-lg text-[10px] font-bold uppercase">Question ${originalIndex + 1}</span>
-                                <span class="${(q.timeSpent > 60) ? 'text-red-500 font-bold' : 'text-slate-400'} text-[10px]">
-                                    <i class="far fa-clock"></i> ${q.timeSpent || 0}s
-                                </span>
+                                <span class="text-slate-400 text-[10px]"><i class="far fa-clock"></i> ${q.timeSpent || 0}s</span>
                             </div>
                             <div class="text-xs font-bold">
-                                ${q.isCorrect ? '<span class="text-green-600">+1.00</span>' : (isSkipped ? '<span class="text-slate-400">0.00</span>' : '<span class="text-red-500">-' + NEGATIVE_MARK_FACTOR + '</span>')}
+                                ${q.isCorrect ? '<span class="text-green-600">+1.00</span>' : (isSkipped ? '<span class="text-slate-400">0.00</span>' : '<span class="text-red-500">-0.33</span>')}
                             </div>
                         </div>
-                        <div class="font-semibold text-slate-800 mb-6 leading-relaxed">${cleanMath(q.question)}</div>
+                        <div class="font-semibold text-slate-800 mb-6 leading-relaxed">${formatDisplay(q.question)}</div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div class="p-4 rounded-2xl border text-sm ${q.isCorrect ? 'bg-green-50 border-green-200 text-green-700' : (isSkipped ? 'bg-slate-50 border-slate-200 text-slate-500' : 'bg-red-50 border-red-200 text-red-700')}">
+                            <div class="p-4 rounded-2xl border text-sm ${q.isCorrect ? 'bg-green-50 border-green-200' : (isSkipped ? 'bg-slate-50 border-slate-200' : 'bg-red-50 border-red-200')}">
                                 <span class="font-bold uppercase text-[9px] block opacity-60 mb-1">Your Selection</span>
-                                <span class="font-bold">${cleanMath(q.userAnswer || 'Not Attempted')}</span>
+                                <span class="font-bold">${formatDisplay(q.userAnswer, 'Not Attempted')}</span>
                             </div>
                             <div class="p-4 rounded-2xl border border-green-200 bg-green-50 text-green-700 text-sm">
                                 <span class="font-bold uppercase text-[9px] block opacity-60 mb-1">Correct Answer</span>
-                                <span class="font-bold">${cleanMath(q.correctAnswer || 'N/A')}</span>
+                                <span class="font-bold">${formatDisplay(q.correctAnswer)}</span>
                             </div>
                         </div>
-                        ${q.explanation ? `<div class="mt-4 p-5 bg-blue-50/50 rounded-2xl border border-blue-100 text-xs text-blue-800 leading-relaxed"><span class="text-[10px] font-bold text-blue-600 uppercase block mb-1">Solution Explanation</span>${cleanMath(q.explanation)}</div>` : ''}
+                        ${q.explanation ? `<div class="mt-4 p-5 bg-blue-50/50 rounded-2xl border border-blue-100 text-xs text-blue-800"><span class="text-[10px] font-bold text-blue-600 uppercase block mb-1">Solution Explanation</span>${formatDisplay(q.explanation)}</div>` : ''}
                     </div>`;
                 container.innerHTML += card;
             });
 
-            if (window.MathJax && MathJax.typesetPromise) MathJax.typesetPromise();
+            // Refresh MathJax rendering
+            if (window.MathJax && MathJax.typesetPromise) {
+                setTimeout(() => {
+                    MathJax.typesetPromise([container]).catch(err => console.log(err));
+                }, 100);
+            }
         }
 
         async function handleGeneralShare(event) {
@@ -324,9 +335,8 @@
                 else {
                     await navigator.clipboard.writeText(`${shareData.text}\n${shareData.url}`);
                     const btn = event.currentTarget;
-                    const oldText = btn.innerHTML;
                     btn.innerHTML = '<i class="fas fa-check"></i> COPIED';
-                    setTimeout(() => btn.innerHTML = oldText, 2000);
+                    setTimeout(() => btn.innerHTML = '<i class="fas fa-share-nodes text-sm"></i> SHARE', 2000);
                 }
             } catch (err) { console.error(err); }
         }
