@@ -9,57 +9,87 @@
     
     <script>
         window.MathJax = {
-            tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$']] },
-            options: { processHtmlClass: 'tex2jax_process' }
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$']]
+            },
+            startup: {
+                pageReady: () => {
+                    return MathJax.startup.defaultPageReady();
+                }
+            }
         };
     </script>
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Noto+Sans+Devanagari:wght@400;700&display=swap');
-        body { font-family: 'Inter', 'Noto Sans Devanagari', sans-serif; }
-        .score-circle { transition: all 0.8s ease-in-out; background: conic-gradient(#1e40af var(--perc, 0deg), #e2e8f0 0deg); }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .score-circle { 
+            transition: all 0.8s ease-in-out; 
+            background: conic-gradient(#1e40af var(--perc, 0deg), #e2e8f0 0deg); 
+        }
         .tab-active { border-bottom: 3px solid #1e40af; color: #1e40af; }
+        
+        /* Print Optimizations */
+        @media print { 
+            .print-hidden { display: none !important; } 
+            body { background: white; padding-bottom: 0; }
+            .max-w-4xl { max-w-none; width: 100%; }
+            .rounded-3xl { border-radius: 1rem; border: 1px solid #e2e8f0; }
+            #tab-nav { display: none !important; }
+            .score-circle { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            #review-container { display: block !important; }
+        }
+        #review-container { scroll-behavior: smooth; }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-900 pb-20 tex2jax_process">
+<body class="bg-slate-50 text-slate-900 pb-20">
 
     <nav class="bg-white p-3 sticky top-0 z-50 print-hidden border-b border-slate-200 shadow-sm">
         <div class="max-w-7xl mx-auto flex justify-between items-center px-2">
             <div class="flex items-center gap-4">
-                <div class="bg-blue-600 p-2 rounded-lg flex items-center justify-center">
-                    <i class="fas fa-graduation-cap text-white text-sm"></i>
-                </div>
-                <div class="flex flex-col">
-                    <h1 class="text-sm font-black tracking-tight uppercase leading-none">
-                        COMPETITION <span class="text-blue-600">PLUS</span>
-                    </h1>
-                    <p id="ui-subtitle" class="text-[10px] font-bold text-slate-500 uppercase tracking-wide">Performance Report</p>
+                <div class="flex items-center gap-3">
+                    <div class="bg-blue-600 p-2 rounded-lg flex items-center justify-center shadow-sm">
+                        <i class="fas fa-graduation-cap text-white text-sm"></i>
+                    </div>
+                    <div class="flex flex-col md:flex-row md:items-center md:gap-2">
+                        <h1 class="text-sm font-black tracking-tight uppercase leading-none text-slate-900">
+                            COMPETITION <span class="text-blue-600">PLUS</span>
+                        </h1>
+                        <span class="hidden md:block text-slate-300">|</span>
+                        <p id="test-title-display" class="text-[11px] md:text-xs font-bold text-slate-500 uppercase tracking-wide">Performance Report</p>
+                    </div>
                 </div>
             </div>
 
             <div class="flex items-center gap-3">
-                <button onclick="toggleLanguage()" class="flex items-center gap-2 bg-blue-50 hover:bg-blue-100 text-blue-700 px-3 py-1.5 rounded-lg text-[10px] font-bold border border-blue-200 transition">
-                    <i class="fas fa-language text-lg"></i> <span id="lang-btn-text">HINDI</span>
+                <button onclick="window.print()" class="hidden sm:flex items-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg text-[10px] font-bold border border-slate-300 transition">
+                    <i class="fas fa-print"></i> PRINT PDF
                 </button>
-                <button onclick="window.print()" class="hidden sm:block bg-slate-100 text-slate-700 px-3 py-1.5 rounded-lg text-[10px] font-bold border border-slate-300">
-                    <i class="fas fa-print"></i>
+                <button onclick="handleGeneralShare(event)" class="hidden sm:flex items-center gap-2 bg-blue-50 hover:bg-blue-100 text-blue-700 px-3 py-1.5 rounded-lg text-[10px] font-bold border border-blue-200 transition">
+                    <i class="fas fa-share-nodes text-sm"></i> SHARE
                 </button>
-                <a href="dashboard.html" class="bg-slate-900 text-white px-4 py-2 rounded-lg text-[10px] font-bold shadow-md transition flex items-center gap-2">
-                    <i class="fas fa-th-large"></i> <span id="ui-dash-btn">DASHBOARD</span>
+                <a href="dashboard.html" class="bg-slate-900 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-[10px] font-bold shadow-md transition flex items-center gap-2">
+                    <i class="fas fa-th-large"></i> DASHBOARD
                 </a>
             </div>
         </div>
     </nav>
 
     <main class="max-w-4xl mx-auto px-4 mt-10">
+        <div id="loading-state" class="text-center py-20 hidden">
+            <h2 class="text-2xl font-bold text-slate-400">No recent test data found.</h2>
+            <a href="index.html" class="text-blue-600 underline mt-4 inline-block">Return to Test</a>
+        </div>
+
         <div id="content-area">
             <div class="text-center mb-10">
                 <div class="inline-block p-3 bg-green-100 text-green-700 rounded-full mb-4">
                     <i class="fas fa-check-circle text-3xl"></i>
                 </div>
-                <h2 id="ui-main-heading" class="text-3xl font-extrabold tracking-tight">Test Successfully Submitted</h2>
-                <p class="text-slate-500 mt-2"><span id="ui-analysis-for">Analysis for</span> <span id="user-name-display" class="font-bold text-slate-700">Aspirant</span></p>
+                <h2 class="text-3xl font-extrabold tracking-tight">Test Successfully Submitted</h2>
+                <p class="text-slate-500 mt-2">Detailed performance analysis for <span id="user-name-display" class="font-bold text-slate-700">Aspirant</span></p>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
@@ -67,43 +97,56 @@
                     <div id="score-circle-element" class="relative w-40 h-40 rounded-full flex items-center justify-center score-circle">
                         <div class="absolute inset-2 bg-white rounded-full flex flex-col items-center justify-center">
                             <span id="display-final-score" class="text-4xl font-extrabold text-blue-800">0.0</span>
-                            <span id="ui-out-of" class="text-[10px] font-bold text-slate-400 uppercase">Out of</span>
+                            <span id="display-out-of" class="text-xs font-bold text-slate-400 uppercase tracking-widest text-center px-4">Out of 0</span>
                         </div>
                     </div>
-                    <div class="flex-1 w-full space-y-4">
-                        <h3 id="performance-title" class="text-xl font-bold text-slate-800 text-center md:text-left">Calculating...</h3>
+                    <div class="flex-1 space-y-4">
+                        <h3 id="performance-title" class="text-xl font-bold text-slate-800 text-center md:text-left tracking-tight">Calculating...</h3>
                         <div class="grid grid-cols-3 gap-2">
-                            <div class="bg-slate-50 p-3 rounded-xl text-center">
+                            <div class="bg-slate-50 p-3 rounded-xl text-center border border-slate-100">
                                 <span id="display-accuracy" class="block text-lg font-bold">0%</span>
-                                <span id="ui-stat-accuracy" class="text-[9px] font-bold text-slate-400 uppercase">Accuracy</span>
+                                <span class="text-[10px] font-bold text-slate-400 uppercase">Accuracy</span>
                             </div>
-                            <div class="bg-slate-50 p-3 rounded-xl text-center">
+                            <div class="bg-slate-50 p-3 rounded-xl text-center border border-slate-100">
                                 <span id="display-attempted-count" class="block text-lg font-bold">0</span>
-                                <span id="ui-stat-attempted" class="text-[9px] font-bold text-slate-400 uppercase">Attempted</span>
+                                <span class="text-[10px] font-bold text-slate-400 uppercase">Attempted</span>
                             </div>
-                            <div class="bg-slate-50 p-3 rounded-xl text-center">
+                            <div class="bg-slate-50 p-3 rounded-xl text-center border border-slate-100">
                                 <span id="display-avg-time" class="block text-lg font-bold">0s</span>
-                                <span id="ui-stat-time" class="text-[9px] font-bold text-slate-400 uppercase">Avg Time</span>
+                                <span class="text-[10px] font-bold text-slate-400 uppercase">Avg Time</span>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="bg-slate-900 text-white p-6 rounded-3xl shadow-lg">
-                    <h4 id="ui-time-consumers" class="text-slate-400 text-[10px] font-bold uppercase mb-4 tracking-widest">Time Consumers</h4>
-                    <div id="top-time-consumers" class="space-y-2"></div>
+
+                <div class="bg-slate-900 text-white p-6 rounded-3xl shadow-lg flex flex-col justify-between">
+                    <div>
+                        <h4 class="text-slate-400 text-[10px] font-bold uppercase mb-4 tracking-widest">Top Time Consumers</h4>
+                        <div id="top-time-consumers" class="space-y-2"></div>
+                    </div>
+                    <p class="text-[10px] text-slate-500 pt-4 border-t border-slate-800 italic">*Negative marks (1/3) applied</p>
                 </div>
             </div>
 
-            <div class="mb-8">
+            <div class="mb-10 bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
+                <h3 class="text-lg font-bold mb-4 flex items-center gap-2">
+                    <i class="fas fa-chart-pie text-blue-600"></i> Subject-Wise Analysis
+                </h3>
+                <div id="subject-analysis-container" class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4"></div>
+            </div>
+
+            <div class="mb-8 print-hidden">
                 <h3 class="text-2xl font-extrabold text-slate-800 flex items-center gap-2 mb-6">
-                    <i class="fas fa-file-invoice text-blue-600"></i> 
-                    <span id="ui-review-title">Solution & Detailed Review</span>
+                    <i class="fas fa-file-invoice text-blue-600"></i> Solution & Detailed Review
                 </h3>
                 <div class="flex border-b border-slate-200 overflow-x-auto whitespace-nowrap gap-4" id="tab-nav">
-                    <button onclick="filterResults('all')" id="btn-all" class="px-4 py-3 text-sm font-bold tab-active">All</button>
+                    <button onclick="filterResults('all')" id="btn-all" class="px-4 py-3 text-sm font-bold tab-active">All Questions</button>
                     <button onclick="filterResults('correct')" id="btn-correct" class="px-4 py-3 text-sm font-bold text-slate-500">Correct</button>
                     <button onclick="filterResults('incorrect')" id="btn-incorrect" class="px-4 py-3 text-sm font-bold text-slate-500">Incorrect</button>
-                    <button onclick="filterResults('skipped')" id="btn-skipped" class="px-4 py-3 text-sm font-bold text-slate-500">Skipped</button>
+                    <button onclick="filterResults('skipped')" id="btn-skipped" class="px-4 py-3 text-sm font-bold text-slate-500">Not Attempted</button>
+                    <button onclick="filterResults('time')" id="btn-time" class="px-4 py-3 text-sm font-bold text-slate-500">
+                        <i class="fas fa-hourglass-half mr-1"></i> Time Consumer
+                    </button>
                 </div>
             </div>
 
@@ -112,126 +155,165 @@
     </main>
 
     <script>
-        let currentLang = localStorage.getItem('prefLang') || 'en';
-        let fullReport = JSON.parse(localStorage.getItem('detailedTestReport')) || [];
+        let fullReport = [];
 
-        const i18n = {
-            en: {
-                subtitle: "Performance Report", dash: "DASHBOARD", heading: "Test Successfully Submitted",
-                analysis: "Analysis for", outOf: "Out of", accuracy: "Accuracy", attempted: "Attempted",
-                avgTime: "Avg Time", timeTitle: "Time Consumers", reviewTitle: "Solution & Detailed Review",
-                tabAll: "All Questions", tabCorrect: "Correct", tabIncorrect: "Incorrect", tabSkipped: "Not Attempted",
-                yourSelection: "Your Selection", correctAnswer: "Correct Answer", solution: "Solution Explanation",
-                notAttempted: "Not Attempted", langBtn: "HINDI"
-            },
-            hi: {
-                subtitle: "प्रदर्शन रिपोर्ट", dash: "डैशबोर्ड", heading: "परीक्षा सफलतापूर्वक जमा हुई",
-                analysis: "विश्लेषण:", outOf: "कुल अंक", accuracy: "सटीकता", attempted: "प्रयास",
-                avgTime: "औसत समय", timeTitle: "अधिक समय लेने वाले", reviewTitle: "समाधान और विस्तृत समीक्षा",
-                tabAll: "सभी प्रश्न", tabCorrect: "सही", tabIncorrect: "गलत", tabSkipped: "बिना प्रयास",
-                yourSelection: "आपका चयन", correctAnswer: "सही उत्तर", solution: "प्रश्न का हल",
-                notAttempted: "प्रयास नहीं किया", langBtn: "ENGLISH"
+        window.onload = function() {
+            const resultData = JSON.parse(localStorage.getItem('lastTestResult'));
+            fullReport = JSON.parse(localStorage.getItem('detailedTestReport'));
+            const userName = localStorage.getItem('userName') || "Aspirant";
+
+            if (!resultData || !fullReport) {
+                document.getElementById('content-area').classList.add('hidden');
+                document.getElementById('loading-state').classList.remove('hidden');
+                return;
             }
+
+            document.getElementById('test-title-display').innerText = resultData.testName || "Performance Report";
+            document.getElementById('user-name-display').innerText = userName;
+
+            // Calculations
+            const totalScore = parseFloat(resultData.total) || 0;
+            const totalQ = resultData.totalQuestions || fullReport.length;
+            const attempted = resultData.correct + resultData.incorrect;
+            const accuracy = attempted > 0 ? Math.round((resultData.correct / attempted) * 100) : 0;
+            const totalSeconds = fullReport.reduce((acc, curr) => acc + (parseInt(curr.timeSpent) || 0), 0);
+            const avgTime = attempted > 0 ? (totalSeconds / attempted).toFixed(1) : 0;
+
+            // UI Updates
+            const perc = Math.max(0, (totalScore / totalQ) * 100);
+            document.getElementById('score-circle-element').style.setProperty('--perc', `${(perc / 100) * 360}deg`);
+            document.getElementById('display-final-score').innerText = totalScore.toFixed(2);
+            document.getElementById('display-out-of').innerText = `Out of ${totalQ}`;
+            document.getElementById('display-accuracy').innerText = accuracy + "%";
+            document.getElementById('display-attempted-count').innerText = attempted;
+            document.getElementById('display-avg-time').innerText = avgTime + "s";
+
+            const pTitle = document.getElementById('performance-title');
+            if(perc >= 75) pTitle.innerHTML = `<span class="text-green-600">Exceptional Merit Grade! 🏆</span>`;
+            else if(perc >= 40) pTitle.innerHTML = `<span class="text-blue-600">Qualified for Next Stage. 👍</span>`;
+            else pTitle.innerHTML = `<span class="text-red-500">Keep Grinding! 📚</span>`;
+
+            // Subject Analysis with Strength/Weakness Logic
+            const subjectStats = {};
+            fullReport.forEach(q => {
+                const sub = q.subject || "GENERAL STUDIES";
+                if(!subjectStats[sub]) subjectStats[sub] = { correct: 0, total: 0 };
+                subjectStats[sub].total++;
+                if(q.isCorrect) subjectStats[sub].correct++;
+            });
+
+            const subContainer = document.getElementById('subject-analysis-container');
+            subContainer.innerHTML = "";
+            Object.keys(subjectStats).forEach(sub => {
+                const subPerc = Math.round((subjectStats[sub].correct / subjectStats[sub].total) * 100);
+                let statusTag = subPerc < 40 ? '🔴 Needs Focus' : (subPerc > 80 ? '🟢 Strong' : '🟡 Average');
+                
+                subContainer.innerHTML += `
+                    <div class="space-y-1 mb-2">
+                        <div class="flex justify-between text-xs font-bold uppercase">
+                            <span class="text-slate-500">${sub} <span class="ml-2 text-[9px] opacity-70">${statusTag}</span></span>
+                            <span class="text-slate-900">${subPerc}%</span>
+                        </div>
+                        <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                            <div class="bg-blue-600 h-full transition-all duration-1000" style="width: ${subPerc}%"></div>
+                        </div>
+                    </div>`;
+            });
+
+            const sortedByTime = [...fullReport].sort((a, b) => (b.timeSpent || 0) - (a.timeSpent || 0)).slice(0, 3);
+            const timeBox = document.getElementById('top-time-consumers');
+            timeBox.innerHTML = "";
+            sortedByTime.forEach(q => {
+                const qIdx = fullReport.findIndex(item => item.question === q.question) + 1;
+                timeBox.innerHTML += `
+                    <div class="flex justify-between items-center bg-slate-800/50 p-2 rounded-lg border border-slate-700 text-xs">
+                        <span class="text-slate-400 font-bold uppercase">Q. No ${qIdx}</span>
+                        <span class="text-blue-400 font-mono font-bold">${q.timeSpent || 0}s</span>
+                    </div>`;
+            });
+
+            filterResults('all');
         };
-
-        function toggleLanguage() {
-            currentLang = currentLang === 'en' ? 'hi' : 'en';
-            localStorage.setItem('prefLang', currentLang);
-            updateUI();
-        }
-
-        function updateUI() {
-            const t = i18n[currentLang];
-            // Navbar & General UI
-            document.getElementById('ui-subtitle').innerText = t.subtitle;
-            document.getElementById('ui-dash-btn').innerText = t.dash;
-            document.getElementById('lang-btn-text').innerText = t.langBtn;
-            document.getElementById('ui-main-heading').innerText = t.heading;
-            document.getElementById('ui-analysis-for').innerText = t.analysis;
-            
-            // Stats
-            document.getElementById('ui-out-of').innerText = t.outOf;
-            document.getElementById('ui-stat-accuracy').innerText = t.accuracy;
-            document.getElementById('ui-stat-attempted').innerText = t.attempted;
-            document.getElementById('ui-stat-time').innerText = t.avgTime;
-            document.getElementById('ui-time-consumers').innerText = t.timeTitle;
-
-            // Review Tabs
-            document.getElementById('ui-review-title').innerText = t.reviewTitle;
-            document.getElementById('btn-all').innerText = t.tabAll;
-            document.getElementById('btn-correct').innerText = t.tabCorrect;
-            document.getElementById('btn-incorrect').innerText = t.tabIncorrect;
-            document.getElementById('btn-skipped').innerText = t.tabSkipped;
-
-            filterResults('all'); // Refresh list items
-        }
-
-        function formatDisplay(q, field) {
-            // Priority: if Hindi is selected and field_hi exists, use it. Otherwise English.
-            let val = (currentLang === 'hi' && q[field + '_hi']) ? q[field + '_hi'] : q[field];
-            
-            // Handle correct answer specifically if it's an index
-            if (field === 'correctAnswer' && typeof q.correctAnswer === 'number' && q.options) {
-                const optField = (currentLang === 'hi' && q.options_hi) ? 'options_hi' : 'options';
-                val = q[optField][q.correctAnswer];
-            }
-
-            if (!val || val === "undefined" || val === "N/A") {
-                return field === 'userAnswer' ? i18n[currentLang].notAttempted : "N/A";
-            }
-
-            return val.toString().replace(/\$(.*?)\$/g, '\\($1\\)').trim();
-        }
 
         function filterResults(type) {
             const container = document.getElementById('review-container');
             container.innerHTML = "";
-            const t = i18n[currentLang];
-
+            
             document.querySelectorAll('#tab-nav button').forEach(b => b.classList.remove('tab-active', 'text-slate-500'));
-            document.getElementById(`btn-${type}`).classList.add('tab-active');
+            const activeBtn = document.getElementById(`btn-${type}`);
+            if(activeBtn) activeBtn.classList.add('tab-active');
 
-            fullReport.forEach((q, index) => {
-                const isSkipped = !q.userAnswer || q.userAnswer === "Not Attempted";
+            let displayList = [...fullReport];
+            if (type === 'time') displayList.sort((a, b) => (b.timeSpent || 0) - (a.timeSpent || 0));
+
+            displayList.forEach((q) => {
+                const originalIndex = fullReport.findIndex(item => item.question === q.question);
+                const isSkipped = q.userAnswer === "Not Attempted" || !q.userAnswer;
+                
                 if (type === 'correct' && !q.isCorrect) return;
                 if (type === 'incorrect' && (q.isCorrect || isSkipped)) return;
                 if (type === 'skipped' && !isSkipped) return;
 
                 const statusColor = q.isCorrect ? 'border-green-100' : (isSkipped ? 'border-slate-100' : 'border-red-100');
+                const timeHighlight = type === 'time' ? 'bg-amber-50 ring-2 ring-amber-200' : '';
                 
-                container.innerHTML += `
-                    <div class="p-6 rounded-3xl border-2 bg-white ${statusColor} shadow-sm">
-                        <div class="flex justify-between items-center mb-4">
-                            <span class="bg-slate-100 text-slate-500 px-3 py-1 rounded-lg text-[10px] font-bold">Q. ${index + 1}</span>
-                            <span class="text-slate-400 text-[10px] font-bold"><i class="far fa-clock"></i> ${q.timeSpent || 0}s</span>
+                // Status Icon Logic
+                const statusIcon = q.isCorrect ? 'fa-check-circle text-green-500' : 
+                                  (isSkipped ? 'fa-minus-circle text-slate-300' : 'fa-times-circle text-red-500');
+
+                const card = `
+                    <div class="p-6 rounded-3xl border-2 bg-white ${statusColor} ${timeHighlight} shadow-sm transition-all">
+                        <div class="flex justify-between items-start mb-4">
+                            <div class="flex items-center gap-2">
+                                <i class="fas ${statusIcon}"></i>
+                                <span class="bg-slate-100 text-slate-500 px-3 py-1 rounded-lg text-[10px] font-bold uppercase">Question ${originalIndex + 1}</span>
+                                <span class="${(q.timeSpent > 60) ? 'text-red-500 font-bold' : 'text-slate-400'} text-[10px]">
+                                    <i class="far fa-clock"></i> ${q.timeSpent || 0}s
+                                </span>
+                            </div>
+                            <div class="text-xs font-bold">
+                                ${q.isCorrect ? '<span class="text-green-600">+1.00</span>' : (isSkipped ? '<span class="text-slate-400">0.00</span>' : '<span class="text-red-500">-0.33</span>')}
+                            </div>
                         </div>
-                        <div class="font-semibold text-slate-800 mb-6 leading-relaxed">${formatDisplay(q, 'question')}</div>
+                        <div class="font-semibold text-slate-800 mb-6 leading-relaxed">${q.question}</div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div class="p-4 rounded-2xl border text-sm ${q.isCorrect ? 'bg-green-50 border-green-200' : 'bg-slate-50'}">
-                                <span class="font-bold uppercase text-[8px] block opacity-50 mb-1">${t.yourSelection}</span>
-                                <span class="font-bold">${formatDisplay(q, 'userAnswer')}</span>
+                            <div class="p-4 rounded-2xl border text-sm ${q.isCorrect ? 'bg-green-50 border-green-200 text-green-700' : (isSkipped ? 'bg-slate-50 border-slate-200 text-slate-500' : 'bg-red-50 border-red-200 text-red-700')}">
+                                <span class="font-bold uppercase text-[9px] block opacity-60 mb-1">Your Selection</span>
+                                <span class="font-bold">${q.userAnswer || 'Not Attempted'}</span>
                             </div>
                             <div class="p-4 rounded-2xl border border-green-200 bg-green-50 text-green-700 text-sm">
-                                <span class="font-bold uppercase text-[8px] block opacity-50 mb-1">${t.correctAnswer}</span>
-                                <span class="font-bold">${formatDisplay(q, 'correctAnswer')}</span>
+                                <span class="font-bold uppercase text-[9px] block opacity-60 mb-1">Correct Answer</span>
+                                <span class="font-bold">${q.correctAnswer}</span>
                             </div>
                         </div>
-                        ${q.explanation ? `
-                        <div class="mt-4 p-5 bg-blue-50/50 rounded-2xl border border-blue-100 text-xs text-blue-800">
-                            <span class="font-bold block mb-1 uppercase text-[9px] text-blue-600">${t.solution}</span>
-                            ${formatDisplay(q, 'explanation')}
-                        </div>` : ''}
+                        ${q.explanation ? `<div class="mt-4 p-5 bg-blue-50/50 rounded-2xl border border-blue-100 text-xs text-blue-800 leading-relaxed"><span class="text-[10px] font-bold text-blue-600 uppercase block mb-1">Solution Explanation</span>${q.explanation}</div>` : ''}
                     </div>`;
+                container.innerHTML += card;
             });
 
-            if (window.MathJax) MathJax.typesetPromise([container]);
+            if (window.MathJax && MathJax.typesetPromise) MathJax.typesetPromise();
         }
 
-        window.onload = function() {
-            // Your existing logic for score calculation and charts goes here
-            // (Keeping the logic from your provided code snippet)
-            updateUI(); 
-        };
+        async function handleGeneralShare(event) {
+            const score = document.getElementById('display-final-score').innerText;
+            const testName = document.getElementById('test-title-display').innerText;
+            const shareData = {
+                title: 'Test Result | Competition Plus',
+                text: `🎯 I scored ${score} in "${testName}" on Competition Plus!`,
+                url: window.location.href
+            };
+
+            try {
+                if (navigator.share) await navigator.share(shareData);
+                else {
+                    await navigator.clipboard.writeText(`${shareData.text}\n${shareData.url}`);
+                    const btn = event.currentTarget;
+                    const oldText = btn.innerHTML;
+                    btn.innerHTML = '<i class="fas fa-check"></i> COPIED';
+                    setTimeout(() => btn.innerHTML = oldText, 2000);
+                }
+            } catch (err) { console.error(err); }
+        }
     </script>
 </body>
 </html>
