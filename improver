@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Results | Competition Plus</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$']]
+            }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .score-circle { transition: all 0.8s ease-in-out; background: conic-gradient(#1e40af var(--perc), #e2e8f0 0deg); }
+        .tab-active { border-bottom: 3px solid #1e40af; color: #1e40af; }
+        @media print { .print-hidden { display: none; } .print-m-0 { margin: 0 !important; border: none; } }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900 pb-20">
+
+    <nav class="bg-white p-3 sticky top-0 z-50 print-hidden border-b border-slate-200 shadow-sm">
+    <div class="max-w-7xl mx-auto flex justify-between items-center px-2">
+        <div class="flex items-center gap-4">
+            <button class="text-slate-500 hover:text-blue-600 transition">
+                <i class="fas fa-bars text-lg"></i>
+            </button>
+            
+            <div class="flex items-center gap-3">
+                <div class="bg-blue-600 p-2 rounded-lg flex items-center justify-center shadow-sm">
+                    <i class="fas fa-graduation-cap text-white text-sm"></i>
+                </div>
+                <div class="flex flex-col md:flex-row md:items-center md:gap-2">
+                    <h1 class="text-sm font-black tracking-tight uppercase leading-none text-slate-900">
+                        COMPETITION <span class="text-blue-600">PLUS</span>
+                    </h1>
+                    <span class="hidden md:block text-slate-300">|</span>
+                    <p id="test-title-display" class="text-[11px] md:text-xs font-bold text-slate-500 uppercase tracking-wide">Performance Report</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-3">
+            <button onclick="shareOnWhatsApp()" class="hidden sm:flex items-center gap-2 bg-green-50 hover:bg-green-100 text-green-700 px-3 py-1.5 rounded-lg text-[10px] font-bold border border-green-200 transition">
+                <i class="fab fa-whatsapp text-sm"></i> SHARE
+            </button>
+            
+            <a href="dashboard.html" class="bg-slate-900 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-[10px] font-bold shadow-md transition flex items-center gap-2">
+                <i class="fas fa-th-large"></i> DASHBOARD
+            </a>
+        </div>
+    </div>
+</nav>
+
+    <main class="max-w-4xl mx-auto px-4 mt-10">
+        <div class="text-center mb-10">
+            <div class="inline-block p-3 bg-green-100 text-green-700 rounded-full mb-4">
+                <i class="fas fa-check-circle text-3xl"></i>
+            </div>
+            <h2 class="text-3xl font-extrabold tracking-tight">Test Successfully Submitted</h2>
+            <p class="text-slate-500 mt-2">Detailed performance analysis for <span id="user-name-display" class="font-bold text-slate-700">Aspirant</span></p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+            <div class="md:col-span-2 bg-white p-8 rounded-3xl shadow-sm border border-slate-100 flex flex-col md:flex-row items-center gap-8">
+                <div id="score-circle-element" class="relative w-40 h-40 rounded-full flex items-center justify-center score-circle" style="--perc: 0deg;">
+                    <div class="absolute inset-2 bg-white rounded-full flex flex-col items-center justify-center">
+                        <span id="display-final-score" class="text-4xl font-extrabold text-blue-800">0.0</span>
+                        <span id="display-out-of" class="text-xs font-bold text-slate-400 uppercase tracking-widest text-center px-4">Out of 0</span>
+                    </div>
+                </div>
+                <div class="flex-1 space-y-4">
+                    <h3 id="performance-title" class="text-xl font-bold text-slate-800 text-center md:text-left tracking-tight">Calculating...</h3>
+                    <div class="grid grid-cols-3 gap-2">
+                        <div class="bg-slate-50 p-3 rounded-xl text-center border border-slate-100">
+                            <span id="display-accuracy" class="block text-lg font-bold">0%</span>
+                            <span class="text-[10px] font-bold text-slate-400 uppercase">Accuracy</span>
+                        </div>
+                        <div class="bg-slate-50 p-3 rounded-xl text-center border border-slate-100">
+                            <span id="display-attempted-count" class="block text-lg font-bold">0</span>
+                            <span class="text-[10px] font-bold text-slate-400 uppercase">Attempted</span>
+                        </div>
+                        <div class="bg-slate-50 p-3 rounded-xl text-center border border-slate-100">
+                            <span id="display-avg-time" class="block text-lg font-bold">0s</span>
+                            <span class="text-[10px] font-bold text-slate-400 uppercase">Avg Time</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-slate-900 text-white p-6 rounded-3xl shadow-lg flex flex-col justify-between">
+                <div>
+                    <h4 class="text-slate-400 text-[10px] font-bold uppercase mb-4 tracking-widest">Top Time Consumers</h4>
+                    <div id="top-time-consumers" class="space-y-2"></div>
+                </div>
+                <p class="text-[10px] text-slate-500 pt-4 border-t border-slate-800 italic">*Negative marks (1/3) applied</p>
+            </div>
+        </div>
+
+        <div class="mb-10 bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
+            <h3 class="text-lg font-bold mb-4 flex items-center gap-2">
+                <i class="fas fa-chart-pie text-blue-600"></i> Subject-Wise Analysis
+            </h3>
+            <div id="subject-analysis-container" class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4"></div>
+        </div>
+
+        <div class="mb-8">
+            <h3 class="text-2xl font-extrabold text-slate-800 flex items-center gap-2 mb-6">
+                <i class="fas fa-file-invoice text-blue-600"></i> Solution & Detailed Review
+            </h3>
+            
+            <div class="flex border-b border-slate-200 overflow-x-auto whitespace-nowrap gap-4" id="tab-nav">
+                <button onclick="filterResults('all')" id="btn-all" class="px-4 py-3 text-sm font-bold tab-active">All Questions</button>
+                <button onclick="filterResults('correct')" id="btn-correct" class="px-4 py-3 text-sm font-bold text-slate-500">Correct</button>
+                <button onclick="filterResults('incorrect')" id="btn-incorrect" class="px-4 py-3 text-sm font-bold text-slate-500">Incorrect</button>
+                <button onclick="filterResults('skipped')" id="btn-skipped" class="px-4 py-3 text-sm font-bold text-slate-500">Not Attempted</button>
+            </div>
+        </div>
+
+        <div id="review-container" class="space-y-6"></div>
+
+        <div class="mt-12 flex flex-col md:flex-row gap-4 justify-center print-hidden">
+            <button onclick="location.href='index.html'" class="bg-slate-900 text-white px-10 py-4 rounded-xl font-bold shadow-lg hover:bg-slate-800 transition transform hover:-translate-y-1">
+                <i class="fas fa-redo mr-2"></i> Retake Test
+            </button>
+            <button onclick="window.print()" class="bg-white border-2 border-slate-200 text-slate-700 px-10 py-4 rounded-xl font-bold hover:bg-slate-50 transition transform hover:-translate-y-1">
+                <i class="fas fa-download mr-2"></i> Save Report
+            </button>
+        </div>
+    </main>
+
+    <script>
+        let fullReport = [];
+
+        window.onload = function() {
+            const resultData = JSON.parse(localStorage.getItem('lastTestResult'));
+            fullReport = JSON.parse(localStorage.getItem('detailedTestReport'));
+            const userName = localStorage.getItem('userName') || "Aspirant";
+
+            if (!resultData || !fullReport) {
+                document.querySelector('main').innerHTML = `<div class="text-center py-20"><h2 class="text-2xl font-bold text-slate-400">No recent test data found.</h2></div>`;
+                return;
+            }
+
+            // Update Dynamic Header Title (e.g., Mock Test 6)
+            if(resultData.testName) {
+                document.getElementById('test-title-display').innerText = resultData.testName;
+            }
+
+            document.getElementById('user-name-display').innerText = userName;
+
+            // 1. Core Calculations
+            const totalScore = parseFloat(resultData.total);
+            const totalQ = resultData.totalQuestions || fullReport.length;
+            const attempted = resultData.correct + resultData.incorrect;
+            const accuracy = attempted > 0 ? Math.round((resultData.correct / attempted) * 100) : 0;
+            const totalSeconds = fullReport.reduce((acc, curr) => acc + (curr.timeSpent || 0), 0);
+            const avgTime = attempted > 0 ? (totalSeconds / attempted).toFixed(1) : 0;
+
+            // 2. Update Header UI
+            const perc = Math.max(0, (totalScore / totalQ) * 100);
+            document.getElementById('score-circle-element').style.setProperty('--perc', `${(perc / 100) * 360}deg`);
+            document.getElementById('display-final-score').innerText = totalScore.toFixed(2);
+            document.getElementById('display-out-of').innerText = `Out of ${totalQ}`;
+            document.getElementById('display-accuracy').innerText = accuracy + "%";
+            document.getElementById('display-attempted-count').innerText = attempted;
+            document.getElementById('display-avg-time').innerText = avgTime + "s";
+
+            // 3. Performance Title
+            const pTitle = document.getElementById('performance-title');
+            if(perc >= 75) pTitle.innerHTML = `<span class="text-green-600">Exceptional Merit Grade! 🏆</span>`;
+            else if(perc >= 40) pTitle.innerHTML = `<span class="text-blue-600">Qualified for Next Stage. 👍</span>`;
+            else pTitle.innerHTML = `<span class="text-red-500">Keep Grinding! 📚</span>`;
+
+            // 4. Subject Wise Analysis
+            const subjectStats = {};
+            fullReport.forEach(q => {
+                const sub = q.subject || "GENERAL STUDIES";
+                if(!subjectStats[sub]) subjectStats[sub] = { correct: 0, total: 0 };
+                subjectStats[sub].total++;
+                if(q.isCorrect) subjectStats[sub].correct++;
+            });
+
+            const subContainer = document.getElementById('subject-analysis-container');
+            Object.keys(subjectStats).forEach(sub => {
+                const subPerc = Math.round((subjectStats[sub].correct / subjectStats[sub].total) * 100);
+                const row = document.createElement('div');
+                row.className = "space-y-1 mb-2";
+                row.innerHTML = `
+                    <div class="flex justify-between text-xs font-bold uppercase text-slate-500">
+                        <span>${sub}</span>
+                        <span>${subPerc}%</span>
+                    </div>
+                    <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                        <div class="bg-blue-600 h-full transition-all duration-1000" style="width: ${subPerc}%"></div>
+                    </div>
+                `;
+                subContainer.appendChild(row);
+            });
+
+            // 5. Top Time Consumers Logic
+            const sortedByTime = [...fullReport].sort((a, b) => (b.timeSpent || 0) - (a.timeSpent || 0)).slice(0, 3);
+            const timeBox = document.getElementById('top-time-consumers');
+            sortedByTime.forEach(q => {
+                const qIdx = fullReport.findIndex(item => item.question === q.question) + 1;
+                timeBox.innerHTML += `
+                    <div class="flex justify-between items-center bg-slate-800/50 p-2 rounded-lg border border-slate-700 text-xs">
+                        <span class="text-slate-400 font-bold uppercase">Q. No ${qIdx}</span>
+                        <span class="text-blue-400 font-mono font-bold">${q.timeSpent || 0}s</span>
+                    </div>
+                `;
+            });
+
+            filterResults('all');
+        };
+
+        function filterResults(type) {
+            const container = document.getElementById('review-container');
+            container.innerHTML = "";
+            
+            document.querySelectorAll('#tab-nav button').forEach(b => b.classList.remove('tab-active', 'text-slate-500'));
+            document.getElementById(`btn-${type}`).classList.add('tab-active');
+
+            fullReport.forEach((q, i) => {
+                const isSkipped = q.userAnswer === "Not Attempted" || !q.userAnswer;
+                
+                if (type === 'correct' && !q.isCorrect) return;
+                if (type === 'incorrect' && (q.isCorrect || isSkipped)) return;
+                if (type === 'skipped' && !isSkipped) return;
+
+                const card = document.createElement('div');
+                const statusColor = q.isCorrect ? 'border-green-100' : (isSkipped ? 'border-slate-100' : 'border-red-100');
+                card.className = `p-6 rounded-3xl border-2 bg-white ${statusColor} shadow-sm`;
+                
+                card.innerHTML = `
+                    <div class="flex justify-between items-start mb-4">
+                        <div class="flex items-center gap-2">
+                            <span class="bg-slate-100 text-slate-500 px-3 py-1 rounded-lg text-[10px] font-bold uppercase">Question ${i + 1}</span>
+                            <span class="text-[10px] text-slate-400 font-bold"><i class="far fa-clock"></i> ${q.timeSpent || 0}s</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            ${q.isCorrect ? '<span class="text-green-600 text-xs font-bold">+1.00</span>' : (isSkipped ? '<span class="text-slate-400 text-xs font-bold">0.00</span>' : '<span class="text-red-500 text-xs font-bold">-0.33</span>')}
+                        </div>
+                    </div>
+                    <div class="font-semibold text-slate-800 mb-6 leading-relaxed">${q.question}</div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <div class="p-4 rounded-2xl border text-sm ${q.isCorrect ? 'bg-green-50 border-green-200 text-green-700' : (isSkipped ? 'bg-slate-50 border-slate-200 text-slate-500' : 'bg-red-50 border-red-200 text-red-700')}">
+                            <span class="font-bold uppercase text-[9px] block opacity-60 mb-1">Your Selection</span>
+                            <span class="font-bold">${q.userAnswer || 'Not Attempted'}</span>
+                        </div>
+                        <div class="p-4 rounded-2xl border border-green-200 bg-green-50 text-green-700 text-sm">
+                            <span class="font-bold uppercase text-[9px] block opacity-60 mb-1">Correct Answer</span>
+                            <span class="font-bold">${q.correctAnswer}</span>
+                        </div>
+                    </div>
+
+                    ${q.explanation ? `
+                        <div class="mt-4 p-5 bg-blue-50/50 rounded-2xl border border-blue-100">
+                            <span class="text-[10px] font-bold text-blue-600 uppercase block mb-1"><i class="fas fa-chalkboard-teacher mr-1"></i> Solution Explanation</span>
+                            <p class="text-xs text-blue-800 leading-relaxed">${q.explanation}</p>
+                        </div>
+                    ` : ''}
+                `;
+                container.appendChild(card);
+            });
+
+            if (window.MathJax && MathJax.typesetPromise) MathJax.typesetPromise();
+        }
+
+        function shareOnWhatsApp() {
+            const score = document.getElementById('display-final-score').innerText;
+            const accuracy = document.getElementById('display-accuracy').innerText;
+            const text = `🎯 I scored ${score} with ${accuracy} accuracy on Competition Plus! Prepare for Rajasthan Exam with me.`;
+            window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+        }
+    </script>
+</body>
+</html>
