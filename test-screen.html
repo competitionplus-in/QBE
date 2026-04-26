@@ -557,34 +557,55 @@
         }
 
         function finalSubmit() {
-    // 1. Prepare the detailed report saving BOTH languages
+    // 1. Map through allQuestions to build the final report
     const detailedReport = allQuestions.map((pair, index) => {
-        const userIdx = studentAnswers[index];
+        // Use your global studentAnswers variable (the { index: choice } object)
+        const userIdx = studentAnswers[index]; 
         
+        // Use English as the primary reference for correctness logic
+        const q = pair.en || pair.hi; 
+        const correctIdx = parseInt(q.correct);
+        
+        // Determine status
+        const isCorrect = (userIdx !== undefined && userIdx !== null) && (parseInt(userIdx) === correctIdx);
+        const isSkipped = (userIdx === undefined || userIdx === null);
+
         return {
-            pair: pair, // This contains { en: {...}, hi: {...} }
-            userSelectedIndex: userIdx !== undefined ? userIdx : null,
-            subject: (pair.en || pair.hi).subject || "General"
+            pair: pair, // Saves both languages
+            userSelectedIndex: !isSkipped ? parseInt(userIdx) : null,
+            isCorrect: isCorrect,
+            subject: q.subject || "General",
+            // If you aren't tracking per-question time yet, we set 0
+            timeSpent: (typeof timeSpentPerQuestion !== 'undefined') ? timeSpentPerQuestion[index] : 0
         };
     });
 
-    // 2. Save to LocalStorage
+    // 2. Calculate Totals
+    const correctCount = detailedReport.filter(item => item.isCorrect).length;
+    const attemptedCount = detailedReport.filter(item => item.userSelectedIndex !== null).length;
+    const incorrectCount = attemptedCount - correctCount;
+    const finalScore = correctCount - (incorrectCount * 0.33);
+
+    // 3. Create the Summary Object result.html is looking for
+    const summaryResult = {
+        testName: document.getElementById('test-title-display')?.innerText || "Test Report",
+        totalQuestions: allQuestions.length,
+        correct: correctCount,
+        incorrect: incorrectCount,
+        total: finalScore,
+        testId: testId
+    };
+
+    // 4. Save to LocalStorage
     localStorage.setItem('detailedTestReport', JSON.stringify(detailedReport));
-    localStorage.setItem('lastTestId', testId);
+    localStorage.setItem('lastTestResult', JSON.stringify(summaryResult));
 
-    // 3. Calculate basic score
-    const score = detailedReport.filter(item => {
-        const q = item.pair.en || item.pair.hi;
-        return item.userSelectedIndex === parseInt(q.correct);
-    }).length;
-    localStorage.setItem('lastScore', score);
-
-    // 4. Clean up exam progress
+    // 5. Cleanup Firebase/Local progress keys
     const keysToRemove = ['cp_answers', 'cp_reviews', 'cp_visited', 'cp_timer'];
     keysToRemove.forEach(key => localStorage.removeItem(key));
 
-    // 5. Redirect
-    window.location.href = "result.html"; 
+    // 6. Go to results
+    window.location.href = "result.html";
 }
 
     // Initialize
