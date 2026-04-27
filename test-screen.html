@@ -167,9 +167,9 @@
                     <p class="text-sm font-bold text-amber-900">Wait! You missed some questions.</p>
                 </div>
                 <div class="flex gap-3">
-                    <button onclick="closeModal()" class="flex-1 py-3 text-xs font-bold bg-slate-100 rounded-xl">RESUME</button>
-                    <button onclick="finalSubmit()" class="flex-1 py-3 text-xs font-bold bg-blue-600 text-white rounded-xl shadow-lg">CONFIRM SUBMIT</button>
-                </div>
+    <button id="modal-resume-btn" onclick="closeModal()" class="flex-1 py-3 text-xs font-bold bg-slate-100 rounded-xl">RESUME</button>
+    <button id="modal-confirm-btn" onclick="finalSubmit()" class="flex-1 py-3 text-xs font-bold bg-blue-600 text-white rounded-xl shadow-lg">CONFIRM SUBMIT</button>
+</div>
             </div>
         </div>
     </div>
@@ -378,21 +378,53 @@ function updatePalette() {
         function move(dir) { const target = currentIndex + dir; if (target >= 0 && target < allQuestions.length) { currentIndex = target; renderQuestion(); updatePalette(); } }
         function clearResponse() { delete studentAnswers[currentIndex]; delete reviewList[currentIndex]; localStorage.setItem('cp_answers', JSON.stringify(studentAnswers)); localStorage.setItem('cp_reviews', JSON.stringify(reviewList)); renderQuestion(); updatePalette(); }
         
-        function confirmSubmit() {
-            const getVal = (id) => parseInt(document.getElementById(id).innerText);
-            const stats = { total: allQuestions.length, ans: getVal('leg-answered'), na: getVal('leg-not-answered'), nv: getVal('leg-not-visited'), m: getVal('leg-marked'), ma: getVal('leg-marked-answered') };
-            
-            document.getElementById('modal-total').innerText = stats.total;
-            document.getElementById('modal-answered').innerText = stats.ans;
-            document.getElementById('modal-not-answered').innerText = stats.na;
-            document.getElementById('modal-marked').innerText = stats.m;
-            document.getElementById('modal-marked-ans').innerText = stats.ma;
-            document.getElementById('modal-not-visited').innerText = stats.nv;
+        function confirmSubmit(isTimeOver = false) {
+    const getVal = (id) => parseInt(document.getElementById(id).innerText);
+    const stats = { 
+        total: allQuestions.length, 
+        ans: getVal('leg-answered'), 
+        na: getVal('leg-not-answered'), 
+        nv: getVal('leg-not-visited'), 
+        m: getVal('leg-marked'), 
+        ma: getVal('leg-marked-answered') 
+    };
+    
+    // Fill Modal Stats
+    document.getElementById('modal-total').innerText = stats.total;
+    document.getElementById('modal-answered').innerText = stats.ans;
+    document.getElementById('modal-not-answered').innerText = stats.na;
+    document.getElementById('modal-marked').innerText = stats.m;
+    document.getElementById('modal-marked-ans').innerText = stats.ma;
+    document.getElementById('modal-not-visited').innerText = stats.nv;
 
-            document.getElementById('modal-warning').classList.toggle('hidden', (stats.ans + stats.ma) === stats.total);
-            document.getElementById('submit-modal').classList.remove('hidden');
-            document.body.classList.add('modal-open');
-        }
+    const warningBox = document.getElementById('modal-warning');
+    const resumeBtn = document.getElementById('modal-resume-btn');
+    const confirmBtn = document.getElementById('modal-confirm-btn');
+
+    if (isTimeOver) {
+        // Time Over State
+        warningBox.classList.remove('hidden');
+        warningBox.className = "p-4 bg-red-50 border border-red-200 rounded-2xl mb-6";
+        warningBox.innerHTML = `<p class="text-sm font-bold text-red-900"><i class="fas fa-hourglass-end mr-2"></i>Time is over! Your answers have been saved. Please click below to view your results.</p>`;
+        
+        resumeBtn.classList.add('hidden'); // Hide resume button
+        confirmBtn.innerText = "VIEW RESULTS"; // Change button text
+        confirmBtn.className = "flex-1 py-3 text-xs font-bold bg-red-600 text-white rounded-xl shadow-lg";
+    } else {
+        // Manual Finish State
+        const isIncomplete = (stats.ans + stats.ma) < stats.total;
+        warningBox.classList.toggle('hidden', !isIncomplete);
+        warningBox.className = "p-4 bg-amber-50 border border-amber-200 rounded-2xl mb-6";
+        warningBox.innerHTML = `<p class="text-sm font-bold text-amber-900">Wait! You missed some questions.</p>`;
+        
+        resumeBtn.classList.remove('hidden');
+        confirmBtn.innerText = "CONFIRM SUBMIT";
+        confirmBtn.className = "flex-1 py-3 text-xs font-bold bg-blue-600 text-white rounded-xl shadow-lg";
+    }
+
+    document.getElementById('submit-modal').classList.remove('hidden');
+    document.body.classList.add('modal-open');
+}
 
         function closeModal() { document.getElementById('submit-modal').classList.add('hidden'); document.body.classList.remove('modal-open'); }
         function toggleSidebar() { document.getElementById('sidebar').classList.toggle('collapsed'); }
@@ -411,22 +443,34 @@ function updatePalette() {
     updatePalette();
 }
         function startTimer() {
-            if (timerRunning) return; 
-            timerRunning = true;
-            const intv = setInterval(() => {
-                if (timeInSeconds <= 0) { 
-                    clearInterval(intv); 
-                    finalSubmit(); 
-                    return; 
-                }
-                const h = Math.floor(timeInSeconds / 3600);
-                const m = Math.floor((timeInSeconds % 3600) / 60);
-                const s = timeInSeconds % 60;
-                DOM.timer.innerText = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
-                timeInSeconds--; 
-                localStorage.setItem('cp_timer', timeInSeconds);
-            }, 1000);
+    if (timerRunning) return; 
+    timerRunning = true;
+    const intv = setInterval(() => {
+        // 1. Check if time is up BEFORE decrementing
+        if (timeInSeconds <= 0) { 
+            timeInSeconds = 0;
+            DOM.timer.innerText = "00:00:00"; // Lock display at zero
+            localStorage.setItem('cp_timer', 0);
+            clearInterval(intv); 
+            timerRunning = false;
+            
+            // Trigger auto-submit with "Time Over" mode
+            confirmSubmit(true); 
+            return; 
         }
+
+        // 2. Decrement and save
+        timeInSeconds--; 
+        localStorage.setItem('cp_timer', timeInSeconds);
+
+        // 3. Render time
+        const h = Math.floor(timeInSeconds / 3600);
+        const m = Math.floor((timeInSeconds % 3600) / 60);
+        const s = timeInSeconds % 60;
+        DOM.timer.innerText = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+        
+    }, 1000);
+}
 
         function finalSubmit() {
     const report = allQuestions.map((p, i) => {
