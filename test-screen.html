@@ -300,9 +300,10 @@
         DOM.container.classList.remove('loading');
     });
 } else {
-    DOM.container.classList.remove('loading');
+        DOM.container.classList.remove('loading');
+    }
 }
-        function updatePalette() {
+function updatePalette() {
             const frag = document.createDocumentFragment();
             let c = { ans: 0, m: 0, ma: 0, nv: 0, na: 0 };
 
@@ -330,7 +331,12 @@
             if (activeNode) activeNode.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' });
         }
 
-        function selectOption(idx) { studentAnswers[currentIndex] = idx; localStorage.setItem('cp_answers', JSON.stringify(studentAnswers)); renderQuestion(); updatePalette(); }
+        function selectOption(idx) { 
+    studentAnswers[currentIndex] = idx; 
+    localStorage.setItem('cp_answers', JSON.stringify(studentAnswers)); 
+    renderQuestion(); 
+    updatePalette(); 
+}
         function saveAndNext() { if (reviewList[currentIndex]) delete reviewList[currentIndex]; localStorage.setItem('cp_reviews', JSON.stringify(reviewList)); move(1); }
         function markReview() { reviewList[currentIndex] = true; localStorage.setItem('cp_reviews', JSON.stringify(reviewList)); move(1); }
         function prevQuestion() { move(-1); }
@@ -355,35 +361,70 @@
 
         function closeModal() { document.getElementById('submit-modal').classList.add('hidden'); document.body.classList.remove('modal-open'); }
         function toggleSidebar() { document.getElementById('sidebar').classList.toggle('collapsed'); }
-        function setLanguage(l) { currentLang = l; renderQuestion(); }
+        function setLanguage(l) { 
+            currentLang = l; 
+            document.getElementById('lang-en').className = l === 'en' ? 'px-4 py-1.5 rounded-md text-[12px] font-bold bg-blue-600 text-white transition-all' : 'px-4 py-1.5 rounded-md text-[12px] font-bold text-slate-600 transition-all';
+            document.getElementById('lang-hi').className = l === 'hi' ? 'px-4 py-1.5 rounded-md text-[12px] font-bold bg-blue-600 text-white transition-all' : 'px-4 py-1.5 rounded-md text-[12px] font-bold text-slate-600 transition-all';
+            
+            renderQuestion(); 
+            updatePalette();
+        } // Fixed: Added missing closing brace here
 
         function startTimer() {
-            if (timerRunning) return; timerRunning = true;
+            if (timerRunning) return; 
+            timerRunning = true;
             const intv = setInterval(() => {
-                if (timeInSeconds <= 0) { clearInterval(intv); finalSubmit(); return; }
-                const h = Math.floor(timeInSeconds / 3600), m = Math.floor((timeInSeconds % 3600) / 60), s = timeInSeconds % 60;
+                if (timeInSeconds <= 0) { 
+                    clearInterval(intv); 
+                    finalSubmit(); 
+                    return; 
+                }
+                const h = Math.floor(timeInSeconds / 3600);
+                const m = Math.floor((timeInSeconds % 3600) / 60);
+                const s = timeInSeconds % 60;
                 DOM.timer.innerText = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
-                timeInSeconds--; localStorage.setItem('cp_timer', timeInSeconds);
+                timeInSeconds--; 
+                localStorage.setItem('cp_timer', timeInSeconds);
             }, 1000);
         }
 
         function finalSubmit() {
             const report = allQuestions.map((p, i) => {
-                const uIdx = studentAnswers[i], q = p.en || p.hi;
-                const cIdx = parseInt(q.correctIndex ?? q.correct);
-                return { pair: p, userSelectedIndex: uIdx ?? null, isCorrect: uIdx === cIdx, subject: q.subject || "General", timeSpent: window.timeSpentPerQuestion[i] || 0 };
+                const uIdx = studentAnswers[i];
+                const q = p.en || p.hi;
+                // Supports both "correct" and "correctIndex" keys from RTDB
+                const cIdx = parseInt(q.correctIndex ?? q.correct); 
+                return { 
+                    pair: p, 
+                    userSelectedIndex: uIdx ?? null, 
+                    isCorrect: uIdx === cIdx, 
+                    subject: q.subject || "General", 
+                    timeSpent: window.timeSpentPerQuestion[i] || 0 
+                };
             });
-            const correct = report.filter(r => r.isCorrect).length;
-            const attempted = report.filter(r => r.userSelectedIndex !== null).length;
-            const score = correct - ((attempted - correct) * 0.333);
+
+            const correctCount = report.filter(r => r.userSelectedIndex !== null && r.isCorrect).length;
+            const attemptedCount = report.filter(r => r.userSelectedIndex !== null).length;
+            const wrongCount = attemptedCount - correctCount;
+            
+            // Standard Rajasthan Exam Marking: +1 for Correct, -1/3 for Wrong
+            const finalScore = Math.max(0, correctCount - (wrongCount * 0.333)).toFixed(2);
             
             localStorage.setItem('detailedTestReport', JSON.stringify(report));
-            localStorage.setItem('lastTestResult', JSON.stringify({ testName: DOM.title.innerText, totalQuestions: allQuestions.length, correct, incorrect: attempted - correct, total: parseFloat(score.toFixed(2)) }));
+            localStorage.setItem('lastTestResult', JSON.stringify({ 
+                testName: DOM.title.innerText, 
+                totalQuestions: allQuestions.length, 
+                correct: correctCount, 
+                incorrect: wrongCount, 
+                total: parseFloat(finalScore) 
+            }));
+
+            // Cleanup local storage
             ['cp_answers', 'cp_reviews', 'cp_visited', 'cp_timer', 'cp_time_spent'].forEach(k => localStorage.removeItem(k));
             window.location.href = "result.html";
         }
 
-        // Security
+        // Security - Right click and common dev tools shortcuts
         document.addEventListener('contextmenu', e => e.preventDefault());
         document.addEventListener('keydown', e => {
             const forbidden = ['i', 'j', 'c', 'u', 's', 'p', 'v', 'x'];
