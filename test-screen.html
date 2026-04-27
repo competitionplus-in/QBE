@@ -212,7 +212,15 @@
             }
         };
 
-        async function loadTestData() {
+        function shuffleArray(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
+}
+
+async function loadTestData() {
             try {
                 if (!testId) {
                     const snap = await rtdb.ref('current_active_test').once('value');
@@ -230,7 +238,21 @@
                     isHindi ? grouped[qid].hi = item : grouped[qid].en = item;
                 });
 
+
+                
                allQuestions = Object.values(grouped);
+                let savedOrder = loadLocal('cp_question_order', null);
+
+if (savedOrder) {
+    // Reconstruct allQuestions based on the saved IDs
+    allQuestions = savedOrder.map(id => allQuestions.find(p => (p.en || p.hi).questionID === id));
+} else {
+    // First time opening the test? Shuffle!
+    shuffleArray(allQuestions);
+    // Save this order so refresh doesn't change it
+    const orderToSave = allQuestions.map(p => (p.en || p.hi).questionID);
+    localStorage.setItem('cp_question_order', JSON.stringify(orderToSave));
+}
 
         // --- DYNAMIC TIMER LOGIC START ---
         if (timeInSeconds <= 0) {
@@ -276,22 +298,35 @@
             DOM.badge.className = `relative text-white px-3.5 py-1.5 rounded-md text-[12px] font-bold uppercase tracking-widest transition-all ${cls}`;
             DOM.badge.innerHTML = `Question ${String(currentIndex + 1).padStart(2, '0')}${dot}`;
             DOM.subject.innerText = q.subject || "General";
-            DOM.content.innerHTML = q.questionText;
+            let imageHtml = q.questionImage ? `<img src="${q.questionImage}" class="max-h-64 mx-auto mb-4 rounded-lg shadow-sm">` : '';
+DOM.content.innerHTML = imageHtml + q.questionText;
 
-            const opts = q.options || [];
-            DOM.grid.className = opts.every(o => o.length < 25) ? "grid grid-cols-1 md:grid-cols-2 gap-4" : "grid grid-cols-1 gap-4";
-            DOM.grid.innerHTML = opts.map((opt, idx) => {
-                const sel = studentAnswers[currentIndex] === idx;
-                return `
-                    <div onclick="selectOption(${idx})" class="group p-4 border-2 rounded-xl cursor-pointer flex items-center justify-between transition-all ${sel ? 'border-blue-500 bg-blue-50 shadow-md scale-[1.02]' : 'border-slate-100 hover:border-slate-300 hover:bg-slate-50'}">
-                        <div class="flex items-center gap-4">
-                            <div class="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm ${sel ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-500'}">${String.fromCharCode(65 + idx)}</div>
-                            <div class="option-text text-sm md:text-base">${opt}</div>
-                        </div>
-                        ${sel ? '<div class="text-blue-600 animate-in fade-in zoom-in duration-200"><i class="fas fa-circle-check text-xl"></i></div>' : ''}
-                    </div>`;
-            }).join('');
+            if (!pair.shuffledOptions) {
+    let optionsWithMetadata = q.options.map((text, index) => ({
+        text: text,
+        originalIndex: index // Keep track of original position for scoring
+    }));
+    
+    // Shuffle the options array
+    pair.shuffledOptions = shuffleArray([...optionsWithMetadata]);
+}
 
+const opts = pair.shuffledOptions; // Use our new shuffled list
+
+DOM.grid.className = opts.every(o => o.text.length < 25) ? "grid grid-cols-1 md:grid-cols-2 gap-4" : "grid grid-cols-1 gap-4";
+
+DOM.grid.innerHTML = opts.map((opt, idx) => {
+    const sel = studentAnswers[currentIndex] === idx;
+    return `
+        <div onclick="selectOption(${idx})" class="group p-4 border-2 rounded-xl cursor-pointer flex items-center justify-between transition-all ${sel ? 'border-blue-500 bg-blue-50 shadow-md scale-[1.02]' : 'border-slate-100 hover:border-slate-300 hover:bg-slate-50'}">
+            <div class="flex items-center gap-4">
+                <div class="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm ${sel ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-500'}">${String.fromCharCode(65 + idx)}</div>
+                <div class="option-text text-sm md:text-base">${opt.text}</div>
+            </div>
+            ${sel ? '<div class="text-blue-600 animate-in fade-in zoom-in duration-200"><i class="fas fa-circle-check text-xl"></i></div>' : ''}
+        </div>`;
+}).join('');
+            
             if (window.MathJax) {
     MathJax.typesetPromise([DOM.content, DOM.grid]).then(() => {
         DOM.container.classList.remove('loading');
@@ -362,14 +397,19 @@ function updatePalette() {
         function closeModal() { document.getElementById('submit-modal').classList.add('hidden'); document.body.classList.remove('modal-open'); }
         function toggleSidebar() { document.getElementById('sidebar').classList.toggle('collapsed'); }
         function setLanguage(l) { 
-            currentLang = l; 
-            document.getElementById('lang-en').className = l === 'en' ? 'px-4 py-1.5 rounded-md text-[12px] font-bold bg-blue-600 text-white transition-all' : 'px-4 py-1.5 rounded-md text-[12px] font-bold text-slate-600 transition-all';
-            document.getElementById('lang-hi').className = l === 'hi' ? 'px-4 py-1.5 rounded-md text-[12px] font-bold bg-blue-600 text-white transition-all' : 'px-4 py-1.5 rounded-md text-[12px] font-bold text-slate-600 transition-all';
-            
-            renderQuestion(); 
-            updatePalette();
-        } // Fixed: Added missing closing brace here
-
+    currentLang = l; 
+    const buttons = { en: document.getElementById('lang-en'), hi: document.getElementById('lang-hi') };
+    
+    // Toggle classes more cleanly
+    Object.keys(buttons).forEach(key => {
+        buttons[key].className = (key === l) 
+            ? 'px-4 py-1.5 rounded-md text-[12px] font-bold bg-blue-600 text-white transition-all' 
+            : 'px-4 py-1.5 rounded-md text-[12px] font-bold text-slate-600 transition-all';
+    });
+    
+    renderQuestion(); 
+    updatePalette();
+}
         function startTimer() {
             if (timerRunning) return; 
             timerRunning = true;
@@ -389,40 +429,59 @@ function updatePalette() {
         }
 
         function finalSubmit() {
-            const report = allQuestions.map((p, i) => {
-                const uIdx = studentAnswers[i];
-                const q = p.en || p.hi;
-                // Supports both "correct" and "correctIndex" keys from RTDB
-                const cIdx = parseInt(q.correctIndex ?? q.correct); 
-                return { 
-                    pair: p, 
-                    userSelectedIndex: uIdx ?? null, 
-                    isCorrect: uIdx === cIdx, 
-                    subject: q.subject || "General", 
-                    timeSpent: window.timeSpentPerQuestion[i] || 0 
-                };
-            });
-
-            const correctCount = report.filter(r => r.userSelectedIndex !== null && r.isCorrect).length;
-            const attemptedCount = report.filter(r => r.userSelectedIndex !== null).length;
-            const wrongCount = attemptedCount - correctCount;
-            
-            // Standard Rajasthan Exam Marking: +1 for Correct, -1/3 for Wrong
-            const finalScore = Math.max(0, correctCount - (wrongCount * 0.333)).toFixed(2);
-            
-            localStorage.setItem('detailedTestReport', JSON.stringify(report));
-            localStorage.setItem('lastTestResult', JSON.stringify({ 
-                testName: DOM.title.innerText, 
-                totalQuestions: allQuestions.length, 
-                correct: correctCount, 
-                incorrect: wrongCount, 
-                total: parseFloat(finalScore) 
-            }));
-
-            // Cleanup local storage
-            ['cp_answers', 'cp_reviews', 'cp_visited', 'cp_timer', 'cp_time_spent'].forEach(k => localStorage.removeItem(k));
-            window.location.href = "result.html";
+    const report = allQuestions.map((p, i) => {
+        const uIdx = studentAnswers[i]; // The index (0-3) the student clicked on screen
+        const q = p.en || p.hi;
+        
+        // The real correct index from your database
+        const cIdx = parseInt(q.correctIndex ?? q.correct); 
+        
+        // Logic to find the original index of the shuffled option
+        let userOriginalChoice = null;
+        if (uIdx !== undefined && p.shuffledOptions && p.shuffledOptions[uIdx]) {
+            userOriginalChoice = p.shuffledOptions[uIdx].originalIndex;
         }
+
+        return { 
+            pair: p, 
+            userSelectedIndex: uIdx ?? null, 
+            // CRITICAL: We compare the original index, not the clicked index
+            isCorrect: userOriginalChoice === cIdx, 
+            subject: q.subject || "General", 
+            timeSpent: window.timeSpentPerQuestion[i] || 0 
+        };
+    });
+
+    // Scoring calculation for Competition Plus
+    const correctCount = report.filter(r => r.userSelectedIndex !== null && r.isCorrect).length;
+    const attemptedCount = report.filter(r => r.userSelectedIndex !== null).length;
+    const wrongCount = attemptedCount - correctCount;
+    
+    // Standard Rajasthan Exam Marking: +1 for Correct, -1/3 for Wrong
+    const finalScore = Math.max(0, correctCount - (wrongCount / 3)).toFixed(2);
+    
+    localStorage.setItem('detailedTestReport', JSON.stringify(report));
+    localStorage.setItem('lastTestResult', JSON.stringify({ 
+        testName: DOM.title.innerText, 
+        totalQuestions: allQuestions.length, 
+        correct: correctCount, 
+        incorrect: wrongCount, 
+        total: parseFloat(finalScore) 
+    }));
+
+    // Cleanup local storage including the new shuffle order key
+    const keysToRemove = [
+        'cp_answers', 
+        'cp_reviews', 
+        'cp_visited', 
+        'cp_timer', 
+        'cp_time_spent', 
+        'cp_question_order'
+    ];
+    keysToRemove.forEach(k => localStorage.removeItem(k));
+
+    window.location.href = "result.html";
+}
 
         // Security - Right click and common dev tools shortcuts
         document.addEventListener('contextmenu', e => e.preventDefault());
