@@ -1,306 +1,699 @@
 <!DOCTYPE html>
+
 <html lang="en">
+
 <head>
+
     <meta charset="UTF-8">
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>Test Results | Competition Plus</title>
+
     <script src="https://cdn.tailwindcss.com"></script>
+
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
     
+
     <script>
+
         window.MathJax = {
+
             tex: {
+
                 inlineMath: [['$', '$'], ['\\(', '\\)']],
-                displayMath: [['$$', '$$']],
-                processEscapes: true // Prevents $ Rupee errors
+
+                displayMath: [['$$', '$$']]
+
             },
-            options: {
-                enableMenu: false
-            },
+
             startup: {
-                pageReady: () => MathJax.startup.defaultPageReady()
+
+                pageReady: () => {
+
+                    return MathJax.startup.defaultPageReady();
+
+                }
+
             }
+
         };
+
     </script>
+
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 
+
+
     <style>
+
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
+
         body { font-family: 'Inter', sans-serif; }
+
         .score-circle { 
+
             transition: all 0.8s ease-in-out; 
+
             background: conic-gradient(#1e40af var(--perc, 0deg), #e2e8f0 0deg); 
+
         }
+
         .tab-active { border-bottom: 3px solid #1e40af; color: #1e40af; }
-        .report-text-content { white-space: pre-wrap !important; word-wrap: break-word; }
+
+        
+
+        /* FIX: Preserves line breaks from Firebase data */
+
+        .report-text-content {
+
+            white-space: pre-wrap !important;
+
+            word-wrap: break-word;
+
+        }
+
+
 
         @media print { 
+
             .print-hidden { display: none !important; } 
+
             body { background: white; padding-bottom: 0; }
+
             .max-w-4xl { max-w-none; width: 100%; }
+
             .rounded-3xl { border-radius: 1rem; border: 1px solid #e2e8f0; }
+
             #tab-nav { display: none !important; }
+
             .score-circle { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
             #review-container { display: block !important; }
+
         }
+
         #review-container { scroll-behavior: smooth; }
+
     </style>
+
 </head>
+
 <body class="bg-slate-50 text-slate-900 pb-20">
 
+
+
     <nav class="bg-white p-3 sticky top-0 z-50 print-hidden border-b border-slate-200 shadow-sm">
+
         <div class="max-w-7xl mx-auto flex justify-between items-center px-2">
+
             <div class="flex items-center gap-4">
-                <div class="bg-blue-600 p-2 rounded-lg flex items-center justify-center shadow-sm">
-                    <i class="fas fa-graduation-cap text-white text-sm"></i>
+
+                <div class="flex items-center gap-3">
+
+                    <div class="bg-blue-600 p-2 rounded-lg flex items-center justify-center shadow-sm">
+
+                        <i class="fas fa-graduation-cap text-white text-sm"></i>
+
+                    </div>
+
+                    <div class="flex flex-col md:flex-row md:items-center md:gap-2">
+
+                        <h1 class="text-sm font-black tracking-tight uppercase leading-none text-slate-900">
+
+                            COMPETITION <span class="text-blue-600">PLUS</span>
+
+                        </h1>
+
+                        <span class="hidden md:block text-slate-300">|</span>
+
+                        <p id="test-title-display" class="text-[11px] md:text-xs font-bold text-slate-500 uppercase tracking-wide">Performance Report</p>
+
+                    </div>
+
                 </div>
-                <div class="flex flex-col md:flex-row md:items-center md:gap-2">
-                    <h1 class="text-sm font-black tracking-tight uppercase leading-none">
-                        COMPETITION <span class="text-blue-600">PLUS</span>
-                    </h1>
-                    <span class="hidden md:block text-slate-300">|</span>
-                    <p id="test-title-display" class="text-[11px] md:text-xs font-bold text-slate-500 uppercase">Performance Report</p>
-                </div>
+
             </div>
+
+
+
             <div class="flex items-center gap-3">
+
                 <button onclick="window.print()" class="hidden sm:flex items-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg text-[10px] font-bold border border-slate-300 transition">
+
                     <i class="fas fa-print"></i> PRINT PDF
+
                 </button>
+
                 <button onclick="handleGeneralShare(event)" class="hidden sm:flex items-center gap-2 bg-blue-50 hover:bg-blue-100 text-blue-700 px-3 py-1.5 rounded-lg text-[10px] font-bold border border-blue-200 transition">
+
                     <i class="fas fa-share-nodes text-sm"></i> SHARE
+
                 </button>
+
                 <a href="dashboard.html" class="bg-slate-900 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-[10px] font-bold shadow-md transition flex items-center gap-2">
+
                     <i class="fas fa-th-large"></i> DASHBOARD
+
                 </a>
+
             </div>
+
         </div>
+
     </nav>
 
+
+
     <main class="max-w-4xl mx-auto px-4 mt-10">
+
         <div id="loading-state" class="text-center py-20 hidden">
+
             <h2 class="text-2xl font-bold text-slate-400">No recent test data found.</h2>
+
             <a href="index.html" class="text-blue-600 underline mt-4 inline-block">Return to Test</a>
+
         </div>
+
+
 
         <div id="content-area">
+
             <div class="text-center mb-10">
+
                 <div class="inline-block p-3 bg-green-100 text-green-700 rounded-full mb-4">
+
                     <i class="fas fa-check-circle text-3xl"></i>
+
                 </div>
+
                 <h2 class="text-3xl font-extrabold tracking-tight">Test Successfully Submitted</h2>
+
                 <p class="text-slate-500 mt-2">Detailed performance analysis for <span id="user-name-display" class="font-bold text-slate-700">Aspirant</span></p>
+
             </div>
+
+
 
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+
                 <div class="md:col-span-2 bg-white p-8 rounded-3xl shadow-sm border border-slate-100 flex flex-col md:flex-row items-center gap-8">
+
                     <div id="score-circle-element" class="relative w-40 h-40 rounded-full flex items-center justify-center score-circle">
+
                         <div class="absolute inset-2 bg-white rounded-full flex flex-col items-center justify-center">
+
                             <span id="display-final-score" class="text-4xl font-extrabold text-blue-800">0.0</span>
+
                             <span id="display-out-of" class="text-xs font-bold text-slate-400 uppercase tracking-widest text-center px-4">Out of 0</span>
+
                         </div>
+
                     </div>
+
                     <div class="flex-1 space-y-4">
+
                         <h3 id="performance-title" class="text-xl font-bold text-slate-800 text-center md:text-left tracking-tight">Calculating...</h3>
+
                         <div class="grid grid-cols-3 gap-2">
+
                             <div class="bg-slate-50 p-3 rounded-xl text-center border border-slate-100">
+
                                 <span id="display-accuracy" class="block text-lg font-bold">0%</span>
+
                                 <span class="text-[10px] font-bold text-slate-400 uppercase">Accuracy</span>
+
                             </div>
+
                             <div class="bg-slate-50 p-3 rounded-xl text-center border border-slate-100">
+
                                 <span id="display-attempted-count" class="block text-lg font-bold">0</span>
+
                                 <span class="text-[10px] font-bold text-slate-400 uppercase">Attempted</span>
+
                             </div>
+
                             <div class="bg-slate-50 p-3 rounded-xl text-center border border-slate-100">
+
                                 <span id="display-avg-time" class="block text-lg font-bold">0s</span>
+
                                 <span class="text-[10px] font-bold text-slate-400 uppercase">Avg Time</span>
+
                             </div>
+
                         </div>
+
                     </div>
+
                 </div>
+
+
 
                 <div class="bg-slate-900 text-white p-6 rounded-3xl shadow-lg flex flex-col justify-between">
+
                     <div>
+
                         <h4 class="text-slate-400 text-[10px] font-bold uppercase mb-4 tracking-widest">Top Time Consumers</h4>
+
                         <div id="top-time-consumers" class="space-y-2"></div>
+
                     </div>
+
                     <p class="text-[10px] text-slate-500 pt-4 border-t border-slate-800 italic">*Negative marks (1/3) applied</p>
+
                 </div>
+
             </div>
+
+
 
             <div class="mb-10 bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
+
                 <h3 class="text-lg font-bold mb-4 flex items-center gap-2">
+
                     <i class="fas fa-chart-pie text-blue-600"></i> Subject-Wise Analysis
+
                 </h3>
+
                 <div id="subject-analysis-container" class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4"></div>
+
             </div>
+
+
 
             <div class="mb-8 print-hidden">
+
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+
                     <h3 class="text-2xl font-extrabold text-slate-800 flex items-center gap-2">
+
                         <i class="fas fa-file-invoice text-blue-600"></i> Solution & Detailed Review
+
                     </h3>
+
+                    
+
                     <div class="flex bg-slate-200 p-1 rounded-xl w-fit">
-                        <button onclick="setLanguage('en')" id="lang-en" class="px-4 py-1.5 rounded-lg text-[11px] font-bold transition-all bg-blue-600 text-white shadow-sm">ENGLISH</button>
-                        <button onclick="setLanguage('hi')" id="lang-hi" class="px-4 py-1.5 rounded-lg text-[11px] font-bold transition-all text-slate-600 hover:bg-slate-300">हिन्दी</button>
+
+                        <button onclick="setLanguage('en')" id="lang-en" 
+
+                            class="px-4 py-1.5 rounded-lg text-[11px] font-bold transition-all duration-200 bg-blue-600 text-white shadow-sm">
+
+                            ENGLISH
+
+                        </button>
+
+                        <button onclick="setLanguage('hi')" id="lang-hi" 
+
+                            class="px-4 py-1.5 rounded-lg text-[11px] font-bold transition-all duration-200 text-slate-600 hover:bg-slate-300">
+
+                            हिन्दी
+
+                        </button>
+
                     </div>
+
                 </div>
+
+
 
                 <div class="flex border-b border-slate-200 overflow-x-auto whitespace-nowrap gap-4" id="tab-nav">
+
                     <button onclick="filterResults('all')" id="btn-all" class="px-4 py-3 text-sm font-bold tab-active">All Questions</button>
+
                     <button onclick="filterResults('correct')" id="btn-correct" class="px-4 py-3 text-sm font-bold text-slate-500">Correct</button>
+
                     <button onclick="filterResults('incorrect')" id="btn-incorrect" class="px-4 py-3 text-sm font-bold text-slate-500">Incorrect</button>
+
                     <button onclick="filterResults('skipped')" id="btn-skipped" class="px-4 py-3 text-sm font-bold text-slate-500">Not Attempted</button>
+
                     <button onclick="filterResults('time')" id="btn-time" class="px-4 py-3 text-sm font-bold text-slate-500">
+
                         <i class="fas fa-hourglass-half mr-1"></i> Time Consumer
+
                     </button>
+
                 </div>
 
-                <div id="review-container" class="space-y-6 pt-6"></div>
+
+
+                <div id="review-container" class="space-y-6"></div>
+
             </div>
+
         </div>
+
     </main>
 
+
+
     <script>
+
+        // Global State
+
         let fullReport = [];
+
         let currentLanguage = 'en';
 
+
+
         window.onload = function() {
+
             const reportData = localStorage.getItem('detailedTestReport');
+
             const summaryData = localStorage.getItem('lastTestResult');
 
+
+
             if (!reportData || !summaryData) {
+
                 document.getElementById('loading-state').classList.remove('hidden');
+
                 document.getElementById('content-area').classList.add('hidden');
+
                 return;
+
             }
 
+
+
             fullReport = JSON.parse(reportData);
+
             const summary = JSON.parse(summaryData);
 
+
+
             document.getElementById('test-title-display').innerText = summary.testName || "Performance Report";
+
             document.getElementById('display-final-score').innerText = summary.total.toFixed(2);
+
             document.getElementById('display-out-of').innerText = `Out of ${summary.totalQuestions}`;
+
             document.getElementById('display-attempted-count').innerText = (summary.correct + summary.incorrect);
+
             
+
             const totalAttempted = summary.correct + summary.incorrect;
+
             const accuracy = totalAttempted > 0 ? ((summary.correct / totalAttempted) * 100).toFixed(1) : 0;
+
             document.getElementById('display-accuracy').innerText = accuracy + "%";
 
-            const perc = (summary.total / (summary.totalQuestions || 1)) * 360;
+
+
+            const perc = (summary.total / summary.totalQuestions) * 360;
+
             document.getElementById('score-circle-element').style.setProperty('--perc', `${perc}deg`);
 
+
+
             const perfTitle = document.getElementById('performance-title');
-            perfTitle.innerText = accuracy >= 80 ? "Excellent Work! 🚀" : accuracy >= 60 ? "Good Job! Keep Pushing. 👍" : "Needs More Practice. 📚";
+
+            if (accuracy >= 80) perfTitle.innerText = "Excellent Work! 🚀";
+
+            else if (accuracy >= 60) perfTitle.innerText = "Good Job! Keep Pushing. 👍";
+
+            else perfTitle.innerText = "Needs More Practice. 📚";
+
+
 
             renderSubjectAnalysis();
+
             renderTimeConsumers();
+
             filterResults('all');
+
         };
 
+
+
         function renderSubjectAnalysis() {
+
             const subjects = {};
+
             let totalTime = 0;
 
+
+
             fullReport.forEach(item => {
+
                 const sub = item.subject || "General";
+
                 if (!subjects[sub]) subjects[sub] = { correct: 0, total: 0 };
+
                 subjects[sub].total++;
+
                 if (item.isCorrect) subjects[sub].correct++;
+
                 totalTime += (item.timeSpent || 0);
+
             });
 
-            document.getElementById('display-avg-time').innerText = Math.round(totalTime / (fullReport.length || 1)) + "s";
 
-            document.getElementById('subject-analysis-container').innerHTML = Object.entries(subjects).map(([name, data]) => `
+
+            const avgTime = fullReport.length > 0 ? Math.round(totalTime / fullReport.length) : 0;
+
+            document.getElementById('display-avg-time').innerText = avgTime + "s";
+
+
+
+            const container = document.getElementById('subject-analysis-container');
+
+            container.innerHTML = Object.entries(subjects).map(([name, data]) => `
+
                 <div class="space-y-1">
+
                     <div class="flex justify-between text-[11px] font-bold uppercase tracking-wide">
+
                         <span class="text-slate-600">${name}</span>
+
                         <span class="${(data.correct/data.total) > 0.6 ? 'text-green-600' : 'text-amber-600'}">${data.correct}/${data.total}</span>
+
                     </div>
+
                     <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+
                         <div class="bg-blue-600 h-full transition-all duration-1000" style="width: ${(data.correct/data.total)*100}%"></div>
+
                     </div>
-                </div>`).join('');
+
+                </div>
+
+            `).join('');
+
         }
+
+
 
         function renderTimeConsumers() {
+
             const sorted = [...fullReport].sort((a, b) => (b.timeSpent || 0) - (a.timeSpent || 0)).slice(0, 3);
-            document.getElementById('top-time-consumers').innerHTML = sorted.map(item => `
+
+            const container = document.getElementById('top-time-consumers');
+
+            container.innerHTML = sorted.map((item, i) => `
+
                 <div class="flex justify-between items-center bg-white/5 p-2 rounded-lg border border-white/10 text-xs">
-                    <span class="text-slate-300">Q. ${fullReport.indexOf(item) + 1}</span>
+
+                    <span class="text-slate-300">Q. ${fullReport.findIndex(r => r === item) + 1}</span>
+
                     <span class="font-mono text-blue-400 font-bold">${item.timeSpent || 0} Sec</span>
-                </div>`).join('');
+
+                </div>
+
+            `).join('');
+
         }
+
+
 
         function setLanguage(lang) {
+
             currentLanguage = lang;
-            const isEn = lang === 'en';
-            document.getElementById('lang-en').className = `px-4 py-1.5 rounded-lg text-[11px] font-bold transition-all ${isEn ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-300'}`;
-            document.getElementById('lang-hi').className = `px-4 py-1.5 rounded-lg text-[11px] font-bold transition-all ${!isEn ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-300'}`;
-            filterResults(document.querySelector('.tab-active').id.replace('btn-', ''));
+
+            const btnEn = document.getElementById('lang-en');
+
+            const btnHi = document.getElementById('lang-hi');
+
+            const active = "bg-blue-600 text-white shadow-sm";
+
+            const inactive = "text-slate-600 hover:bg-slate-300";
+
+
+
+            if(lang === 'en') {
+
+                btnEn.className = `px-4 py-1.5 rounded-lg text-[11px] font-bold transition-all duration-200 ${active}`;
+
+                btnHi.className = `px-4 py-1.5 rounded-lg text-[11px] font-bold transition-all duration-200 ${inactive}`;
+
+            } else {
+
+                btnEn.className = `px-4 py-1.5 rounded-lg text-[11px] font-bold transition-all duration-200 ${inactive}`;
+
+                btnHi.className = `px-4 py-1.5 rounded-lg text-[11px] font-bold transition-all duration-200 ${active}`;
+
+            }
+
+            const activeTab = document.querySelector('.tab-active')?.id.replace('btn-', '') || 'all';
+
+            filterResults(activeTab);
+
         }
+
+
 
         function filterResults(type) {
+
             const container = document.getElementById('review-container');
+
+            container.innerHTML = "";
+
+            
+
             document.querySelectorAll('#tab-nav button').forEach(b => b.classList.remove('tab-active', 'text-slate-500'));
+
             document.getElementById(`btn-${type}`)?.classList.add('tab-active');
 
-            let list = [...fullReport];
-            if (type === 'time') list.sort((a, b) => (b.timeSpent || 0) - (a.timeSpent || 0));
 
-            const html = list.map((item) => {
+
+            let displayList = [...fullReport];
+
+            if (type === 'time') displayList.sort((a, b) => (b.timeSpent || 0) - (a.timeSpent || 0));
+
+
+
+            displayList.forEach((item) => {
+
+                const originalIndex = fullReport.findIndex(r => r === item);
+
+                let qData = (item.pair) ? ((currentLanguage === 'hi' && item.pair.hi) ? item.pair.hi : item.pair.en) : item;
+
+                if(!qData) qData = item.pair?.en || item.pair?.hi || item;
+
+
+
                 const isSkipped = item.userSelectedIndex === null || item.userSelectedIndex === undefined;
-                if (type === 'correct' && !item.isCorrect) return '';
-                if (type === 'incorrect' && (item.isCorrect || isSkipped)) return '';
-                if (type === 'skipped' && !isSkipped) return '';
 
-                const qData = item.pair ? (item.pair[currentLanguage] || item.pair.en) : item;
+                
+
+                if (type === 'correct' && !item.isCorrect) return;
+
+                if (type === 'incorrect' && (item.isCorrect || isSkipped)) return;
+
+                if (type === 'skipped' && !isSkipped) return;
+
+
+
                 const statusColor = item.isCorrect ? 'border-green-100 bg-white' : (isSkipped ? 'border-slate-100 bg-slate-50/50' : 'border-red-100 bg-white');
+
                 const statusIcon = item.isCorrect ? 'fa-check-circle text-green-500' : (isSkipped ? 'fa-minus-circle text-slate-300' : 'fa-times-circle text-red-500');
+
+
+
+                const userIdx = item.userSelectedIndex;
+
                 const correctIdx = qData.hasOwnProperty('correctIndex') ? parseInt(qData.correctIndex) : parseInt(qData.correct);
 
-                return `
-                <div class="p-6 rounded-3xl border-2 ${statusColor} shadow-sm mb-6 transition-all duration-300">
-                    <div class="flex justify-between items-start mb-4">
-                        <div class="flex items-center gap-2">
-                            <i class="fas ${statusIcon}"></i>
-                            <span class="bg-slate-100 text-slate-500 px-3 py-1 rounded-lg text-[10px] font-bold uppercase">Question ${fullReport.indexOf(item) + 1}</span>
-                            <span class="text-slate-400 text-[10px]"><i class="far fa-clock"></i> ${item.timeSpent || 0}s</span>
-                        </div>
-                    </div>
-                    <div class="report-text-content font-semibold text-slate-800 mb-6 leading-relaxed">${qData.questionText || qData.question}</div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div class="p-4 rounded-2xl border text-sm ${item.isCorrect ? 'bg-green-50 border-green-200 text-green-700' : (isSkipped ? 'bg-slate-50 border-slate-200 text-slate-500' : 'bg-red-50 border-red-200 text-red-700')}">
-                            <span class="font-bold uppercase text-[9px] block opacity-60 mb-1">Your Selection</span>
-                            <span class="font-bold">${(item.userSelectedIndex !== null && qData.options) ? qData.options[item.userSelectedIndex] : 'Not Attempted'}</span>
-                        </div>
-                        <div class="p-4 rounded-2xl border border-green-200 bg-green-50 text-green-700 text-sm">
-                            <span class="font-bold uppercase text-[9px] block opacity-60 mb-1">Correct Answer</span>
-                            <span class="font-bold">${qData.options ? qData.options[correctIdx] : 'N/A'}</span>
-                        </div>
-                    </div>
-                    ${qData.explanation ? `<div class="mt-4 p-5 bg-blue-50/30 rounded-2xl border border-blue-100 text-[13px] text-slate-700 report-text-content">${qData.explanation}</div>` : ''}
-                </div>`;
-            }).join('');
 
-            container.innerHTML = html || `<div class="text-center py-10 text-slate-400 font-bold">No questions to display in this category.</div>`;
-            if (window.MathJax) MathJax.typesetPromise([container]);
+
+                container.innerHTML += `
+
+                    <div class="p-6 rounded-3xl border-2 ${statusColor} shadow-sm mb-6 transition-all duration-300">
+
+                        <div class="flex justify-between items-start mb-4">
+
+                            <div class="flex items-center gap-2">
+
+                                <i class="fas ${statusIcon}"></i>
+
+                                <span class="bg-slate-100 text-slate-500 px-3 py-1 rounded-lg text-[10px] font-bold uppercase">Question ${originalIndex + 1}</span>
+
+                                <span class="text-slate-400 text-[10px]"><i class="far fa-clock"></i> ${item.timeSpent || 0}s</span>
+
+                            </div>
+
+                        </div>
+
+                        
+
+                        <div class="report-text-content font-semibold text-slate-800 mb-6 leading-relaxed">${qData.questionText || qData.question}</div>
+
+                        
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                            <div class="p-4 rounded-2xl border text-sm ${item.isCorrect ? 'bg-green-50 border-green-200 text-green-700' : (isSkipped ? 'bg-slate-50 border-slate-200 text-slate-500' : 'bg-red-50 border-red-200 text-red-700')}">
+
+                                <span class="font-bold uppercase text-[9px] block opacity-60 mb-1">Your Selection</span>
+
+                                <span class="font-bold">${(userIdx !== null && qData.options) ? qData.options[userIdx] : 'Not Attempted'}</span>
+
+                            </div>
+
+                            <div class="p-4 rounded-2xl border border-green-200 bg-green-50 text-green-700 text-sm">
+
+                                <span class="font-bold uppercase text-[9px] block opacity-60 mb-1">Correct Answer</span>
+
+                                <span class="font-bold">${qData.options ? qData.options[correctIdx] : 'N/A'}</span>
+
+                            </div>
+
+                        </div>
+
+                        
+
+                        ${qData.explanation ? `<div class="mt-4 p-5 bg-blue-50/30 rounded-2xl border border-blue-100 text-[13px] text-slate-700 report-text-content">${qData.explanation}</div>` : ''}
+
+                    </div>`;
+
+            });
+
+            if (window.MathJax) MathJax.typesetPromise();
+
         }
+
+
 
         async function handleGeneralShare(event) {
+
             const score = document.getElementById('display-final-score').innerText;
+
             const testName = document.getElementById('test-title-display').innerText;
-            const text = `🎯 I scored ${score} in "${testName}" on Competition Plus!`;
+
+            const shareData = {
+
+                title: 'Test Result | Competition Plus',
+
+                text: `🎯 I scored ${score} in "${testName}" on Competition Plus!`,
+
+                url: window.location.href
+
+            };
+
             try {
-                if (navigator.share) {
-                    await navigator.share({ title: 'Test Result', text: text, url: window.location.href });
-                } else {
-                    await navigator.clipboard.writeText(`${text}\n${window.location.href}`);
-                    event.currentTarget.innerHTML = '<i class="fas fa-check"></i> COPIED';
-                    setTimeout(() => event.currentTarget.innerHTML = '<i class="fas fa-share-nodes"></i> SHARE', 2000);
+
+                if (navigator.share) await navigator.share(shareData);
+
+                else {
+
+                    await navigator.clipboard.writeText(`${shareData.text}\n${shareData.url}`);
+
+                    const btn = event.currentTarget;
+
+                    btn.innerHTML = '<i class="fas fa-check"></i> COPIED';
+
+                    setTimeout(() => btn.innerHTML = '<i class="fas fa-share-nodes"></i> SHARE', 2000);
+
                 }
+
             } catch (err) { console.error(err); }
+
         }
+
     </script>
+
 </body>
+
 </html>
