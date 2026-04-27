@@ -311,12 +311,10 @@ DOM.content.innerHTML = imageHtml + q.questionText;
     pair.shuffledOptions = shuffleArray([...optionsWithMetadata]);
 }
 
-const opts = pair.shuffledOptions; // Use our new shuffled list
-
-DOM.grid.className = opts.every(o => o.text.length < 25) ? "grid grid-cols-1 md:grid-cols-2 gap-4" : "grid grid-cols-1 gap-4";
-
+const opts = pair.shuffledOptions;
 DOM.grid.innerHTML = opts.map((opt, idx) => {
-    const sel = studentAnswers[currentIndex] === idx;
+    // Check if the saved originalIndex matches this option's originalIndex
+    const sel = studentAnswers[currentIndex] === opt.originalIndex;
     return `
         <div onclick="selectOption(${idx})" class="group p-4 border-2 rounded-xl cursor-pointer flex items-center justify-between transition-all ${sel ? 'border-blue-500 bg-blue-50 shadow-md scale-[1.02]' : 'border-slate-100 hover:border-slate-300 hover:bg-slate-50'}">
             <div class="flex items-center gap-4">
@@ -366,8 +364,9 @@ function updatePalette() {
             if (activeNode) activeNode.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' });
         }
 
-        function selectOption(idx) { 
-    studentAnswers[currentIndex] = idx; 
+        function selectOption(viewIdx) { 
+    const pair = allQuestions[currentIndex];
+    studentAnswers[currentIndex] = pair.shuffledOptions[viewIdx].originalIndex; 
     localStorage.setItem('cp_answers', JSON.stringify(studentAnswers)); 
     renderQuestion(); 
     updatePalette(); 
@@ -403,6 +402,11 @@ function updatePalette() {
 
     if (isTimeOver) {
         // Time Over State
+        document.getElementById('options-grid').style.pointerEvents = 'none';
+    document.getElementById('question-container').style.opacity = '0.6';
+    
+    // Auto-save the current state one last time
+    localStorage.setItem('cp_answers', JSON.stringify(studentAnswers));
         warningBox.classList.remove('hidden');
         warningBox.className = "p-4 bg-red-50 border border-red-200 rounded-2xl mb-6";
         warningBox.innerHTML = `<p class="text-sm font-bold text-red-900"><i class="fas fa-hourglass-end mr-2"></i>Time is over! Your answers have been saved. Please click below to view your results.</p>`;
@@ -474,31 +478,21 @@ function updatePalette() {
 
         function finalSubmit() {
     const report = allQuestions.map((p, i) => {
-        const uIdx = studentAnswers[i]; // The index (0-3) the student clicked on screen
+        const userSavedOriginalIdx = studentAnswers[i]; // Now stores the actual choice ID
         const q = p.en || p.hi;
-        
-        // The real correct index from your database
-        const cIdx = parseInt(q.correctIndex ?? q.correct); 
-        
-        // Logic to find the original index of the shuffled option
-        let userOriginalChoice = null;
-        if (uIdx !== undefined && p.shuffledOptions && p.shuffledOptions[uIdx]) {
-            userOriginalChoice = p.shuffledOptions[uIdx].originalIndex;
-        }
+        const correctIdx = parseInt(q.correctIndex ?? q.correct); 
 
         return { 
             pair: p, 
-            userSelectedIndex: uIdx ?? null, 
-            // CRITICAL: We compare the original index, not the clicked index
-            isCorrect: userOriginalChoice === cIdx, 
+            userSelectedIndex: userSavedOriginalIdx, 
+            isCorrect: userSavedOriginalIdx === correctIdx, 
             subject: q.subject || "General", 
             timeSpent: window.timeSpentPerQuestion[i] || 0 
         };
     });
-
     // Scoring calculation for Competition Plus
     const correctCount = report.filter(r => r.userSelectedIndex !== null && r.isCorrect).length;
-    const attemptedCount = report.filter(r => r.userSelectedIndex !== null).length;
+    const attemptedCount = report.filter(r => r.userSelectedIndex !== undefined).length;
     const wrongCount = attemptedCount - correctCount;
     
     // Standard Rajasthan Exam Marking: +1 for Correct, -1/3 for Wrong
