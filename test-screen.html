@@ -91,23 +91,44 @@
         </section>
 
         <aside id="sidebar" class="w-80 bg-white border-l border-slate-200 flex flex-col transition-all duration-300">
-            <div class="p-5 border-b border-slate-100 flex items-center gap-4">
-                <img src="https://ui-avatars.com/api/?name=Aspirant&background=0D8ABC&color=fff" class="w-12 h-12 rounded-xl border" alt="Profile">
-                <div><h4 class="font-bold text-slate-800 text-sm">Official Aspirant</h4><p class="text-[10px] text-slate-500">CP-2026-88</p></div>
+    <div class="p-5 border-b border-slate-100 flex items-center gap-4">
+        <img src="https://ui-avatars.com/api/?name=Aspirant&background=0D8ABC&color=fff" class="w-12 h-12 rounded-xl border" alt="Profile">
+        <div><h4 class="font-bold text-slate-800 text-sm">Official Aspirant</h4><p class="text-[10px] text-slate-500">CP-2026-88</p></div>
+    </div>
+    
+    <div class="flex-1 overflow-y-auto p-5">
+        <p class="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-4">Question Palette</p>
+        <div id="palette-grid" class="grid grid-cols-5 gap-3"></div>
+    </div>
+
+    <div class="p-4 border-t bg-slate-50/50">
+        <div class="grid grid-cols-2 gap-2">
+            <div class="flex items-center gap-2 bg-white p-2 rounded-lg border border-slate-200">
+                <div class="w-5 h-5 bg-green-500 rounded shadow-sm flex items-center justify-center text-[10px] text-white font-bold"><span id="leg-answered">0</span></div>
+                <span class="text-[10px] font-bold text-slate-600 uppercase">Answered</span>
             </div>
-            <div class="flex-1 overflow-y-auto p-5">
-                <p class="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-4">Question Palette</p>
-                <div id="palette-grid" class="grid grid-cols-5 gap-3"></div>
+            <div class="flex items-center gap-2 bg-white p-2 rounded-lg border border-slate-200">
+                <div class="w-5 h-5 bg-red-500 rounded shadow-sm flex items-center justify-center text-[10px] text-white font-bold"><span id="leg-not-answered">0</span></div>
+                <span class="text-[10px] font-bold text-slate-600 uppercase">Not Ans</span>
             </div>
-            <div class="p-5 border-t bg-slate-50/30">
-                <div class="grid grid-cols-2 gap-y-3">
-                    <div class="flex items-center gap-2"><div class="w-4 h-4 bg-white border border-slate-300 rounded"></div><span class="text-[10px] font-bold text-slate-600">Not Visited (<span id="leg-not-visited">0</span>)</span></div>
-                    <div class="flex items-center gap-2"><div class="w-4 h-4 bg-red-500 rounded"></div><span class="text-[10px] font-bold text-slate-600">Not Answered (<span id="leg-not-answered">0</span>)</span></div>
-                    <div class="flex items-center gap-2"><div class="w-4 h-4 bg-green-500 rounded"></div><span class="text-[10px] font-bold text-slate-600">Answered (<span id="leg-answered">0</span>)</span></div>
-                    <div class="flex items-center gap-2"><div class="w-4 h-4 bg-purple-600 rounded"></div><span class="text-[10px] font-bold text-slate-600">Marked (<span id="leg-marked">0</span>)</span></div>
-                </div>
+            <div class="flex items-center gap-2 bg-white p-2 rounded-lg border border-slate-200">
+                <div class="w-5 h-5 bg-white border border-slate-300 rounded shadow-sm flex items-center justify-center text-[10px] text-slate-400 font-bold"><span id="leg-not-visited">0</span></div>
+                <span class="text-[10px] font-bold text-slate-600 uppercase">Not Visited</span>
             </div>
-        </aside>
+            <div class="flex items-center gap-2 bg-white p-2 rounded-lg border border-slate-200">
+                <div class="w-5 h-5 bg-purple-600 rounded shadow-sm flex items-center justify-center text-[10px] text-white font-bold"><span id="leg-marked">0</span></div>
+                <span class="text-[10px] font-bold text-slate-600 uppercase">Marked</span>
+            </div>
+        </div>
+        <div class="mt-2 flex items-center justify-center gap-2 bg-purple-50 p-2 rounded-lg border border-purple-100">
+            <div class="relative w-5 h-5 bg-purple-600 rounded shadow-sm flex items-center justify-center text-[10px] text-white font-bold">
+                <span id="leg-marked-answered">0</span>
+                <div class="absolute -top-1 -right-1 w-2 h-2 bg-green-400 rounded-full border border-white"></div>
+            </div>
+            <span class="text-[10px] font-bold text-purple-700 uppercase">Marked & Answered</span>
+        </div>
+    </div>
+</aside>
     </main>
 
     <div id="submit-modal" class="hidden fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
@@ -239,33 +260,41 @@
         }
 
         function updatePalette() {
-            const grid = UI.palette();
-            const frag = document.createDocumentFragment();
-            let c = { ans: 0, m: 0, ma: 0, nv: 0, na: 0 };
+    const grid = document.getElementById("palette-grid");
+    const frag = document.createDocumentFragment();
+    let c = { ans: 0, m: 0, ma: 0, nv: 0, na: 0 };
 
-            allQuestions.forEach((_, i) => {
-                const isAns = studentAnswers[i] !== undefined, isMark = reviewList[i], isVis = visitedList[i];
-                let cls = "bg-white text-slate-400 border-slate-200", dot = "";
+    allQuestions.forEach((_, i) => {
+        const isAns = studentAnswers[i] !== undefined, isMark = reviewList[i], isVis = visitedList[i];
+        let cls = "bg-white text-slate-400 border-slate-200", dot = "";
 
-                if (isMark && isAns) { cls = "bg-purple-600 text-white shadow-lg"; dot = '<div class="absolute -top-0.5 -right-0.5 w-2 h-2 bg-green-400 rounded-full border border-purple-600"></div>'; c.ma++; }
-                else if (isMark) { cls = "bg-purple-600 text-white shadow-lg"; c.m++; }
-                else if (isAns) { cls = "bg-green-500 text-white shadow-lg"; c.ans++; }
-                else if (isVis) { cls = "bg-red-500 text-white"; c.na++; }
-                else c.nv++;
-
-                const btn = document.createElement("div");
-                btn.className = `q-node relative ${cls} ${i === currentIndex ? 'q-active' : ''}`;
-                btn.innerHTML = `<span>${i + 1}</span>${dot}`;
-                btn.onclick = () => { currentIndex = i; renderQuestion(); updatePalette(); };
-                frag.appendChild(btn);
-            });
-
-            grid.innerHTML = ""; grid.appendChild(frag);
-            document.getElementById("leg-answered").innerText = c.ans;
-            document.getElementById("leg-marked").innerText = c.m + c.ma;
-            document.getElementById("leg-not-answered").innerText = c.na;
-            document.getElementById("leg-not-visited").innerText = c.nv;
+        if (isMark && isAns) { 
+            cls = "bg-purple-600 text-white shadow-lg"; 
+            dot = '<div class="absolute -top-0.5 -right-0.5 w-2 h-2 bg-green-400 rounded-full border border-purple-600"></div>'; 
+            c.ma++; 
         }
+        else if (isMark) { cls = "bg-purple-600 text-white shadow-lg"; c.m++; }
+        else if (isAns) { cls = "bg-green-500 text-white shadow-lg"; c.ans++; }
+        else if (isVis) { cls = "bg-red-500 text-white"; c.na++; }
+        else c.nv++;
+
+        const btn = document.createElement("div");
+        btn.className = `q-node relative ${cls} ${i === currentIndex ? 'q-active' : ''}`;
+        btn.innerHTML = `<span>${i + 1}</span>${dot}`;
+        btn.onclick = () => { currentIndex = i; renderQuestion(); updatePalette(); };
+        frag.appendChild(btn);
+    });
+
+    grid.innerHTML = ""; 
+    grid.appendChild(frag);
+    
+    // Update the Restored Legend Counts
+    document.getElementById("leg-answered").innerText = c.ans;
+    document.getElementById("leg-not-answered").innerText = c.na;
+    document.getElementById("leg-not-visited").innerText = c.nv;
+    document.getElementById("leg-marked").innerText = c.m;
+    document.getElementById("leg-marked-answered").innerText = c.ma;
+}
 
         function selectOption(idx) { studentAnswers[currentIndex] = idx; localStorage.setItem('cp_answers', JSON.stringify(studentAnswers)); renderQuestion(); updatePalette(); }
         function saveAndNext() { if (reviewList[currentIndex]) delete reviewList[currentIndex]; localStorage.setItem('cp_reviews', JSON.stringify(reviewList)); if (currentIndex < allQuestions.length - 1) { currentIndex++; renderQuestion(); updatePalette(); } }
