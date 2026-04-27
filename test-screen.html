@@ -292,10 +292,16 @@
                     </div>`;
             }).join('');
 
-            if (window.MathJax && q.questionText.includes('$')) MathJax.typesetPromise().finally(() => DOM.container.classList.remove('loading'));
-            else DOM.container.classList.remove('loading');
-        }
-
+            if (window.MathJax) {
+    MathJax.typesetPromise([DOM.content, DOM.grid]).then(() => {
+        DOM.container.classList.remove('loading');
+    }).catch((err) => {
+        console.error('MathJax error:', err);
+        DOM.container.classList.remove('loading');
+    });
+} else {
+    DOM.container.classList.remove('loading');
+}
         function updatePalette() {
             const frag = document.createDocumentFragment();
             let c = { ans: 0, m: 0, ma: 0, nv: 0, na: 0 };
