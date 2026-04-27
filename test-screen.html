@@ -191,7 +191,7 @@
         let studentAnswers = loadLocal('cp_answers', {});
         let reviewList = loadLocal('cp_reviews', {});
         let visitedList = loadLocal('cp_visited', {});
-        let timeInSeconds = parseInt(localStorage.getItem('cp_timer')) || 3600;
+        let timeInSeconds = parseInt(localStorage.getItem('cp_timer')) || 0;
         window.timeSpentPerQuestion = loadLocal('cp_time_spent', []);
 
         const DOM = {
@@ -230,7 +230,14 @@
                     isHindi ? grouped[qid].hi = item : grouped[qid].en = item;
                 });
 
-                allQuestions = Object.values(grouped);
+               allQuestions = Object.values(grouped);
+
+        // --- DYNAMIC TIMER LOGIC START ---
+        if (timeInSeconds <= 0) {
+            const secondsPerQuestion = 60; 
+            timeInSeconds = allQuestions.length * secondsPerQuestion;
+            localStorage.setItem('cp_timer', timeInSeconds);
+        }
                 if (window.timeSpentPerQuestion.length === 0) window.timeSpentPerQuestion = new Array(allQuestions.length).fill(0);
                 
                 setInterval(() => {
