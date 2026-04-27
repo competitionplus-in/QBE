@@ -272,9 +272,12 @@
             DOM.grid.innerHTML = options.map((opt, idx) => {
                 const sel = studentAnswers[currentIndex] === idx;
                 return `
-                    <div onclick="selectOption(${idx})" class="group p-4 border-2 rounded-xl cursor-pointer flex items-center gap-4 transition-all ${sel ? 'border-blue-500 bg-blue-50 shadow-md scale-[1.02]' : 'border-slate-100 hover:border-slate-300 hover:bg-slate-50'}">
-                        <div class="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm ${sel ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-500'}">${String.fromCharCode(65 + idx)}</div>
-                        <div class="option-text text-sm md:text-base">${opt}</div>
+                    <div onclick="selectOption(${idx})" class="group p-4 border-2 rounded-xl cursor-pointer flex items-center justify-between transition-all ${sel ? 'border-blue-500 bg-blue-50 shadow-md scale-[1.02]' : 'border-slate-100 hover:border-slate-300 hover:bg-slate-50'}">
+                        <div class="flex items-center gap-4">
+                            <div class="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm ${sel ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-500'}">${String.fromCharCode(65 + idx)}</div>
+                            <div class="option-text text-sm md:text-base">${opt}</div>
+                        </div>
+                        ${sel ? '<div class="text-blue-600 animate-in fade-in zoom-in duration-200"><i class="fas fa-circle-check text-xl"></i></div>' : ''}
                     </div>`;
             }).join('');
 
