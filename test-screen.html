@@ -362,7 +362,15 @@
             DOM.legend.nv.innerText = c.nv;
             DOM.legend.m.innerText = c.m;
             DOM.legend.ma.innerText = c.ma;
-        }
+        const activeNode = DOM.palette.querySelector('.q-active');
+    if (activeNode) {
+        activeNode.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'nearest', 
+            inline: 'start' 
+        });
+    }
+}
 
         function selectOption(idx) { studentAnswers[currentIndex] = idx; localStorage.setItem('cp_answers', JSON.stringify(studentAnswers)); renderQuestion(); updatePalette(); }
         function saveAndNext() { if (reviewList[currentIndex]) delete reviewList[currentIndex]; localStorage.setItem('cp_reviews', JSON.stringify(reviewList)); if (currentIndex < allQuestions.length - 1) { currentIndex++; renderQuestion(); updatePalette(); } }
