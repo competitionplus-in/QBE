@@ -148,27 +148,71 @@
     </main>
 
     <div id="submit-modal" class="hidden fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
-        <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden border border-white/20">
-            <div class="bg-slate-50 px-6 py-4 border-b border-slate-100 flex justify-between items-center">
-                <h3 class="text-lg font-bold text-slate-800">Final Submission</h3>
-                <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600"><i class="fas fa-times text-xl"></i></button>
+    <div class="bg-white rounded-3xl shadow-2xl max-w-lg w-full overflow-hidden border border-white/20 animate-in fade-in zoom-in duration-300">
+        <div class="bg-slate-50 px-6 py-5 border-b border-slate-100 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center">
+                    <i class="fas fa-file-export"></i>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold text-slate-800 leading-tight">Exam Summary</h3>
+                    <p class="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Final Review before submission</p>
+                </div>
             </div>
-            <div class="p-6">
-                <div class="grid grid-cols-3 gap-3 mb-6">
-                    <div class="bg-slate-50 p-2 rounded-lg border text-center"> <p class="text-[8px] font-bold uppercase">Total</p> <p id="modal-total" class="text-lg font-black">0</p> </div>
-                    <div class="bg-green-50 p-2 rounded-lg border text-center"> <p class="text-[8px] font-bold uppercase text-green-600">Answered</p> <p id="modal-answered" class="text-lg font-black text-green-800">0</p> </div>
-                    <div class="bg-purple-50 p-2 rounded-lg border text-center"> <p class="text-[8px] font-bold uppercase text-purple-600">Marked+Ans</p> <p id="modal-marked-ans" class="text-lg font-black text-purple-800">0</p> </div>
+            <button onclick="closeModal()" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-200 text-slate-400 transition-colors">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <div class="p-6">
+            <div class="grid grid-cols-3 gap-3 mb-6">
+                <div class="bg-slate-50 p-3 rounded-2xl border border-slate-100 text-center">
+                    <p class="text-[9px] font-black uppercase text-slate-400 mb-1">Total</p>
+                    <p id="modal-total" class="text-2xl font-black text-slate-800">0</p>
                 </div>
-                <div id="modal-warning" class="hidden p-3 bg-amber-50 border border-amber-200 rounded-lg mb-4 text-[11px] text-amber-800">
-                    <i class="fas fa-exclamation-triangle mr-2"></i>Some questions are unanswered. Review your choices.
+                <div class="bg-green-50 p-3 rounded-2xl border border-green-100 text-center">
+                    <p class="text-[9px] font-black uppercase text-green-600 mb-1">Answered</p>
+                    <p id="modal-answered" class="text-2xl font-black text-green-700">0</p>
                 </div>
+                <div class="bg-red-50 p-3 rounded-2xl border border-red-100 text-center">
+                    <p class="text-[9px] font-black uppercase text-red-600 mb-1">Not Ans</p>
+                    <p id="modal-not-answered" class="text-2xl font-black text-red-700">0</p>
+                </div>
+                <div class="bg-purple-50 p-3 rounded-2xl border border-purple-100 text-center">
+                    <p class="text-[9px] font-black uppercase text-purple-600 mb-1">Marked</p>
+                    <p id="modal-marked" class="text-2xl font-black text-purple-700">0</p>
+                </div>
+                <div class="bg-indigo-50 p-3 rounded-2xl border border-indigo-100 text-center">
+                    <p class="text-[9px] font-black uppercase text-indigo-600 mb-1">Mark+Ans</p>
+                    <p id="modal-marked-ans" class="text-2xl font-black text-indigo-700">0</p>
+                </div>
+                <div class="bg-slate-100 p-3 rounded-2xl border border-slate-200 text-center">
+                    <p class="text-[9px] font-black uppercase text-slate-500 mb-1">Not Visited</p>
+                    <p id="modal-not-visited" class="text-2xl font-black text-slate-600">0</p>
+                </div>
+            </div>
+
+            <div id="modal-warning" class="hidden p-4 bg-amber-50 border border-amber-200 rounded-2xl mb-6">
                 <div class="flex gap-3">
-                    <button onclick="closeModal()" class="flex-1 py-2 text-xs font-bold text-slate-600 bg-slate-100 rounded-lg">GO BACK</button>
-                    <button onclick="finalSubmit()" class="flex-1 py-2 text-xs font-bold bg-blue-600 text-white rounded-lg shadow-lg">CONFIRM SUBMIT</button>
+                    <i class="fas fa-circle-exclamation text-amber-500 text-lg mt-0.5"></i>
+                    <div>
+                        <p class="text-sm font-bold text-amber-900">Wait! You missed some questions.</p>
+                        <p class="text-[11px] text-amber-700 font-medium mt-0.5">It is recommended to review all questions before finishing the test.</p>
+                    </div>
                 </div>
+            </div>
+
+            <div class="flex gap-3">
+                <button onclick="closeModal()" class="flex-1 py-3 text-xs font-bold text-slate-500 bg-slate-100 hover:bg-slate-200 rounded-xl transition-all">
+                    RESUME TEST
+                </button>
+                <button onclick="finalSubmit()" class="flex-1 py-3 text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-lg shadow-blue-200 transition-all active:scale-95">
+                    CONFIRM SUBMIT
+                </button>
             </div>
         </div>
     </div>
+</div>
 
     <script>
         const firebaseConfig = {
@@ -327,18 +371,38 @@
         function clearResponse() { delete studentAnswers[currentIndex]; delete reviewList[currentIndex]; localStorage.setItem('cp_answers', JSON.stringify(studentAnswers)); localStorage.setItem('cp_reviews', JSON.stringify(reviewList)); renderQuestion(); updatePalette(); }
         
         function confirmSubmit() {
-            const ans = parseInt(DOM.legend.ans.innerText);
-            const mans = parseInt(DOM.legend.ma.innerText);
-            const total = allQuestions.length;
+    // Extract current counts from the UI legends
+    const counts = {
+        total: allQuestions.length,
+        ans: parseInt(DOM.legend.ans.innerText),
+        na: parseInt(DOM.legend.na.innerText),
+        nv: parseInt(DOM.legend.nv.innerText),
+        m: parseInt(DOM.legend.m.innerText),
+        ma: parseInt(DOM.legend.ma.innerText)
+    };
 
-            document.getElementById('modal-total').innerText = total;
-            document.getElementById('modal-answered').innerText = ans;
-            document.getElementById('modal-marked-ans').innerText = mans;
-            const warn = document.getElementById('modal-warning');
-            (ans + mans < total) ? warn.classList.remove('hidden') : warn.classList.add('hidden');
-            document.getElementById('submit-modal').classList.remove('hidden');
-            document.body.classList.add('modal-open');
-        }
+    // Populate Modal Fields
+    document.getElementById('modal-total').innerText = counts.total;
+    document.getElementById('modal-answered').innerText = counts.ans;
+    document.getElementById('modal-not-answered').innerText = counts.na;
+    document.getElementById('modal-marked').innerText = counts.m;
+    document.getElementById('modal-marked-ans').innerText = counts.ma;
+    document.getElementById('modal-not-visited').innerText = counts.nv;
+
+    // Show warning if any questions are not answered (including those not visited)
+    const warn = document.getElementById('modal-warning');
+    const totalAttempted = counts.ans + counts.ma;
+    
+    if (totalAttempted < counts.total) {
+        warn.classList.remove('hidden');
+    } else {
+        warn.classList.add('hidden');
+    }
+
+    // Show Modal
+    document.getElementById('submit-modal').classList.remove('hidden');
+    document.body.classList.add('modal-open');
+}
 
         function closeModal() { document.getElementById('submit-modal').classList.add('hidden'); document.body.classList.remove('modal-open'); }
         function toggleSidebar() { document.getElementById('sidebar').classList.toggle('collapsed'); }
