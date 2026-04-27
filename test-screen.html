@@ -38,9 +38,7 @@
         aside.collapsed { width: 0; overflow: hidden; border-left-width: 0; }
         .no-select { user-select: none; -webkit-user-select: none; }
         .modal-open { overflow: hidden; }
-        /* Custom Scrollbar for Palette */
         #sidebar-scroll::-webkit-scrollbar { width: 5px; }
-        #sidebar-scroll::-webkit-scrollbar-track { background: transparent; }
         #sidebar-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
     </style>
 </head>
@@ -75,7 +73,7 @@
                             <span id="subject-tag" class="text-slate-500 text-[11px] font-bold uppercase tracking-widest">General</span>
                         </div>
                         <div class="flex bg-slate-200/50 rounded-lg p-1">
-                            <button onclick="setLanguage('en')" id="lang-en" class="px-4 py-1.5 rounded-md text-[12px] font-bold bg-blue-600 text-white shadow-sm transition-all">ENGLISH</button>
+                            <button onclick="setLanguage('en')" id="lang-en" class="px-4 py-1.5 rounded-md text-[12px] font-bold bg-blue-600 text-white transition-all">ENGLISH</button>
                             <button onclick="setLanguage('hi')" id="lang-hi" class="px-4 py-1.5 rounded-md text-[12px] font-bold text-slate-600 transition-all">हिन्दी</button>
                         </div>
                     </div>
@@ -105,10 +103,7 @@
                 </div>
                 <div>
                     <h4 class="font-bold text-slate-800 text-sm">Official Aspirant</h4>
-                    <div class="flex items-center gap-1.5">
-                        <span class="flex h-1.5 w-1.5 rounded-full bg-green-500"></span>
-                        <p class="text-[10px] text-slate-500 font-medium tracking-wide uppercase">Live Session</p>
-                    </div>
+                    <p class="text-[10px] text-slate-500 font-medium tracking-wide uppercase flex items-center gap-1.5"><span class="h-1.5 w-1.5 rounded-full bg-green-500"></span>Live Session</p>
                 </div>
             </div>
             
@@ -120,24 +115,24 @@
             <div class="p-4 border-t bg-slate-50/50">
                 <div class="grid grid-cols-2 gap-2">
                     <div class="flex items-center gap-2 bg-white p-2 rounded-lg border border-slate-200">
-                        <div class="w-5 h-5 bg-green-500 rounded shadow-sm flex items-center justify-center text-[10px] text-white font-bold"><span id="leg-answered">0</span></div>
+                        <div class="w-5 h-5 bg-green-500 rounded flex items-center justify-center text-[10px] text-white font-bold" id="leg-answered">0</div>
                         <span class="text-[10px] font-bold text-slate-600 uppercase">Answered</span>
                     </div>
                     <div class="flex items-center gap-2 bg-white p-2 rounded-lg border border-slate-200">
-                        <div class="w-5 h-5 bg-red-500 rounded shadow-sm flex items-center justify-center text-[10px] text-white font-bold"><span id="leg-not-answered">0</span></div>
+                        <div class="w-5 h-5 bg-red-500 rounded flex items-center justify-center text-[10px] text-white font-bold" id="leg-not-answered">0</div>
                         <span class="text-[10px] font-bold text-slate-600 uppercase">Not Ans</span>
                     </div>
                     <div class="flex items-center gap-2 bg-white p-2 rounded-lg border border-slate-200">
-                        <div class="w-5 h-5 bg-white border border-slate-300 rounded shadow-sm flex items-center justify-center text-[10px] text-slate-400 font-bold"><span id="leg-not-visited">0</span></div>
+                        <div class="w-5 h-5 bg-white border border-slate-300 rounded flex items-center justify-center text-[10px] text-slate-400 font-bold" id="leg-not-visited">0</div>
                         <span class="text-[10px] font-bold text-slate-600 uppercase">Not Visited</span>
                     </div>
                     <div class="flex items-center gap-2 bg-white p-2 rounded-lg border border-slate-200">
-                        <div class="w-5 h-5 bg-purple-600 rounded shadow-sm flex items-center justify-center text-[10px] text-white font-bold"><span id="leg-marked">0</span></div>
+                        <div class="w-5 h-5 bg-purple-600 rounded flex items-center justify-center text-[10px] text-white font-bold" id="leg-marked">0</div>
                         <span class="text-[10px] font-bold text-slate-600 uppercase">Marked</span>
                     </div>
                 </div>
                 <div class="mt-2 flex items-center justify-center gap-2 bg-purple-50 p-2 rounded-lg border border-purple-100">
-                    <div class="relative w-5 h-5 bg-purple-600 rounded shadow-sm flex items-center justify-center text-[10px] text-white font-bold">
+                    <div class="relative w-5 h-5 bg-purple-600 rounded flex items-center justify-center text-[10px] text-white font-bold">
                         <span id="leg-marked-answered">0</span>
                         <div class="absolute -top-1 -right-1 w-2 h-2 bg-green-400 rounded-full border border-white"></div>
                     </div>
@@ -148,71 +143,36 @@
     </main>
 
     <div id="submit-modal" class="hidden fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
-    <div class="bg-white rounded-3xl shadow-2xl max-w-lg w-full overflow-hidden border border-white/20 animate-in fade-in zoom-in duration-300">
-        <div class="bg-slate-50 px-6 py-5 border-b border-slate-100 flex justify-between items-center">
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center">
-                    <i class="fas fa-file-export"></i>
-                </div>
-                <div>
-                    <h3 class="text-lg font-bold text-slate-800 leading-tight">Exam Summary</h3>
-                    <p class="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Final Review before submission</p>
-                </div>
-            </div>
-            <button onclick="closeModal()" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-200 text-slate-400 transition-colors">
-                <i class="fas fa-times"></i>
-            </button>
-        </div>
-
-        <div class="p-6">
-            <div class="grid grid-cols-3 gap-3 mb-6">
-                <div class="bg-slate-50 p-3 rounded-2xl border border-slate-100 text-center">
-                    <p class="text-[9px] font-black uppercase text-slate-400 mb-1">Total</p>
-                    <p id="modal-total" class="text-2xl font-black text-slate-800">0</p>
-                </div>
-                <div class="bg-green-50 p-3 rounded-2xl border border-green-100 text-center">
-                    <p class="text-[9px] font-black uppercase text-green-600 mb-1">Answered</p>
-                    <p id="modal-answered" class="text-2xl font-black text-green-700">0</p>
-                </div>
-                <div class="bg-red-50 p-3 rounded-2xl border border-red-100 text-center">
-                    <p class="text-[9px] font-black uppercase text-red-600 mb-1">Not Ans</p>
-                    <p id="modal-not-answered" class="text-2xl font-black text-red-700">0</p>
-                </div>
-                <div class="bg-purple-50 p-3 rounded-2xl border border-purple-100 text-center">
-                    <p class="text-[9px] font-black uppercase text-purple-600 mb-1">Marked</p>
-                    <p id="modal-marked" class="text-2xl font-black text-purple-700">0</p>
-                </div>
-                <div class="bg-indigo-50 p-3 rounded-2xl border border-indigo-100 text-center">
-                    <p class="text-[9px] font-black uppercase text-indigo-600 mb-1">Mark+Ans</p>
-                    <p id="modal-marked-ans" class="text-2xl font-black text-indigo-700">0</p>
-                </div>
-                <div class="bg-slate-100 p-3 rounded-2xl border border-slate-200 text-center">
-                    <p class="text-[9px] font-black uppercase text-slate-500 mb-1">Not Visited</p>
-                    <p id="modal-not-visited" class="text-2xl font-black text-slate-600">0</p>
-                </div>
-            </div>
-
-            <div id="modal-warning" class="hidden p-4 bg-amber-50 border border-amber-200 rounded-2xl mb-6">
-                <div class="flex gap-3">
-                    <i class="fas fa-circle-exclamation text-amber-500 text-lg mt-0.5"></i>
+        <div class="bg-white rounded-3xl shadow-2xl max-w-lg w-full overflow-hidden animate-in fade-in zoom-in duration-300">
+            <div class="bg-slate-50 px-6 py-5 border-b border-slate-100 flex justify-between items-center">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center"><i class="fas fa-file-export"></i></div>
                     <div>
-                        <p class="text-sm font-bold text-amber-900">Wait! You missed some questions.</p>
-                        <p class="text-[11px] text-amber-700 font-medium mt-0.5">It is recommended to review all questions before finishing the test.</p>
+                        <h3 class="text-lg font-bold text-slate-800">Exam Summary</h3>
+                        <p class="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Final Review</p>
                     </div>
                 </div>
+                <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600"><i class="fas fa-times"></i></button>
             </div>
-
-            <div class="flex gap-3">
-                <button onclick="closeModal()" class="flex-1 py-3 text-xs font-bold text-slate-500 bg-slate-100 hover:bg-slate-200 rounded-xl transition-all">
-                    RESUME TEST
-                </button>
-                <button onclick="finalSubmit()" class="flex-1 py-3 text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-lg shadow-blue-200 transition-all active:scale-95">
-                    CONFIRM SUBMIT
-                </button>
+            <div class="p-6">
+                <div class="grid grid-cols-3 gap-3 mb-6" id="modal-stats-container">
+                    <div class="bg-slate-50 p-3 rounded-2xl text-center"><p class="text-[9px] font-black uppercase text-slate-400">Total</p><p id="modal-total" class="text-2xl font-black">0</p></div>
+                    <div class="bg-green-50 p-3 rounded-2xl text-center"><p class="text-[9px] font-black uppercase text-green-600">Ans</p><p id="modal-answered" class="text-2xl font-black text-green-700">0</p></div>
+                    <div class="bg-red-50 p-3 rounded-2xl text-center"><p class="text-[9px] font-black uppercase text-red-600">Not Ans</p><p id="modal-not-answered" class="text-2xl font-black text-red-700">0</p></div>
+                    <div class="bg-purple-50 p-3 rounded-2xl text-center"><p class="text-[9px] font-black uppercase text-purple-600">Marked</p><p id="modal-marked" class="text-2xl font-black text-purple-700">0</p></div>
+                    <div class="bg-indigo-50 p-3 rounded-2xl text-center"><p class="text-[9px] font-black uppercase text-indigo-600">M+A</p><p id="modal-marked-ans" class="text-2xl font-black text-indigo-700">0</p></div>
+                    <div class="bg-slate-100 p-3 rounded-2xl text-center"><p class="text-[9px] font-black uppercase text-slate-500">Not Vis</p><p id="modal-not-visited" class="text-2xl font-black text-slate-600">0</p></div>
+                </div>
+                <div id="modal-warning" class="hidden p-4 bg-amber-50 border border-amber-200 rounded-2xl mb-6">
+                    <p class="text-sm font-bold text-amber-900">Wait! You missed some questions.</p>
+                </div>
+                <div class="flex gap-3">
+                    <button onclick="closeModal()" class="flex-1 py-3 text-xs font-bold bg-slate-100 rounded-xl">RESUME</button>
+                    <button onclick="finalSubmit()" class="flex-1 py-3 text-xs font-bold bg-blue-600 text-white rounded-xl shadow-lg">CONFIRM SUBMIT</button>
+                </div>
             </div>
         </div>
     </div>
-</div>
 
     <script>
         const firebaseConfig = {
@@ -226,13 +186,14 @@
 
         let allQuestions = [], currentIndex = 0, currentLang = 'en', timerRunning = false;
         let testId = new URLSearchParams(window.location.search).get('testId');
-        let studentAnswers = JSON.parse(localStorage.getItem('cp_answers')) || {};
-        let reviewList = JSON.parse(localStorage.getItem('cp_reviews')) || {};
-        let visitedList = JSON.parse(localStorage.getItem('cp_visited')) || {};
+        
+        const loadLocal = (key, def) => JSON.parse(localStorage.getItem(key)) || def;
+        let studentAnswers = loadLocal('cp_answers', {});
+        let reviewList = loadLocal('cp_reviews', {});
+        let visitedList = loadLocal('cp_visited', {});
         let timeInSeconds = parseInt(localStorage.getItem('cp_timer')) || 3600;
-        window.timeSpentPerQuestion = JSON.parse(localStorage.getItem('cp_time_spent')) || [];
+        window.timeSpentPerQuestion = loadLocal('cp_time_spent', []);
 
-        // Cached DOM Elements
         const DOM = {
             container: document.getElementById("question-container"),
             content: document.getElementById("question-content"),
@@ -257,10 +218,9 @@
                     const snap = await rtdb.ref('current_active_test').once('value');
                     testId = snap.val();
                 }
-                DOM.title.innerText = testId.replace(/_/g, ' ');
+                DOM.title.innerText = testId.split('_').join(' ');
                 const snapshot = await rtdb.ref(testId).once('value');
-                const rawData = snapshot.val();
-                const dataArray = Array.isArray(rawData) ? rawData : Object.values(rawData);
+                const dataArray = Object.values(snapshot.val());
 
                 const grouped = {};
                 dataArray.forEach(item => {
@@ -274,7 +234,7 @@
                 if (window.timeSpentPerQuestion.length === 0) window.timeSpentPerQuestion = new Array(allQuestions.length).fill(0);
                 
                 setInterval(() => {
-                    if (timerRunning && allQuestions.length > 0) {
+                    if (timerRunning && allQuestions.length) {
                         window.timeSpentPerQuestion[currentIndex]++;
                         localStorage.setItem('cp_time_spent', JSON.stringify(window.timeSpentPerQuestion));
                     }
@@ -283,7 +243,7 @@
                 renderQuestion();
                 startTimer();
                 updatePalette();
-            } catch (e) { console.error(e); }
+            } catch (e) { console.error("Data Load Error:", e); }
         }
 
         function renderQuestion() {
@@ -311,9 +271,9 @@
             DOM.subject.innerText = q.subject || "General";
             DOM.content.innerHTML = q.questionText;
 
-            const options = q.options || [];
-            DOM.grid.className = options.every(o => o.length < 25) ? "grid grid-cols-1 md:grid-cols-2 gap-4" : "grid grid-cols-1 gap-4";
-            DOM.grid.innerHTML = options.map((opt, idx) => {
+            const opts = q.options || [];
+            DOM.grid.className = opts.every(o => o.length < 25) ? "grid grid-cols-1 md:grid-cols-2 gap-4" : "grid grid-cols-1 gap-4";
+            DOM.grid.innerHTML = opts.map((opt, idx) => {
                 const sel = studentAnswers[currentIndex] === idx;
                 return `
                     <div onclick="selectOption(${idx})" class="group p-4 border-2 rounded-xl cursor-pointer flex items-center justify-between transition-all ${sel ? 'border-blue-500 bg-blue-50 shadow-md scale-[1.02]' : 'border-slate-100 hover:border-slate-300 hover:bg-slate-50'}">
@@ -325,7 +285,7 @@
                     </div>`;
             }).join('');
 
-            if (window.MathJax) MathJax.typesetPromise().then(() => DOM.container.classList.remove('loading'));
+            if (window.MathJax && q.questionText.includes('$')) MathJax.typesetPromise().finally(() => DOM.container.classList.remove('loading'));
             else DOM.container.classList.remove('loading');
         }
 
@@ -337,11 +297,7 @@
                 const isAns = studentAnswers[i] !== undefined, isMark = reviewList[i], isVis = visitedList[i];
                 let cls = "bg-white text-slate-400 border-slate-200", dot = "";
 
-                if (isMark && isAns) { 
-                    cls = "bg-purple-600 text-white shadow-lg"; 
-                    dot = '<div class="absolute -top-0.5 -right-0.5 w-2 h-2 bg-green-400 rounded-full border border-purple-600"></div>'; 
-                    c.ma++; 
-                }
+                if (isMark && isAns) { cls = "bg-purple-600 text-white shadow-lg"; dot = '<div class="absolute -top-0.5 -right-0.5 w-2 h-2 bg-green-400 rounded-full border border-purple-600"></div>'; c.ma++; }
                 else if (isMark) { cls = "bg-purple-600 text-white shadow-lg"; c.m++; }
                 else if (isAns) { cls = "bg-green-500 text-white shadow-lg"; c.ans++; }
                 else if (isVis) { cls = "bg-red-500 text-white"; c.na++; }
@@ -354,73 +310,39 @@
                 frag.appendChild(btn);
             });
 
-            DOM.palette.innerHTML = ""; 
-            DOM.palette.appendChild(frag);
-            
-            DOM.legend.ans.innerText = c.ans;
-            DOM.legend.na.innerText = c.na;
-            DOM.legend.nv.innerText = c.nv;
-            DOM.legend.m.innerText = c.m;
-            DOM.legend.ma.innerText = c.ma;
-        const activeNode = DOM.palette.querySelector('.q-active');
-    if (activeNode) {
-        activeNode.scrollIntoView({ 
-            behavior: 'smooth', 
-            block: 'nearest', 
-            inline: 'start' 
-        });
-    }
-}
+            DOM.palette.innerHTML = ""; DOM.palette.appendChild(frag);
+            Object.keys(c).forEach(k => { if(DOM.legend[k]) DOM.legend[k].innerText = c[k]; });
+
+            const activeNode = DOM.palette.querySelector('.q-active');
+            if (activeNode) activeNode.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' });
+        }
 
         function selectOption(idx) { studentAnswers[currentIndex] = idx; localStorage.setItem('cp_answers', JSON.stringify(studentAnswers)); renderQuestion(); updatePalette(); }
-        function saveAndNext() { if (reviewList[currentIndex]) delete reviewList[currentIndex]; localStorage.setItem('cp_reviews', JSON.stringify(reviewList)); if (currentIndex < allQuestions.length - 1) { currentIndex++; renderQuestion(); updatePalette(); } }
-        function markReview() { reviewList[currentIndex] = true; localStorage.setItem('cp_reviews', JSON.stringify(reviewList)); if (currentIndex < allQuestions.length - 1) { currentIndex++; renderQuestion(); updatePalette(); } }
-        function prevQuestion() { if (currentIndex > 0) { currentIndex--; renderQuestion(); updatePalette(); } }
+        function saveAndNext() { if (reviewList[currentIndex]) delete reviewList[currentIndex]; localStorage.setItem('cp_reviews', JSON.stringify(reviewList)); move(1); }
+        function markReview() { reviewList[currentIndex] = true; localStorage.setItem('cp_reviews', JSON.stringify(reviewList)); move(1); }
+        function prevQuestion() { move(-1); }
+        function move(dir) { const target = currentIndex + dir; if (target >= 0 && target < allQuestions.length) { currentIndex = target; renderQuestion(); updatePalette(); } }
         function clearResponse() { delete studentAnswers[currentIndex]; delete reviewList[currentIndex]; localStorage.setItem('cp_answers', JSON.stringify(studentAnswers)); localStorage.setItem('cp_reviews', JSON.stringify(reviewList)); renderQuestion(); updatePalette(); }
         
         function confirmSubmit() {
-    // Extract current counts from the UI legends
-    const counts = {
-        total: allQuestions.length,
-        ans: parseInt(DOM.legend.ans.innerText),
-        na: parseInt(DOM.legend.na.innerText),
-        nv: parseInt(DOM.legend.nv.innerText),
-        m: parseInt(DOM.legend.m.innerText),
-        ma: parseInt(DOM.legend.ma.innerText)
-    };
+            const getVal = (id) => parseInt(document.getElementById(id).innerText);
+            const stats = { total: allQuestions.length, ans: getVal('leg-answered'), na: getVal('leg-not-answered'), nv: getVal('leg-not-visited'), m: getVal('leg-marked'), ma: getVal('leg-marked-answered') };
+            
+            document.getElementById('modal-total').innerText = stats.total;
+            document.getElementById('modal-answered').innerText = stats.ans;
+            document.getElementById('modal-not-answered').innerText = stats.na;
+            document.getElementById('modal-marked').innerText = stats.m;
+            document.getElementById('modal-marked-ans').innerText = stats.ma;
+            document.getElementById('modal-not-visited').innerText = stats.nv;
 
-    // Populate Modal Fields
-    document.getElementById('modal-total').innerText = counts.total;
-    document.getElementById('modal-answered').innerText = counts.ans;
-    document.getElementById('modal-not-answered').innerText = counts.na;
-    document.getElementById('modal-marked').innerText = counts.m;
-    document.getElementById('modal-marked-ans').innerText = counts.ma;
-    document.getElementById('modal-not-visited').innerText = counts.nv;
-
-    // Show warning if any questions are not answered (including those not visited)
-    const warn = document.getElementById('modal-warning');
-    const totalAttempted = counts.ans + counts.ma;
-    
-    if (totalAttempted < counts.total) {
-        warn.classList.remove('hidden');
-    } else {
-        warn.classList.add('hidden');
-    }
-
-    // Show Modal
-    document.getElementById('submit-modal').classList.remove('hidden');
-    document.body.classList.add('modal-open');
-}
+            document.getElementById('modal-warning').classList.toggle('hidden', (stats.ans + stats.ma) === stats.total);
+            document.getElementById('submit-modal').classList.remove('hidden');
+            document.body.classList.add('modal-open');
+        }
 
         function closeModal() { document.getElementById('submit-modal').classList.add('hidden'); document.body.classList.remove('modal-open'); }
         function toggleSidebar() { document.getElementById('sidebar').classList.toggle('collapsed'); }
-        
-        function setLanguage(l) { 
-            currentLang = l; 
-            document.getElementById('lang-en').className = l === 'en' ? "px-4 py-1.5 rounded-md text-[12px] font-bold bg-blue-600 text-white shadow-sm" : "px-4 py-1.5 rounded-md text-[12px] font-bold text-slate-600"; 
-            document.getElementById('lang-hi').className = l === 'hi' ? "px-4 py-1.5 rounded-md text-[12px] font-bold bg-blue-600 text-white shadow-sm" : "px-4 py-1.5 rounded-md text-[12px] font-bold text-slate-600"; 
-            renderQuestion(); 
-        }
+        function setLanguage(l) { currentLang = l; renderQuestion(); }
 
         function startTimer() {
             if (timerRunning) return; timerRunning = true;
@@ -435,25 +357,25 @@
         function finalSubmit() {
             const report = allQuestions.map((p, i) => {
                 const uIdx = studentAnswers[i], q = p.en || p.hi;
-                const cIdx = q.hasOwnProperty('correctIndex') ? parseInt(q.correctIndex) : parseInt(q.correct);
-                const isCorrect = (uIdx !== undefined && parseInt(uIdx) === cIdx);
-                return { pair: p, userSelectedIndex: uIdx !== undefined ? parseInt(uIdx) : null, isCorrect, subject: q.subject || "General", timeSpent: window.timeSpentPerQuestion[i] || 0 };
+                const cIdx = parseInt(q.correctIndex ?? q.correct);
+                return { pair: p, userSelectedIndex: uIdx ?? null, isCorrect: uIdx === cIdx, subject: q.subject || "General", timeSpent: window.timeSpentPerQuestion[i] || 0 };
             });
             const correct = report.filter(r => r.isCorrect).length;
             const attempted = report.filter(r => r.userSelectedIndex !== null).length;
             const score = correct - ((attempted - correct) * 0.333);
+            
             localStorage.setItem('detailedTestReport', JSON.stringify(report));
             localStorage.setItem('lastTestResult', JSON.stringify({ testName: DOM.title.innerText, totalQuestions: allQuestions.length, correct, incorrect: attempted - correct, total: parseFloat(score.toFixed(2)) }));
             ['cp_answers', 'cp_reviews', 'cp_visited', 'cp_timer', 'cp_time_spent'].forEach(k => localStorage.removeItem(k));
             window.location.href = "result.html";
         }
 
-        // Security Guard
+        // Security
         document.addEventListener('contextmenu', e => e.preventDefault());
         document.addEventListener('keydown', e => {
-            if (e.key === "F12" || (e.ctrlKey && e.shiftKey && ['I','J','C'].includes(e.key)) || (e.ctrlKey && ['u','s','p','c','v','x'].includes(e.key.toLowerCase()))) {
+            const forbidden = ['i', 'j', 'c', 'u', 's', 'p', 'v', 'x'];
+            if (e.key === "F12" || (e.ctrlKey && forbidden.includes(e.key.toLowerCase()))) {
                 e.preventDefault();
-                if (['c','v','x'].includes(e.key.toLowerCase())) alert("Action restricted during the exam.");
             }
         });
 
