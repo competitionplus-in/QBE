@@ -448,7 +448,13 @@
                 const q = p.en || p.hi;
                 const userChoice = State.answers[i];
                 const correct = parseInt(q.correctIndex ?? q.correct);
-                return { pair: p, userSelectedIndex: userChoice, isCorrect: userChoice === correct, timeSpent: State.timeSpent[i] };
+                return { 
+pair: p, 
+    userSelectedIndex: userSavedOriginalIdx, 
+    isCorrect: userSavedOriginalIdx === correctIdx, 
+    subject: q.subject || "General", // <--- This captures the specific subject
+    timeSpent: window.timeSpentPerQuestion[i] || 0 
+};
             });
 
             const correct = report.filter(r => r.userSelectedIndex !== undefined && r.isCorrect).length;
