@@ -455,8 +455,7 @@ pair: p,
     subject: q.subject || "General", // <--- This captures the specific subject
     timeSpent: window.timeSpentPerQuestion[i] || 0 
 };
-                return { pair: p, userSelectedIndex: userChoice, isCorrect: userChoice === correct, timeSpent: State.timeSpent[i] };
-            });
+                
             });
 
             const correct = report.filter(r => r.userSelectedIndex !== undefined && r.isCorrect).length;
