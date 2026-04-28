@@ -444,23 +444,41 @@
         }
 
         function finalSubmit() {
-            const report = allQuestions.map((p, i) => {
-                const q = p.en || p.hi;
-                const userChoice = State.answers[i];
-                const correct = parseInt(q.correctIndex ?? q.correct);
-                return { pair: p, userSelectedIndex: userChoice, isCorrect: userChoice === correct, timeSpent: State.timeSpent[i] };
-            });
+    const report = allQuestions.map((p, i) => {
+        // q is the actual question object containing data like questionText, subject, etc.
+        const q = p.en || p.hi; 
+        const userChoice = State.answers[i];
+        const correct = parseInt(q.correctIndex ?? q.correct);
 
-            const correct = report.filter(r => r.userSelectedIndex !== undefined && r.isCorrect).length;
-            const wrong = report.filter(r => r.userSelectedIndex !== undefined && !r.isCorrect).length;
-            const score = Math.max(0, correct - (wrong / 3)).toFixed(2);
-            
-            localStorage.setItem('detailedTestReport', JSON.stringify(report));
-            localStorage.setItem('lastTestResult', JSON.stringify({ testName: DOM.title.innerText, totalQuestions: allQuestions.length, correct, incorrect: wrong, total: parseFloat(score) }));
+        return { 
+            pair: p, 
+            userSelectedIndex: userChoice, 
+            isCorrect: userChoice === correct, 
+            timeSpent: State.timeSpent[i],
+            // ADD THIS LINE BELOW
+            subject: q.subject || "General" 
+        };
+    });
 
-            ['cp_answers', 'cp_reviews', 'cp_visited', 'cp_timer', 'cp_time_spent', 'cp_question_order'].forEach(k => localStorage.removeItem(k));
-            window.location.href = "result.html";
-        }
+    // ... rest of your scoring logic ...
+    const correctCount = report.filter(r => r.userSelectedIndex !== undefined && r.isCorrect).length;
+    const wrongCount = report.filter(r => r.userSelectedIndex !== undefined && !r.isCorrect).length;
+    const score = Math.max(0, correctCount - (wrongCount / 3)).toFixed(2);
+    
+    localStorage.setItem('detailedTestReport', JSON.stringify(report));
+    
+    // Optional: If you want subject-wise totals in your summary object too:
+    localStorage.setItem('lastTestResult', JSON.stringify({ 
+        testName: DOM.title.innerText, 
+        totalQuestions: allQuestions.length, 
+        correct: correctCount, 
+        incorrect: wrongCount, 
+        total: parseFloat(score) 
+    }));
+
+    ['cp_answers', 'cp_reviews', 'cp_visited', 'cp_timer', 'cp_time_spent', 'cp_question_order'].forEach(k => localStorage.removeItem(k));
+    window.location.href = "result.html";
+}
 
         // Global UI toggles
         function closeModal() { document.getElementById('submit-modal').classList.add('hidden'); document.body.classList.remove('modal-open'); }
