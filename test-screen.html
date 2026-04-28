@@ -272,51 +272,67 @@ let testId = new URLSearchParams(window.location.search).get('testId');
         }
 
         async function loadTestData() {
-            try {
-                if (!testId) {
-                    const snap = await rtdb.ref('current_active_test').once('value');
-                    testId = snap.val();
-                }
-                DOM.title.innerText = testId.split('_').join(' ');
-                
-                const snapshot = await rtdb.ref(testId).once('value');
-                const dataArray = Object.values(snapshot.val());
-                const isHindi = /[\u0900-\u097F]/.test(item.questionText || item.explanation);
-                // Group bi-lingual questions
-                const grouped = {};
-                dataArray.forEach(item => {
-                    const qid = item.questionID;
-                    if (!grouped[qid]) grouped[qid] = { en: null, hi: null };
-                    const isHindi = /[\u0900-\u097F]/.test(item.questionText || item.explanation);
-                    isHindi ? grouped[qid].hi = item : grouped[qid].en = item;
-                });
+    try {
+        if (!testId) {
+            const snap = await rtdb.ref('current_active_test').once('value');
+            testId = snap.val();
+        }
+        if (!testId) return;
 
-                allQuestions = Object.values(grouped);
-                
-                // Shuffle logic
-                let savedOrder = State.load('cp_question_order', null);
-                if (savedOrder) {
-                    allQuestions = savedOrder.map(id => allQuestions.find(p => (p.en || p.hi).questionID === id));
-                } else {
-                    shuffleArray(allQuestions);
-                    State.save('cp_question_order', allQuestions.map(p => (p.en || p.hi).questionID));
-                }
+        DOM.title.innerText = testId.split('_').join(' ');
+        
+        const snapshot = await rtdb.ref(testId).once('value');
+        const rawData = snapshot.val();
+        if (!rawData) return;
 
-                // Initialize Persisted State
-                State.answers = State.load('cp_answers', {});
-                State.reviews = State.load('cp_reviews', {});
-                State.visited = State.load('cp_visited', {});
-                State.timeSpent = State.load('cp_time_spent', new Array(allQuestions.length).fill(0));
-                
-                let timeInSec = parseInt(localStorage.getItem('cp_timer')) || (allQuestions.length * 60);
-                window.timeInSeconds = timeInSec;
+        const dataArray = Object.values(rawData);
+        const grouped = {};
 
-                renderQuestion();
-                startTimer();
-                updatePalette();
-            } catch (e) { console.error("Initialization Error:", e); }
+        dataArray.forEach(item => {
+            if (!item) return;
+            // Use questionID or fallback to a unique key
+            const qid = item.questionID || item.id; 
+            if (!qid) return;
+
+            if (!grouped[qid]) grouped[qid] = { en: null, hi: null };
+            
+            // Logic to detect Hindi
+            const textToTest = (item.questionText || item.explanation || "");
+            const isHindi = /[\u0900-\u097F]/.test(textToTest);
+            
+            if (isHindi) {
+                grouped[qid].hi = item;
+            } else {
+                grouped[qid].en = item;
+            }
+        });
+
+        allQuestions = Object.values(grouped).filter(p => p.en || p.hi);
+        
+        // Shuffle and State logic
+        let savedOrder = State.load('cp_question_order', null);
+        if (savedOrder && savedOrder.length === allQuestions.length) {
+            allQuestions = savedOrder.map(id => allQuestions.find(p => (p.en || p.hi).questionID === id)).filter(x => x);
+        } else {
+            shuffleArray(allQuestions);
+            State.save('cp_question_order', allQuestions.map(p => (p.en || p.hi).questionID));
         }
 
+        State.answers = State.load('cp_answers', {});
+        State.reviews = State.load('cp_reviews', {});
+        State.visited = State.load('cp_visited', {});
+        State.timeSpent = State.load('cp_time_spent', new Array(allQuestions.length).fill(0));
+        
+        let timeInSec = parseInt(localStorage.getItem('cp_timer')) || (allQuestions.length * 60);
+        window.timeInSeconds = timeInSec;
+
+        renderQuestion();
+        startTimer();
+        updatePalette();
+    } catch (e) { 
+        console.error("Initialization Error:", e); 
+    }
+}
         function renderQuestion() {
             const pair = allQuestions[currentIndex];
             if (!pair) return;
