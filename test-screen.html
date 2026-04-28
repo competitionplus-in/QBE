@@ -4,9 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Live Examination | Competition Plus</title>
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
@@ -22,10 +22,25 @@
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; }
+        
+        :root { --primary-blue: #2563eb; --slate-800: #1e293b; }
+        
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            background-color: #f8fafc; 
+        }
+
+        /* Question Layout */
         #question-container { min-height: 180px; position: relative; }
-        #question-content, .option-text { font-size: 1.125rem !important; line-height: 1.7; color: #1e293b; font-weight: 500; }
+        #question-content, .option-text { 
+            font-size: 1.125rem !important; 
+            line-height: 1.7; 
+            color: var(--slate-800); 
+            font-weight: 500; 
+        }
         #question-content { white-space: pre-wrap; word-wrap: break-word; transition: opacity 0.2s ease; }
+
+        /* Skeleton Loading */
         .loading #question-content { opacity: 0; }
         .loading::before {
             content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 24px;
@@ -33,8 +48,15 @@
             background-size: 200% 100%; animation: skeleton-loading 1.5s infinite; border-radius: 4px;
         }
         @keyframes skeleton-loading { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
-        .q-node { width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; border-radius: 6px; cursor: pointer; transition: all 0.2s ease; border: 2px solid transparent; }
-        .q-active { border-color: #2563eb !important; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2); }
+
+        /* Palette Styling */
+        .q-node { 
+            width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; 
+            font-size: 0.75rem; font-weight: 700; border-radius: 6px; cursor: pointer; 
+            transition: all 0.2s ease; border: 2px solid transparent; 
+        }
+        .q-active { border-color: var(--primary-blue) !important; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2); }
+        
         aside.collapsed { width: 0; overflow: hidden; border-left-width: 0; }
         .no-select { user-select: none; -webkit-user-select: none; }
         .modal-open { overflow: hidden; }
@@ -42,11 +64,14 @@
         #sidebar-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
     </style>
 </head>
+
 <body class="h-screen flex flex-col overflow-hidden no-select">
 
     <header class="h-14 bg-white border-b border-slate-200 flex items-center justify-between px-4 md:px-8 z-30 shadow-sm">
         <div class="flex items-center gap-4">
-            <button onclick="toggleSidebar()" class="text-slate-400 hover:text-blue-600 p-1"><i class="fas fa-bars-staggered text-lg"></i></button>
+            <button onclick="toggleSidebar()" class="text-slate-400 hover:text-blue-600 p-1">
+                <i class="fas fa-bars-staggered text-lg"></i>
+            </button>
             <div class="bg-blue-600 p-1.5 rounded-lg shadow-sm"><i class="fas fa-graduation-cap text-white"></i></div>
             <h1 class="font-bold text-slate-800 tracking-tight text-sm md:text-base flex items-center gap-2 uppercase">
                 <span>Competition <span class="text-blue-600">Plus</span></span>
@@ -68,7 +93,9 @@
                 <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
                     <div class="bg-slate-50/80 px-6 py-4 border-b border-slate-200 flex justify-between items-center">
                         <div class="flex items-center gap-3">
-                            <span id="q-number-badge" class="relative px-3.5 py-1.5 rounded-md text-[12px] font-bold uppercase tracking-widest text-white transition-all duration-300 bg-slate-800">Question 01</span>
+                            <span id="q-number-badge" class="relative px-3.5 py-1.5 rounded-md text-[12px] font-bold uppercase tracking-widest text-white transition-all duration-300 bg-slate-800">
+                                Question 01
+                            </span>
                             <div class="h-5 w-[1.5px] bg-slate-300 rounded-full mx-1"></div>
                             <span id="subject-tag" class="text-slate-500 text-[11px] font-bold uppercase tracking-widest">General</span>
                         </div>
@@ -77,16 +104,22 @@
                             <button onclick="setLanguage('hi')" id="lang-hi" class="px-4 py-1.5 rounded-md text-[12px] font-bold text-slate-600 transition-all">हिन्दी</button>
                         </div>
                     </div>
+
                     <div class="p-6 md:p-12 flex-1">
                         <div id="question-container" class="mb-10"><div id="question-content"></div></div>
                         <div id="options-grid" class="grid gap-4"></div>
                     </div>
+
                     <div class="p-4 bg-slate-50 border-t border-slate-200 flex flex-wrap gap-3 items-center justify-between">
-                        <button onclick="prevQuestion()" class="text-slate-600 font-bold text-sm hover:text-blue-600 transition"><i class="fas fa-arrow-left mr-2"></i>PREVIOUS</button>
+                        <button onclick="prevQuestion()" class="text-slate-600 font-bold text-sm hover:text-blue-600 transition">
+                            <i class="fas fa-arrow-left mr-2"></i>PREVIOUS
+                        </button>
                         <div class="flex gap-2">
                             <button onclick="clearResponse()" class="px-4 py-2 border border-slate-300 text-slate-500 rounded-lg text-xs font-bold hover:bg-white transition">CLEAR</button>
                             <button onclick="markReview()" class="px-4 py-2 bg-purple-50 border border-purple-200 text-purple-600 rounded-lg text-xs font-bold hover:bg-purple-100 transition">MARK FOR REVIEW</button>
-                            <button onclick="saveAndNext()" class="px-8 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold hover:bg-blue-700 shadow-lg flex items-center gap-2 transition-all active:scale-95">SAVE & NEXT <i class="fas fa-chevron-right text-[10px]"></i></button>
+                            <button onclick="saveAndNext()" class="px-8 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold hover:bg-blue-700 shadow-lg flex items-center gap-2 transition-all active:scale-95">
+                                SAVE & NEXT <i class="fas fa-chevron-right text-[10px]"></i>
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -103,7 +136,9 @@
                 </div>
                 <div>
                     <h4 class="font-bold text-slate-800 text-sm">Official Aspirant</h4>
-                    <p class="text-[10px] text-slate-500 font-medium tracking-wide uppercase flex items-center gap-1.5"><span class="h-1.5 w-1.5 rounded-full bg-green-500"></span>Live Session</p>
+                    <p class="text-[10px] text-slate-500 font-medium tracking-wide uppercase flex items-center gap-1.5">
+                        <span class="h-1.5 w-1.5 rounded-full bg-green-500"></span>Live Session
+                    </p>
                 </div>
             </div>
             
@@ -155,7 +190,7 @@
                 <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600"><i class="fas fa-times"></i></button>
             </div>
             <div class="p-6">
-                <div class="grid grid-cols-3 gap-3 mb-6" id="modal-stats-container">
+                <div class="grid grid-cols-3 gap-3 mb-6">
                     <div class="bg-slate-50 p-3 rounded-2xl text-center"><p class="text-[9px] font-black uppercase text-slate-400">Total</p><p id="modal-total" class="text-2xl font-black">0</p></div>
                     <div class="bg-green-50 p-3 rounded-2xl text-center"><p class="text-[9px] font-black uppercase text-green-600">Ans</p><p id="modal-answered" class="text-2xl font-black text-green-700">0</p></div>
                     <div class="bg-red-50 p-3 rounded-2xl text-center"><p class="text-[9px] font-black uppercase text-red-600">Not Ans</p><p id="modal-not-answered" class="text-2xl font-black text-red-700">0</p></div>
@@ -167,9 +202,9 @@
                     <p class="text-sm font-bold text-amber-900">Wait! You missed some questions.</p>
                 </div>
                 <div class="flex gap-3">
-    <button id="modal-resume-btn" onclick="closeModal()" class="flex-1 py-3 text-xs font-bold bg-slate-100 rounded-xl">RESUME</button>
-    <button id="modal-confirm-btn" onclick="finalSubmit()" class="flex-1 py-3 text-xs font-bold bg-blue-600 text-white rounded-xl shadow-lg">CONFIRM SUBMIT</button>
-</div>
+                    <button id="modal-resume-btn" onclick="closeModal()" class="flex-1 py-3 text-xs font-bold bg-slate-100 rounded-xl">RESUME</button>
+                    <button id="modal-confirm-btn" onclick="finalSubmit()" class="flex-1 py-3 text-xs font-bold bg-blue-600 text-white rounded-xl shadow-lg">CONFIRM SUBMIT</button>
+                </div>
             </div>
         </div>
     </div>
@@ -184,15 +219,15 @@
         firebase.initializeApp(firebaseConfig);
         const rtdb = firebase.database();
 
+        // Application State
         let allQuestions = [], currentIndex = 0, currentLang = 'en', timerRunning = false;
         let testId = new URLSearchParams(window.location.search).get('testId');
         
-        const loadLocal = (key, def) => JSON.parse(localStorage.getItem(key)) || def;
-        let studentAnswers = loadLocal('cp_answers', {});
-        let reviewList = loadLocal('cp_reviews', {});
-        let visitedList = loadLocal('cp_visited', {});
-        let timeInSeconds = parseInt(localStorage.getItem('cp_timer')) || 0;
-        window.timeSpentPerQuestion = loadLocal('cp_time_spent', []);
+        const State = {
+            save: (key, val) => localStorage.setItem(key, JSON.stringify(val)),
+            load: (key, def) => JSON.parse(localStorage.getItem(key)) || def,
+            answers: {}, reviews: {}, visited: {}, timeSpent: []
+        };
 
         const DOM = {
             container: document.getElementById("question-container"),
@@ -213,23 +248,25 @@
         };
 
         function shuffleArray(array) {
-    for (let i = array.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [array[i], array[j]] = [array[j], array[i]];
-    }
-    return array;
-}
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
 
-async function loadTestData() {
+        async function loadTestData() {
             try {
                 if (!testId) {
                     const snap = await rtdb.ref('current_active_test').once('value');
                     testId = snap.val();
                 }
                 DOM.title.innerText = testId.split('_').join(' ');
+                
                 const snapshot = await rtdb.ref(testId).once('value');
                 const dataArray = Object.values(snapshot.val());
 
+                // Group bi-lingual questions
                 const grouped = {};
                 dataArray.forEach(item => {
                     const qid = item.questionID;
@@ -238,41 +275,30 @@ async function loadTestData() {
                     isHindi ? grouped[qid].hi = item : grouped[qid].en = item;
                 });
 
-
+                allQuestions = Object.values(grouped);
                 
-               allQuestions = Object.values(grouped);
-                let savedOrder = loadLocal('cp_question_order', null);
+                // Shuffle logic
+                let savedOrder = State.load('cp_question_order', null);
+                if (savedOrder) {
+                    allQuestions = savedOrder.map(id => allQuestions.find(p => (p.en || p.hi).questionID === id));
+                } else {
+                    shuffleArray(allQuestions);
+                    State.save('cp_question_order', allQuestions.map(p => (p.en || p.hi).questionID));
+                }
 
-if (savedOrder) {
-    // Reconstruct allQuestions based on the saved IDs
-    allQuestions = savedOrder.map(id => allQuestions.find(p => (p.en || p.hi).questionID === id));
-} else {
-    // First time opening the test? Shuffle!
-    shuffleArray(allQuestions);
-    // Save this order so refresh doesn't change it
-    const orderToSave = allQuestions.map(p => (p.en || p.hi).questionID);
-    localStorage.setItem('cp_question_order', JSON.stringify(orderToSave));
-}
-
-        // --- DYNAMIC TIMER LOGIC START ---
-        if (timeInSeconds <= 0) {
-            const secondsPerQuestion = 60; 
-            timeInSeconds = allQuestions.length * secondsPerQuestion;
-            localStorage.setItem('cp_timer', timeInSeconds);
-        }
-                if (window.timeSpentPerQuestion.length === 0) window.timeSpentPerQuestion = new Array(allQuestions.length).fill(0);
+                // Initialize Persisted State
+                State.answers = State.load('cp_answers', {});
+                State.reviews = State.load('cp_reviews', {});
+                State.visited = State.load('cp_visited', {});
+                State.timeSpent = State.load('cp_time_spent', new Array(allQuestions.length).fill(0));
                 
-                setInterval(() => {
-                    if (timerRunning && allQuestions.length) {
-                        window.timeSpentPerQuestion[currentIndex]++;
-                        localStorage.setItem('cp_time_spent', JSON.stringify(window.timeSpentPerQuestion));
-                    }
-                }, 1000);
+                let timeInSec = parseInt(localStorage.getItem('cp_timer')) || (allQuestions.length * 60);
+                window.timeInSeconds = timeInSec;
 
                 renderQuestion();
                 startTimer();
                 updatePalette();
-            } catch (e) { console.error("Data Load Error:", e); }
+            } catch (e) { console.error("Initialization Error:", e); }
         }
 
         function renderQuestion() {
@@ -281,11 +307,12 @@ if (savedOrder) {
             const q = (currentLang === 'hi' && pair.hi) ? pair.hi : pair.en;
             
             DOM.container.classList.add('loading');
-            visitedList[currentIndex] = true;
-            localStorage.setItem('cp_visited', JSON.stringify(visitedList));
+            State.visited[currentIndex] = true;
+            State.save('cp_visited', State.visited);
 
-            const isAns = studentAnswers[currentIndex] !== undefined;
-            const isMarked = reviewList[currentIndex];
+            // Badge styling
+            const isAns = State.answers[currentIndex] !== undefined;
+            const isMarked = State.reviews[currentIndex];
             let dot = '', cls = "bg-slate-800";
 
             if (isMarked) {
@@ -298,50 +325,40 @@ if (savedOrder) {
             DOM.badge.className = `relative text-white px-3.5 py-1.5 rounded-md text-[12px] font-bold uppercase tracking-widest transition-all ${cls}`;
             DOM.badge.innerHTML = `Question ${String(currentIndex + 1).padStart(2, '0')}${dot}`;
             DOM.subject.innerText = q.subject || "General";
-            let imageHtml = q.questionImage ? `<img src="${q.questionImage}" class="max-h-64 mx-auto mb-4 rounded-lg shadow-sm">` : '';
-DOM.content.innerHTML = imageHtml + q.questionText;
+            
+            const imgHtml = q.questionImage ? `<img src="${q.questionImage}" class="max-h-64 mx-auto mb-4 rounded-lg shadow-sm">` : '';
+            DOM.content.innerHTML = imgHtml + q.questionText;
 
+            // Option Shuffling
             if (!pair.shuffledOptions) {
-    let optionsWithMetadata = q.options.map((text, index) => ({
-        text: text,
-        originalIndex: index // Keep track of original position for scoring
-    }));
-    
-    // Shuffle the options array
-    pair.shuffledOptions = shuffleArray([...optionsWithMetadata]);
-}
+                pair.shuffledOptions = shuffleArray(q.options.map((text, i) => ({ text, originalIndex: i })));
+            }
 
-const opts = pair.shuffledOptions;
-DOM.grid.innerHTML = opts.map((opt, idx) => {
-    // Check if the saved originalIndex matches this option's originalIndex
-    const sel = studentAnswers[currentIndex] === opt.originalIndex;
-    return `
-        <div onclick="selectOption(${idx})" class="group p-4 border-2 rounded-xl cursor-pointer flex items-center justify-between transition-all ${sel ? 'border-blue-500 bg-blue-50 shadow-md scale-[1.02]' : 'border-slate-100 hover:border-slate-300 hover:bg-slate-50'}">
-            <div class="flex items-center gap-4">
-                <div class="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm ${sel ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-500'}">${String.fromCharCode(65 + idx)}</div>
-                <div class="option-text text-sm md:text-base">${opt.text}</div>
-            </div>
-            ${sel ? '<div class="text-blue-600 animate-in fade-in zoom-in duration-200"><i class="fas fa-circle-check text-xl"></i></div>' : ''}
-        </div>`;
-}).join('');
+            DOM.grid.innerHTML = pair.shuffledOptions.map((opt, idx) => {
+                const sel = State.answers[currentIndex] === opt.originalIndex;
+                return `
+                    <div onclick="selectOption(${idx})" class="group p-4 border-2 rounded-xl cursor-pointer flex items-center justify-between transition-all ${sel ? 'border-blue-500 bg-blue-50 shadow-md scale-[1.02]' : 'border-slate-100 hover:border-slate-300 hover:bg-slate-50'}">
+                        <div class="flex items-center gap-4">
+                            <div class="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm ${sel ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-500'}">${String.fromCharCode(65 + idx)}</div>
+                            <div class="option-text text-sm md:text-base">${opt.text}</div>
+                        </div>
+                        ${sel ? '<div class="text-blue-600 animate-in fade-in zoom-in duration-200"><i class="fas fa-circle-check text-xl"></i></div>' : ''}
+                    </div>`;
+            }).join('');
             
             if (window.MathJax) {
-    MathJax.typesetPromise([DOM.content, DOM.grid]).then(() => {
-        DOM.container.classList.remove('loading');
-    }).catch((err) => {
-        console.error('MathJax error:', err);
-        DOM.container.classList.remove('loading');
-    });
-} else {
-        DOM.container.classList.remove('loading');
-    }
-}
-function updatePalette() {
+                MathJax.typesetPromise([DOM.content, DOM.grid]).finally(() => DOM.container.classList.remove('loading'));
+            } else {
+                DOM.container.classList.remove('loading');
+            }
+        }
+
+        function updatePalette() {
             const frag = document.createDocumentFragment();
             let c = { ans: 0, m: 0, ma: 0, nv: 0, na: 0 };
 
             allQuestions.forEach((_, i) => {
-                const isAns = studentAnswers[i] !== undefined, isMark = reviewList[i], isVis = visitedList[i];
+                const isAns = State.answers[i] !== undefined, isMark = State.reviews[i], isVis = State.visited[i];
                 let cls = "bg-white text-slate-400 border-slate-200", dot = "";
 
                 if (isMark && isAns) { cls = "bg-purple-600 text-white shadow-lg"; dot = '<div class="absolute -top-0.5 -right-0.5 w-2 h-2 bg-green-400 rounded-full border border-purple-600"></div>'; c.ma++; }
@@ -359,175 +376,101 @@ function updatePalette() {
 
             DOM.palette.innerHTML = ""; DOM.palette.appendChild(frag);
             Object.keys(c).forEach(k => { if(DOM.legend[k]) DOM.legend[k].innerText = c[k]; });
-
-            const activeNode = DOM.palette.querySelector('.q-active');
-            if (activeNode) activeNode.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' });
         }
 
         function selectOption(viewIdx) { 
-    const pair = allQuestions[currentIndex];
-    studentAnswers[currentIndex] = pair.shuffledOptions[viewIdx].originalIndex; 
-    localStorage.setItem('cp_answers', JSON.stringify(studentAnswers)); 
-    renderQuestion(); 
-    updatePalette(); 
-}
-        function saveAndNext() { if (reviewList[currentIndex]) delete reviewList[currentIndex]; localStorage.setItem('cp_reviews', JSON.stringify(reviewList)); move(1); }
-        function markReview() { reviewList[currentIndex] = true; localStorage.setItem('cp_reviews', JSON.stringify(reviewList)); move(1); }
-        function prevQuestion() { move(-1); }
-        function move(dir) { const target = currentIndex + dir; if (target >= 0 && target < allQuestions.length) { currentIndex = target; renderQuestion(); updatePalette(); } }
-        function clearResponse() { delete studentAnswers[currentIndex]; delete reviewList[currentIndex]; localStorage.setItem('cp_answers', JSON.stringify(studentAnswers)); localStorage.setItem('cp_reviews', JSON.stringify(reviewList)); renderQuestion(); updatePalette(); }
-        
-        function confirmSubmit(isTimeOver = false) {
-    const getVal = (id) => parseInt(document.getElementById(id).innerText);
-    const stats = { 
-        total: allQuestions.length, 
-        ans: getVal('leg-answered'), 
-        na: getVal('leg-not-answered'), 
-        nv: getVal('leg-not-visited'), 
-        m: getVal('leg-marked'), 
-        ma: getVal('leg-marked-answered') 
-    };
-    
-    // Fill Modal Stats
-    document.getElementById('modal-total').innerText = stats.total;
-    document.getElementById('modal-answered').innerText = stats.ans;
-    document.getElementById('modal-not-answered').innerText = stats.na;
-    document.getElementById('modal-marked').innerText = stats.m;
-    document.getElementById('modal-marked-ans').innerText = stats.ma;
-    document.getElementById('modal-not-visited').innerText = stats.nv;
-
-    const warningBox = document.getElementById('modal-warning');
-    const resumeBtn = document.getElementById('modal-resume-btn');
-    const confirmBtn = document.getElementById('modal-confirm-btn');
-
-    if (isTimeOver) {
-        // Time Over State
-        document.getElementById('options-grid').style.pointerEvents = 'none';
-    document.getElementById('question-container').style.opacity = '0.6';
-    
-    // Auto-save the current state one last time
-    localStorage.setItem('cp_answers', JSON.stringify(studentAnswers));
-        warningBox.classList.remove('hidden');
-        warningBox.className = "p-4 bg-red-50 border border-red-200 rounded-2xl mb-6";
-        warningBox.innerHTML = `<p class="text-sm font-bold text-red-900"><i class="fas fa-hourglass-end mr-2"></i>Time is over! Your answers have been saved. Please click below to view your results.</p>`;
-        
-        resumeBtn.classList.add('hidden'); // Hide resume button
-        confirmBtn.innerText = "VIEW RESULTS"; // Change button text
-        confirmBtn.className = "flex-1 py-3 text-xs font-bold bg-red-600 text-white rounded-xl shadow-lg";
-    } else {
-        // Manual Finish State
-        const isIncomplete = (stats.ans + stats.ma) < stats.total;
-        warningBox.classList.toggle('hidden', !isIncomplete);
-        warningBox.className = "p-4 bg-amber-50 border border-amber-200 rounded-2xl mb-6";
-        warningBox.innerHTML = `<p class="text-sm font-bold text-amber-900">Wait! You missed some questions.</p>`;
-        
-        resumeBtn.classList.remove('hidden');
-        confirmBtn.innerText = "CONFIRM SUBMIT";
-        confirmBtn.className = "flex-1 py-3 text-xs font-bold bg-blue-600 text-white rounded-xl shadow-lg";
-    }
-
-    document.getElementById('submit-modal').classList.remove('hidden');
-    document.body.classList.add('modal-open');
-}
-
-        function closeModal() { document.getElementById('submit-modal').classList.add('hidden'); document.body.classList.remove('modal-open'); }
-        function toggleSidebar() { document.getElementById('sidebar').classList.toggle('collapsed'); }
-        function setLanguage(l) { 
-    currentLang = l; 
-    const buttons = { en: document.getElementById('lang-en'), hi: document.getElementById('lang-hi') };
-    
-    // Toggle classes more cleanly
-    Object.keys(buttons).forEach(key => {
-        buttons[key].className = (key === l) 
-            ? 'px-4 py-1.5 rounded-md text-[12px] font-bold bg-blue-600 text-white transition-all' 
-            : 'px-4 py-1.5 rounded-md text-[12px] font-bold text-slate-600 transition-all';
-    });
-    
-    renderQuestion(); 
-    updatePalette();
-}
-        function startTimer() {
-    if (timerRunning) return; 
-    timerRunning = true;
-    const intv = setInterval(() => {
-        // 1. Check if time is up BEFORE decrementing
-        if (timeInSeconds <= 0) { 
-            timeInSeconds = 0;
-            DOM.timer.innerText = "00:00:00"; // Lock display at zero
-            localStorage.setItem('cp_timer', 0);
-            clearInterval(intv); 
-            timerRunning = false;
-            
-            // Trigger auto-submit with "Time Over" mode
-            confirmSubmit(true); 
-            return; 
+            State.answers[currentIndex] = allQuestions[currentIndex].shuffledOptions[viewIdx].originalIndex; 
+            State.save('cp_answers', State.answers); 
+            renderQuestion(); updatePalette(); 
         }
 
-        // 2. Decrement and save
-        timeInSeconds--; 
-        localStorage.setItem('cp_timer', timeInSeconds);
-
-        // 3. Render time
-        const h = Math.floor(timeInSeconds / 3600);
-        const m = Math.floor((timeInSeconds % 3600) / 60);
-        const s = timeInSeconds % 60;
-        DOM.timer.innerText = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+        function saveAndNext() { delete State.reviews[currentIndex]; State.save('cp_reviews', State.reviews); move(1); }
+        function markReview() { State.reviews[currentIndex] = true; State.save('cp_reviews', State.reviews); move(1); }
+        function move(dir) { const t = currentIndex + dir; if (t >= 0 && t < allQuestions.length) { currentIndex = t; renderQuestion(); updatePalette(); } }
+        function clearResponse() { delete State.answers[currentIndex]; delete State.reviews[currentIndex]; State.save('cp_answers', State.answers); State.save('cp_reviews', State.reviews); renderQuestion(); updatePalette(); }
         
-    }, 1000);
-}
+        function startTimer() {
+            if (timerRunning) return; timerRunning = true;
+            const ticker = setInterval(() => {
+                if (window.timeInSeconds <= 0) { 
+                    clearInterval(ticker); confirmSubmit(true); return; 
+                }
+                window.timeInSeconds--;
+                localStorage.setItem('cp_timer', window.timeInSeconds);
+                
+                // Track time per question
+                State.timeSpent[currentIndex]++;
+                State.save('cp_time_spent', State.timeSpent);
+
+                const h = Math.floor(window.timeInSeconds / 3600), m = Math.floor((window.timeInSeconds % 3600) / 60), s = window.timeInSeconds % 60;
+                DOM.timer.innerText = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+            }, 1000);
+        }
+
+        function confirmSubmit(isTimeOver = false) {
+            const stats = {
+                total: allQuestions.length,
+                ans: parseInt(DOM.legend.ans.innerText),
+                na: parseInt(DOM.legend.na.innerText),
+                nv: parseInt(DOM.legend.nv.innerText),
+                m: parseInt(DOM.legend.m.innerText),
+                ma: parseInt(DOM.legend.ma.innerText)
+            };
+            
+            document.getElementById('modal-total').innerText = stats.total;
+            document.getElementById('modal-answered').innerText = stats.ans;
+            document.getElementById('modal-not-answered').innerText = stats.na;
+            document.getElementById('modal-marked').innerText = stats.m;
+            document.getElementById('modal-marked-ans').innerText = stats.ma;
+            document.getElementById('modal-not-visited').innerText = stats.nv;
+
+            const warn = document.getElementById('modal-warning');
+            const resBtn = document.getElementById('modal-resume-btn');
+            const subBtn = document.getElementById('modal-confirm-btn');
+
+            if (isTimeOver) {
+                DOM.grid.style.pointerEvents = 'none';
+                DOM.container.style.opacity = '0.6';
+                warn.classList.remove('hidden');
+                warn.innerHTML = `<p class="text-sm font-bold text-red-900">Time is over! Redirecting to results...</p>`;
+                resBtn.classList.add('hidden');
+                subBtn.innerText = "VIEW RESULTS";
+            } else {
+                warn.classList.toggle('hidden', (stats.ans + stats.ma) >= stats.total);
+            }
+
+            document.getElementById('submit-modal').classList.remove('hidden');
+            document.body.classList.add('modal-open');
+        }
 
         function finalSubmit() {
-    const report = allQuestions.map((p, i) => {
-        const userSavedOriginalIdx = studentAnswers[i]; // Now stores the actual choice ID
-        const q = p.en || p.hi;
-        const correctIdx = parseInt(q.correctIndex ?? q.correct); 
+            const report = allQuestions.map((p, i) => {
+                const q = p.en || p.hi;
+                const userChoice = State.answers[i];
+                const correct = parseInt(q.correctIndex ?? q.correct);
+                return { pair: p, userSelectedIndex: userChoice, isCorrect: userChoice === correct, timeSpent: State.timeSpent[i] };
+            });
 
-        return { 
-            pair: p, 
-            userSelectedIndex: userSavedOriginalIdx, 
-            isCorrect: userSavedOriginalIdx === correctIdx, 
-            subject: q.subject || "General", 
-            timeSpent: window.timeSpentPerQuestion[i] || 0 
-        };
-    });
-    // Scoring calculation for Competition Plus
-    const correctCount = report.filter(r => r.userSelectedIndex !== null && r.isCorrect).length;
-    const attemptedCount = report.filter(r => r.userSelectedIndex !== undefined).length;
-    const wrongCount = attemptedCount - correctCount;
-    
-    // Standard Rajasthan Exam Marking: +1 for Correct, -1/3 for Wrong
-    const finalScore = Math.max(0, correctCount - (wrongCount / 3)).toFixed(2);
-    
-    localStorage.setItem('detailedTestReport', JSON.stringify(report));
-    localStorage.setItem('lastTestResult', JSON.stringify({ 
-        testName: DOM.title.innerText, 
-        totalQuestions: allQuestions.length, 
-        correct: correctCount, 
-        incorrect: wrongCount, 
-        total: parseFloat(finalScore) 
-    }));
+            const correct = report.filter(r => r.userSelectedIndex !== undefined && r.isCorrect).length;
+            const wrong = report.filter(r => r.userSelectedIndex !== undefined && !r.isCorrect).length;
+            const score = Math.max(0, correct - (wrong / 3)).toFixed(2);
+            
+            localStorage.setItem('detailedTestReport', JSON.stringify(report));
+            localStorage.setItem('lastTestResult', JSON.stringify({ testName: DOM.title.innerText, totalQuestions: allQuestions.length, correct, incorrect: wrong, total: parseFloat(score) }));
 
-    // Cleanup local storage including the new shuffle order key
-    const keysToRemove = [
-        'cp_answers', 
-        'cp_reviews', 
-        'cp_visited', 
-        'cp_timer', 
-        'cp_time_spent', 
-        'cp_question_order'
-    ];
-    keysToRemove.forEach(k => localStorage.removeItem(k));
+            ['cp_answers', 'cp_reviews', 'cp_visited', 'cp_timer', 'cp_time_spent', 'cp_question_order'].forEach(k => localStorage.removeItem(k));
+            window.location.href = "result.html";
+        }
 
-    window.location.href = "result.html";
-}
+        // Global UI toggles
+        function closeModal() { document.getElementById('submit-modal').classList.add('hidden'); document.body.classList.remove('modal-open'); }
+        function toggleSidebar() { document.getElementById('sidebar').classList.toggle('collapsed'); }
+        function setLanguage(l) { currentLang = l; renderQuestion(); updatePalette(); }
 
-        // Security - Right click and common dev tools shortcuts
+        // Security
         document.addEventListener('contextmenu', e => e.preventDefault());
         document.addEventListener('keydown', e => {
-            const forbidden = ['i', 'j', 'c', 'u', 's', 'p', 'v', 'x'];
-            if (e.key === "F12" || (e.ctrlKey && forbidden.includes(e.key.toLowerCase()))) {
-                e.preventDefault();
-            }
+            if (e.key === "F12" || (e.ctrlKey && ['i','j','c','u','s','p'].includes(e.key.toLowerCase()))) e.preventDefault();
         });
 
         loadTestData();
