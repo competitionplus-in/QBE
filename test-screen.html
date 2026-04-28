@@ -1,535 +1,520 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Live Examination | Competition Plus</title>
-    
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Live Examination | Competition Plus</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 
-    <script>
-        window.MathJax = {
-            tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], processEscapes: true },
-            options: { enableMenu: false }
-        };
-    </script>
-    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>
+        window.MathJax = {
+            tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], processEscapes: true },
+            options: { enableMenu: false }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
-        
-        :root { --primary-blue: #2563eb; --slate-800: #1e293b; }
-        
-        body { 
-            font-family: 'Plus Jakarta Sans', sans-serif; 
-            background-color: #f8fafc; 
-            touch-action: manipulation;
-        }
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+        
+        :root { --primary-blue: #2563eb; --slate-800: #1e293b; }
+        
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            background-color: #f8fafc; 
+            touch-action: manipulation;
+        }
 
-        #question-container { min-height: 120px; position: relative; }
-        #question-content, .option-text { 
-            font-size: 1rem !important; 
-            line-height: 1.6; 
-            color: var(--slate-800); 
-            font-weight: 500; 
-        }
+        #question-container { min-height: 120px; position: relative; }
+        #question-content, .option-text { 
+            font-size: 1rem !important; 
+            line-height: 1.6; 
+            color: var(--slate-800); 
+            font-weight: 500; 
+        }
 
-        @media (min-width: 768px) {
-            #question-content, .option-text { font-size: 1.125rem !important; }
-        }
+        @media (min-width: 768px) {
+            #question-content, .option-text { font-size: 1.125rem !important; }
+        }
 
-        /* Palette Styling */
-        .q-node { 
-            width: 42px; height: 42px; display: flex; align-items: center; justify-content: center; 
-            font-size: 0.85rem; font-weight: 700; border-radius: 8px; cursor: pointer; 
-            transition: all 0.2s ease; border: 2px solid transparent; 
-        }
-        
-        /* Mobile Sidebar Logic */
-        #sidebar {
-            position: fixed; right: 0; top: 0; height: 100%; z-index: 50;
-            transform: translateX(100%);
-        }
-        #sidebar.open { transform: translateX(0); }
-        
-        @media (min-width: 1024px) {
-            #sidebar { position: relative; transform: translateX(0); width: 320px; }
-            #sidebar.collapsed { width: 0; overflow: hidden; border-left-width: 0; }
-            #mobile-overlay { display: none !important; }
-        }
+        /* Palette Styling */
+        .q-node { 
+            width: 42px; height: 42px; display: flex; align-items: center; justify-content: center; 
+            font-size: 0.85rem; font-weight: 700; border-radius: 8px; cursor: pointer; 
+            transition: all 0.2s ease; border: 2px solid transparent; 
+        }
+        
+        /* Mobile Sidebar Logic */
+        #sidebar {
+            position: fixed; right: 0; top: 0; height: 100%; z-index: 50;
+            transform: translateX(100%);
+        }
+        #sidebar.open { transform: translateX(0); }
+        
+        @media (min-width: 1024px) {
+            #sidebar { position: relative; transform: translateX(0); width: 320px; }
+            #sidebar.collapsed { width: 0; overflow: hidden; border-left-width: 0; }
+            #mobile-overlay { display: none !important; }
+        }
 
-        .no-select { user-select: none; -webkit-user-select: none; }
-        #sidebar-scroll::-webkit-scrollbar { width: 4px; }
-        #sidebar-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-    </style>
+        .no-select { user-select: none; -webkit-user-select: none; }
+        #sidebar-scroll::-webkit-scrollbar { width: 4px; }
+        #sidebar-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+    </style>
 </head>
 
 <body class="h-screen flex flex-col overflow-hidden no-select">
 
-    <div id="mobile-overlay" onclick="toggleSidebar()" class="hidden fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-40"></div>
+    <div id="mobile-overlay" onclick="toggleSidebar()" class="hidden fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-40"></div>
 
-    <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-3 md:px-8 z-30 shadow-sm">
-        <div class="flex items-center gap-2 md:gap-4">
-            <button onclick="toggleSidebar()" class="text-slate-500 hover:text-blue-600 p-2 lg:hidden">
-                <i class="fas fa-grid-2 text-xl"></i>
-            </button>
-            <button onclick="toggleSidebar()" class="text-slate-400 hover:text-blue-600 p-1 hidden lg:block">
-                <i class="fas fa-bars-staggered text-lg"></i>
-            </button>
-            <h1 class="font-bold text-slate-800 tracking-tight text-xs md:text-base flex flex-col md:flex-row md:items-center uppercase">
-                <span class="hidden sm:inline">Competition <span class="text-blue-600">Plus</span></span>
-                <span id="test-title-display" class="text-blue-600 md:text-slate-500 font-semibold lowercase first-letter:uppercase md:ml-2 truncate max-w-[100px] md:max-w-xs">Loading...</span>
-            </h1>
-        </div>
-        
-        <div class="flex items-center gap-2">
-            <div class="flex items-center gap-2 bg-slate-100 px-3 py-1.5 rounded-full border border-slate-200">
-                <i class="far fa-clock text-blue-600 text-xs md:text-base"></i>
-                <span id="timer" class="font-mono font-bold text-slate-700 tabular-nums text-sm md:text-lg">00:00:00</span>
-            </div>
-            <button onclick="confirmSubmit()" class="bg-slate-800 hover:bg-red-700 text-white px-3 md:px-6 py-2 rounded-lg text-[10px] md:text-[11px] font-bold transition-all uppercase">
-                <span class="hidden md:inline">Finish Test</span>
-                <i class="fas fa-check md:hidden"></i>
-            </button>
-        </div>
-    </header>
+    <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-3 md:px-8 z-30 shadow-sm">
+        <div class="flex items-center gap-2 md:gap-4">
+            <button onclick="toggleSidebar()" class="text-slate-500 hover:text-blue-600 p-2 lg:hidden">
+                <i class="fas fa-grid-2 text-xl"></i>
+            </button>
+            <button onclick="toggleSidebar()" class="text-slate-400 hover:text-blue-600 p-1 hidden lg:block">
+                <i class="fas fa-bars-staggered text-lg"></i>
+            </button>
+            <h1 class="font-bold text-slate-800 tracking-tight text-xs md:text-base flex flex-col md:flex-row md:items-center uppercase">
+                <span class="hidden sm:inline">Competition <span class="text-blue-600">Plus</span></span>
+                <span id="test-title-display" class="text-blue-600 md:text-slate-500 font-semibold lowercase first-letter:uppercase md:ml-2 truncate max-w-[100px] md:max-w-xs">Loading...</span>
+            </h1>
+        </div>
+        
+        <div class="flex items-center gap-2">
+            <div class="flex items-center gap-2 bg-slate-100 px-3 py-1.5 rounded-full border border-slate-200">
+                <i class="far fa-clock text-blue-600 text-xs md:text-base"></i>
+                <span id="timer" class="font-mono font-bold text-slate-700 tabular-nums text-sm md:text-lg">00:00:00</span>
+            </div>
+            <button onclick="confirmSubmit()" class="bg-slate-800 hover:bg-red-700 text-white px-3 md:px-6 py-2 rounded-lg text-[10px] md:text-[11px] font-bold transition-all uppercase">
+                <span class="hidden md:inline">Finish Test</span>
+                <i class="fas fa-check md:hidden"></i>
+            </button>
+        </div>
+    </header>
 
-    <main class="flex-1 flex overflow-hidden relative">
-        <section class="flex-1 overflow-y-auto p-3 md:p-8 pb-32 md:pb-8">
-            <div class="max-w-4xl mx-auto">
-                <div class="bg-white rounded-xl md:rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
-                    <div class="bg-slate-50/80 px-4 py-3 border-b border-slate-200 flex justify-between items-center">
-                        <div class="flex items-center gap-2">
-                            <span id="q-number-badge" class="px-3 py-1 rounded-md text-[10px] md:text-[12px] font-bold uppercase text-white bg-slate-800">
-                                Q-01
-                            </span>
-                            <span id="subject-tag" class="text-slate-500 text-[10px] font-bold uppercase truncate max-w-[80px] md:max-w-none">General</span>
-                        </div>
-                        <div class="flex bg-slate-200/50 rounded-lg p-1 scale-90 md:scale-100">
-                            <button onclick="setLanguage('en')" id="lang-en" class="px-3 py-1 rounded-md text-[10px] font-bold bg-blue-600 text-white">EN</button>
-                            <button onclick="setLanguage('hi')" id="lang-hi" class="px-3 py-1 rounded-md text-[10px] font-bold text-slate-600">HI</button>
-                        </div>
-                    </div>
+    <main class="flex-1 flex overflow-hidden relative">
+        <section class="flex-1 overflow-y-auto p-3 md:p-8 pb-32 md:pb-8">
+            <div class="max-w-4xl mx-auto">
+                <div class="bg-white rounded-xl md:rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
+                    <div class="bg-slate-50/80 px-4 py-3 border-b border-slate-200 flex justify-between items-center">
+                        <div class="flex items-center gap-2">
+                            <span id="q-number-badge" class="px-3 py-1 rounded-md text-[10px] md:text-[12px] font-bold uppercase text-white bg-slate-800">
+                                Q-01
+                            </span>
+                            <span id="subject-tag" class="text-slate-500 text-[10px] font-bold uppercase truncate max-w-[80px] md:max-w-none">General</span>
+                        </div>
+                        <div class="flex bg-slate-200/50 rounded-lg p-1 scale-90 md:scale-100">
+                            <button onclick="setLanguage('en')" id="lang-en" class="px-3 py-1 rounded-md text-[10px] font-bold bg-blue-600 text-white">EN</button>
+                            <button onclick="setLanguage('hi')" id="lang-hi" class="px-3 py-1 rounded-md text-[10px] font-bold text-slate-600">HI</button>
+                        </div>
+                    </div>
 
-                    <div class="p-5 md:p-12 flex-1">
-                        <div id="question-container" class="mb-6 md:mb-10"><div id="question-content"></div></div>
-                        <div id="options-grid" class="grid gap-3 md:gap-4"></div>
-                    </div>
-                </div>
-            </div>
-        </section>
+                    <div class="p-5 md:p-12 flex-1">
+                        <div id="question-container" class="mb-6 md:mb-10"><div id="question-content"></div></div>
+                        <div id="options-grid" class="grid gap-3 md:gap-4"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
 
-        <aside id="sidebar" class="w-72 bg-white border-l border-slate-200 flex flex-col transition-transform duration-300">
-            <div class="p-5 border-b border-slate-100 flex items-center justify-between lg:justify-start gap-4">
-                <div class="flex items-center gap-3">
-                    <img src="https://ui-avatars.com/api/?name=Aspirant&background=0D8ABC&color=fff" class="w-10 h-10 rounded-xl" alt="Profile">
-                    <h4 class="font-bold text-slate-800 text-sm">Aspirant</h4>
-                </div>
-                <button onclick="toggleSidebar()" class="lg:hidden text-slate-400"><i class="fas fa-times"></i></button>
-            </div>
-            
-            <div id="sidebar-scroll" class="flex-1 overflow-y-auto p-5">
-                <p class="text-[11px] font-bold text-slate-400 uppercase mb-4">Question Palette</p>
-                <div id="palette-grid" class="grid grid-cols-4 gap-2"></div>
-            </div>
+        <aside id="sidebar" class="w-72 bg-white border-l border-slate-200 flex flex-col transition-transform duration-300">
+            <div class="p-5 border-b border-slate-100 flex items-center justify-between lg:justify-start gap-4">
+                <div class="flex items-center gap-3">
+                    <img src="https://ui-avatars.com/api/?name=Aspirant&background=0D8ABC&color=fff" class="w-10 h-10 rounded-xl" alt="Profile">
+                    <h4 class="font-bold text-slate-800 text-sm">Aspirant</h4>
+                </div>
+                <button onclick="toggleSidebar()" class="lg:hidden text-slate-400"><i class="fas fa-times"></i></button>
+            </div>
+            
+            <div id="sidebar-scroll" class="flex-1 overflow-y-auto p-5">
+                <p class="text-[11px] font-bold text-slate-400 uppercase mb-4">Question Palette</p>
+                <div id="palette-grid" class="grid grid-cols-4 gap-2"></div>
+            </div>
 
-            <div class="p-4 border-t bg-slate-50/50">
-                <div class="grid grid-cols-2 gap-2 text-[9px] font-bold uppercase">
-                    <div class="flex items-center gap-2 bg-white p-2 rounded-lg border"><div class="w-4 h-4 bg-green-500 rounded" id="leg-answered">0</div>Ans</div>
-                    <div class="flex items-center gap-2 bg-white p-2 rounded-lg border"><div class="w-4 h-4 bg-red-500 rounded" id="leg-not-answered">0</div>Not Ans</div>
-                    <div class="flex items-center gap-2 bg-white p-2 rounded-lg border"><div class="w-4 h-4 bg-slate-200 rounded" id="leg-not-visited">0</div>Not Visited</div>
-                </div>
-            </div>
-        </aside>
-    </main>
+            <div class="p-4 border-t bg-slate-50/50">
+                <div class="grid grid-cols-2 gap-2 text-[9px] font-bold uppercase">
+                    <div class="flex items-center gap-2 bg-white p-2 rounded-lg border"><div class="w-4 h-4 bg-green-500 rounded" id="leg-answered">0</div>Ans</div>
+                    <div class="flex items-center gap-2 bg-white p-2 rounded-lg border"><div class="w-4 h-4 bg-red-500 rounded" id="leg-not-answered">0</div>Not Ans</div>
+                    <div class="flex items-center gap-2 bg-white p-2 rounded-lg border"><div class="w-4 h-4 bg-slate-200 rounded" id="leg-not-visited">0</div>Not Visited</div>
+                </div>
+            </div>
+        </aside>
+    </main>
 
-    <footer class="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 p-3 md:p-4 z-40 lg:relative lg:bg-transparent">
-        <div class="max-w-4xl mx-auto flex items-center justify-between gap-2">
-            <button onclick="prevQuestion()" class="p-3 md:px-4 text-slate-600 font-bold text-xs md:text-sm bg-slate-100 rounded-xl">
-                <i class="fas fa-chevron-left md:mr-2"></i><span class="hidden md:inline">PREVIOUS</span>
-            </button>
-            
-            <div class="flex gap-2 flex-1 justify-end">
-                <button onclick="clearResponse()" class="px-3 md:px-4 py-3 border border-slate-300 text-slate-500 rounded-xl text-[10px] md:text-xs font-bold hover:bg-white transition">CLEAR</button>
-                <button onclick="markReview()" class="hidden md:block px-4 py-3 bg-purple-50 text-purple-600 rounded-xl text-xs font-bold">MARK FOR REVIEW</button>
-                <button onclick="saveAndNext()" class="flex-1 md:flex-none px-6 py-3 bg-blue-600 text-white rounded-xl text-xs md:text-sm font-bold shadow-lg flex items-center justify-center gap-2">
-                    SAVE & NEXT <i class="fas fa-chevron-right text-[10px]"></i>
-                </button>
-            </div>
-        </div>
-    </footer>
+    <footer class="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 p-3 md:p-4 z-40 lg:relative lg:bg-transparent">
+        <div class="max-w-4xl mx-auto flex items-center justify-between gap-2">
+            <button onclick="prevQuestion()" class="p-3 md:px-4 text-slate-600 font-bold text-xs md:text-sm bg-slate-100 rounded-xl">
+                <i class="fas fa-chevron-left md:mr-2"></i><span class="hidden md:inline">PREVIOUS</span>
+            </button>
+            
+            <div class="flex gap-2 flex-1 justify-end">
+                <button onclick="clearResponse()" class="px-3 md:px-4 py-3 border border-slate-300 text-slate-500 rounded-xl text-[10px] md:text-xs font-bold hover:bg-white transition">CLEAR</button>
+                <button onclick="markReview()" class="hidden md:block px-4 py-3 bg-purple-50 text-purple-600 rounded-xl text-xs font-bold">MARK FOR REVIEW</button>
+                <button onclick="saveAndNext()" class="flex-1 md:flex-none px-6 py-3 bg-blue-600 text-white rounded-xl text-xs md:text-sm font-bold shadow-lg flex items-center justify-center gap-2">
+                    SAVE & NEXT <i class="fas fa-chevron-right text-[10px]"></i>
+                </button>
+            </div>
+        </div>
+    </footer>
 
-    <div id="submit-modal" class="hidden fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
-        <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden">
-            <div class="p-6">
-                <h3 class="text-lg font-bold text-slate-800 mb-4 text-center">Exam Summary</h3>
-                <div class="grid grid-cols-3 gap-2 mb-6 text-center">
-    <div class="bg-slate-50 p-2 rounded-xl">
-        <p class="text-[8px] text-slate-400">Total</p>
-        <p id="modal-total" class="text-xl font-bold">0</p>
-    </div>
-    <div class="bg-green-50 p-2 rounded-xl">
-        <p class="text-[8px] text-green-600">Answered</p>
-        <p id="modal-answered" class="text-xl font-bold text-green-700">0</p>
-    </div>
-    <div class="bg-red-50 p-2 rounded-xl">
-        <p class="text-[8px] text-red-600">Not Ans</p>
-        <p id="modal-not-answered" class="text-xl font-bold text-red-700">0</p>
-    </div>
-    <div class="bg-purple-50 p-2 rounded-xl">
-    <p class="text-[8px] text-purple-600">Review</p>
-    <p id="modal-marked" class="text-xl font-bold inline">0</p>
-    <span class="text-[10px] text-purple-400">(<span id="modal-marked-ans">0</span>)</span>
+    <div id="submit-modal" class="hidden fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden">
+            <div class="p-6">
+                <h3 class="text-lg font-bold text-slate-800 mb-4 text-center">Exam Summary</h3>
+                <div class="grid grid-cols-3 gap-2 mb-6 text-center">
+    <div class="bg-slate-50 p-2 rounded-xl">
+        <p class="text-[8px] text-slate-400">Total</p>
+        <p id="modal-total" class="text-xl font-bold">0</p>
+    </div>
+    <div class="bg-green-50 p-2 rounded-xl">
+        <p class="text-[8px] text-green-600">Answered</p>
+        <p id="modal-answered" class="text-xl font-bold text-green-700">0</p>
+    </div>
+    <div class="bg-red-50 p-2 rounded-xl">
+        <p class="text-[8px] text-red-600">Not Ans</p>
+        <p id="modal-not-answered" class="text-xl font-bold text-red-700">0</p>
+    </div>
+    <div class="bg-purple-50 p-2 rounded-xl">
+    <p class="text-[8px] text-purple-600">Review</p>
+    <p id="modal-marked" class="text-xl font-bold inline">0</p>
+    <span class="text-[10px] text-purple-400">(<span id="modal-marked-ans">0</span>)</span>
 </div>
-    <div class="bg-orange-50 p-2 rounded-xl">
-        <p class="text-[8px] text-orange-600">Not Visited</p>
-        <p id="modal-not-visited" class="text-xl font-bold">0</p>
-    </div>
+    <div class="bg-orange-50 p-2 rounded-xl">
+        <p class="text-[8px] text-orange-600">Not Visited</p>
+        <p id="modal-not-visited" class="text-xl font-bold">0</p>
+    </div>
 </div>
 <div id="modal-warning" class="hidden mb-4 p-2 bg-yellow-50 text-yellow-700 text-center rounded-lg"></div>
-                <div class="flex gap-2">
-                    <button onclick="closeModal()" class="flex-1 py-3 text-xs font-bold bg-slate-100 rounded-xl">RESUME</button>
-                    <button onclick="finalSubmit()" class="flex-1 py-3 text-xs font-bold bg-blue-600 text-white rounded-xl">SUBMIT</button>
-                </div>
-            </div>
-        </div>
-    </div>
+                <div class="flex gap-2">
+                    <button onclick="closeModal()" class="flex-1 py-3 text-xs font-bold bg-slate-100 rounded-xl">RESUME</button>
+                    <button onclick="finalSubmit()" class="flex-1 py-3 text-xs font-bold bg-blue-600 text-white rounded-xl">SUBMIT</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
-    <script>
-        const DOM = {
-    title: document.getElementById('test-title-display'),
-    container: document.getElementById('question-container'),
-    content: document.getElementById('question-content'),
-    grid: document.getElementById('options-grid'),
-    badge: document.getElementById('q-number-badge'),
-    subject: document.getElementById('subject-tag'),
-    timer: document.getElementById('timer'),
-    palette: document.getElementById('palette-grid'),
-    legend: {
-        ans: document.getElementById('leg-answered'),
-        na: document.getElementById('leg-not-answered')
-    }
+    <script>
+        const DOM = {
+    title: document.getElementById('test-title-display'),
+    container: document.getElementById('question-container'),
+    content: document.getElementById('question-content'),
+    grid: document.getElementById('options-grid'),
+    badge: document.getElementById('q-number-badge'),
+    subject: document.getElementById('subject-tag'),
+    timer: document.getElementById('timer'),
+    palette: document.getElementById('palette-grid'),
+    legend: {
+        ans: document.getElementById('leg-answered'),
+        na: document.getElementById('leg-not-answered')
+    }
 };
 
 const State = {
-    save: (k, v) => localStorage.setItem(k, JSON.stringify(v)),
-    load: (k, def) => JSON.parse(localStorage.getItem(k)) || def
+    save: (k, v) => localStorage.setItem(k, JSON.stringify(v)),
+    load: (k, def) => JSON.parse(localStorage.getItem(k)) || def
 };
-    DOM.legend.nv = document.getElementById('leg-not-visited');
+    DOM.legend.nv = document.getElementById('leg-not-visited');
 
 let currentIndex = 0;
 let allQuestions = [];
 let currentLang = 'en';
 let timerRunning = false;
 let testId = new URLSearchParams(window.location.search).get('testId');
-        const firebaseConfig = {
-            apiKey: "AIzaSyCAl9iSJhwn5IAUCA5LrgPK5FzFZPtWNZo",
-            authDomain: "competition-plus-9996b.firebaseapp.com",
-            projectId: "competition-plus-9996b",
-            databaseURL: "https://competition-plus-9996b-default-rtdb.asia-southeast1.firebasedatabase.app"
-        };
-        firebase.initializeApp(firebaseConfig);
-        const rtdb = firebase.database();
+        const firebaseConfig = {
+            apiKey: "AIzaSyCAl9iSJhwn5IAUCA5LrgPK5FzFZPtWNZo",
+            authDomain: "competition-plus-9996b.firebaseapp.com",
+            projectId: "competition-plus-9996b",
+            databaseURL: "https://competition-plus-9996b-default-rtdb.asia-southeast1.firebasedatabase.app"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const rtdb = firebase.database();
 
-        // Toggle Sidebar Logic for Mobile
-        function toggleSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            const overlay = document.getElementById('mobile-overlay');
-            
-            if(window.innerWidth < 1024) {
-                sidebar.classList.toggle('open');
-                overlay.classList.toggle('hidden');
-            } else {
-                sidebar.classList.toggle('collapsed');
-            }
-        }
+        // Toggle Sidebar Logic for Mobile
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('mobile-overlay');
+            
+            if(window.innerWidth < 1024) {
+                sidebar.classList.toggle('open');
+                overlay.classList.toggle('hidden');
+            } else {
+                sidebar.classList.toggle('collapsed');
+            }
+        }
 
-        // Modified move function to auto-close sidebar on mobile if navigating
-        function move(dir) { 
-            const t = currentIndex + dir; 
-            if (t >= 0 && t < allQuestions.length) { 
-                currentIndex = t; 
-                renderQuestion(); 
-                updatePalette(); 
-                if(window.innerWidth < 1024) {
-                    document.getElementById('sidebar').classList.remove('open');
-                    document.getElementById('mobile-overlay').classList.add('hidden');
-                }
-            } 
-        }
+        // Modified move function to auto-close sidebar on mobile if navigating
+        function move(dir) { 
+            const t = currentIndex + dir; 
+            if (t >= 0 && t < allQuestions.length) { 
+                currentIndex = t; 
+                renderQuestion(); 
+                updatePalette(); 
+                if(window.innerWidth < 1024) {
+                    document.getElementById('sidebar').classList.remove('open');
+                    document.getElementById('mobile-overlay').classList.add('hidden');
+                }
+            } 
+        }
 
-        function shuffleArray(array) {
-            for (let i = array.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [array[i], array[j]] = [array[j], array[i]];
-            }
-            return array;
-        }
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
 
-        async function loadTestData() {
-    try {
-        if (!testId) {
-            const snap = await rtdb.ref('current_active_test').once('value');
-            testId = snap.val();
-        }
-        if (!testId) return;
+        async function loadTestData() {
+    try {
+        if (!testId) {
+            const snap = await rtdb.ref('current_active_test').once('value');
+            testId = snap.val() || 'Default_Test';
+        }
 
-        DOM.title.innerText = testId.split('_').join(' ');
-        
-        const snapshot = await rtdb.ref(testId).once('value');
-        const rawData = snapshot.val();
-        if (!rawData) return;
+        DOM.title.innerText = testId.replace(/_/g, ' ');
+        const snapshot = await rtdb.ref(testId).once('value');
+        const rawData = snapshot.val();
+        if (!rawData) throw new Error("Data not found");
 
-        const dataArray = Object.values(rawData);
-        const grouped = {};
+        const grouped = {};
+        Object.values(rawData).forEach(item => {
+            if (!item) return;
+            const qid = item.questionID || item.id;
+            if (!qid) return;
 
-        dataArray.forEach(item => {
-            if (!item) return;
-            // Use questionID or fallback to a unique key
-            const qid = item.questionID || item.id; 
-            if (!qid) return;
+            if (!grouped[qid]) grouped[qid] = { en: null, hi: null };
+            // Robust Hindi Detection
+            const isHindi = /[\u0900-\u097F]/.test(JSON.stringify(item));
+            isHindi ? grouped[qid].hi = item : grouped[qid].en = item;
+        });
 
-            if (!grouped[qid]) grouped[qid] = { en: null, hi: null };
-            
-            // Logic to detect Hindi
-            const textToTest = (item.questionText || item.explanation || "");
-            const isHindi = /[\u0900-\u097F]/.test(textToTest);
-            
-            if (isHindi) {
-                grouped[qid].hi = item;
-            } else {
-                grouped[qid].en = item;
-            }
-        });
+        allQuestions = Object.values(grouped).filter(p => p.en || p.hi);
 
-        allQuestions = Object.values(grouped).filter(p => p.en || p.hi);
-        
-        // Shuffle and State logic
-        let savedOrder = State.load('cp_question_order', null);
-        if (savedOrder && savedOrder.length === allQuestions.length) {
-            allQuestions = savedOrder.map(id => allQuestions.find(p => (p.en || p.hi).questionID === id)).filter(x => x);
-        } else {
-            shuffleArray(allQuestions);
-            State.save('cp_question_order', allQuestions.map(p => (p.en || p.hi).questionID));
-        }
-
-        State.answers = State.load('cp_answers', {});
-        State.reviews = State.load('cp_reviews', {});
-        State.visited = State.load('cp_visited', {});
-        State.timeSpent = State.load('cp_time_spent', new Array(allQuestions.length).fill(0));
-        
-        let timeInSec = parseInt(localStorage.getItem('cp_timer')) || (allQuestions.length * 60);
-        window.timeInSeconds = timeInSec;
-
-        renderQuestion();
-        startTimer();
-        updatePalette();
-    } catch (e) { 
-        console.error("Initialization Error:", e); 
-    }
+        // State Restoration
+        restoreExamState();
+        
+        renderQuestion();
+        startTimer();
+        updatePalette();
+    } catch (e) {
+        console.error("Init Error:", e);
+        DOM.content.innerHTML = `<div class="text-red-500 p-4">Failed to load exam. Please refresh.</div>`;
+    }
 }
-        function renderQuestion() {
-            const pair = allQuestions[currentIndex];
-            if (!pair) return;
-            const q = (currentLang === 'hi' && pair.hi) ? pair.hi : pair.en;
-            
-            DOM.container.classList.add('loading');
-            State.visited[currentIndex] = true;
-            State.save('cp_visited', State.visited);
+        function renderQuestion() {
+    const pair = allQuestions[currentIndex];
+    if (!pair) return;
+    const q = (currentLang === 'hi' && pair.hi) ? pair.hi : (pair.en || pair.hi);
+    
+    DOM.container.style.opacity = '0.5';
+    State.visited[currentIndex] = true;
 
-            // Badge styling
-            const isAns = State.answers[currentIndex] !== undefined;
-            const isMarked = State.reviews[currentIndex];
-            let dot = '', cls = "bg-slate-800";
+    // 1. Render Content
+    const imgHtml = q.questionImage ? `<img src="${q.questionImage}" loading="lazy" class="max-h-64 mx-auto mb-4 rounded-lg">` : '';
+    DOM.content.innerHTML = `${imgHtml}<div class="prose max-w-none">${q.questionText}</div>`;
 
-            if (isMarked) {
-                cls = "bg-purple-600 shadow-md";
-                if (isAns) dot = '<div class="absolute -top-1 -right-1 w-2.5 h-2.5 bg-green-400 border-2 border-white rounded-full"></div>';
-            } else if (isAns) {
-                cls = "bg-green-500 shadow-md";
-            }
+    // 2. Render Options
+    DOM.grid.innerHTML = q.options.map((opt, idx) => {
+        const isSelected = State.answers[currentIndex] === idx;
+        return `
+            <button onclick="selectOption(${idx})" class="w-full text-left p-4 border-2 rounded-xl transition-all flex items-center gap-4 ${
+                isSelected ? 'border-blue-600 bg-blue-50' : 'border-slate-100 hover:border-slate-200'
+            }">
+                <span class="w-8 h-8 shrink-0 rounded-lg flex items-center justify-center font-bold ${
+                    isSelected ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-500'
+                }">${String.fromCharCode(64 + idx + 1)}</span>
+                <span class="option-text flex-1">${opt}</span>
+            </button>`;
+    }).join('');
 
-            DOM.badge.className = `relative text-white px-3.5 py-1.5 rounded-md text-[12px] font-bold uppercase tracking-widest transition-all ${cls}`;
-            DOM.badge.innerHTML = `Question ${String(currentIndex + 1).padStart(2, '0')}${dot}`;
-            DOM.subject.innerText = q.subject || "General";
-            
-            const imgHtml = q.questionImage ? `<img src="${q.questionImage}" class="max-h-64 mx-auto mb-4 rounded-lg shadow-sm">` : '';
-            DOM.content.innerHTML = imgHtml + q.questionText;
+    // 3. Conditional MathJax (The Optimization)
+    const hasMath = /[\$\\]/.test(q.questionText + q.options.join(''));
+    if (window.MathJax && hasMath) {
+        MathJax.typesetPromise([DOM.content, DOM.grid]).then(() => DOM.container.style.opacity = '1');
+    } else {
+        DOM.container.style.opacity = '1';
+    }
+}
+        function updatePalette() {
+    const grid = DOM.palette;
+    
+    // Initial Build: Only happens once
+    if (grid.children.length === 0) {
+        const frag = document.createDocumentFragment();
+        allQuestions.forEach((_, i) => {
+            const btn = document.createElement("div");
+            btn.id = `q-node-${i}`;
+            btn.className = 'q-node relative bg-white text-slate-400 border-slate-200';
+            btn.innerHTML = `<span>${i + 1}</span>`;
+            btn.onclick = () => { currentIndex = i; renderQuestion(); updatePalette(); };
+            frag.appendChild(btn);
+        });
+        grid.appendChild(frag);
+    }
 
-            // Option Shuffling
-            if (!pair.shuffledOptions) {
-                pair.shuffledOptions = shuffleArray(q.options.map((text, i) => ({ text, originalIndex: i })));
-            }
+    // Selective Update: Change classes based on state
+    let stats = { ans: 0, marked: 0, markedAns: 0, notVisited: 0, notAns: 0 };
+    
+    allQuestions.forEach((_, i) => {
+        const node = document.getElementById(`q-node-${i}`);
+        const isAns = State.answers[i] !== undefined;
+        const isMark = State.reviews[i];
+        const isVis = State.visited[i];
+        
+        let cls = "bg-white text-slate-400 border-slate-200";
+        let dotHtml = "";
 
-            DOM.grid.innerHTML = pair.shuffledOptions.map((opt, idx) => {
-                const sel = State.answers[currentIndex] === opt.originalIndex;
-                return `
-                    <div onclick="selectOption(${idx})" class="group p-4 border-2 rounded-xl cursor-pointer flex items-center justify-between transition-all ${sel ? 'border-blue-500 bg-blue-50 shadow-md scale-[1.02]' : 'border-slate-100 hover:border-slate-300 hover:bg-slate-50'}">
-                        <div class="flex items-center gap-4">
-                            <div class="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm ${sel ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-500'}">${String.fromCharCode(65 + idx)}</div>
-                            <div class="option-text text-sm md:text-base">${opt.text}</div>
-                        </div>
-                        ${sel ? '<div class="text-blue-600 animate-in fade-in zoom-in duration-200"><i class="fas fa-circle-check text-xl"></i></div>' : ''}
-                    </div>`;
-            }).join('');
-            
-            if (window.MathJax) {
-                MathJax.typesetPromise([DOM.content, DOM.grid]).finally(() => DOM.container.classList.remove('loading'));
-            } else {
-                DOM.container.classList.remove('loading');
-            }
-        }
+        if (isMark) {
+            cls = "bg-purple-600 text-white";
+            if (isAns) {
+                dotHtml = '<div class="absolute -top-1 -right-1 w-2.5 h-2.5 bg-green-400 border-2 border-white rounded-full"></div>';
+                stats.markedAns++;
+            } else stats.marked++;
+        } else if (isAns) {
+            cls = "bg-green-500 text-white";
+            stats.ans++;
+        } else if (isVis) {
+            cls = "bg-red-500 text-white";
+            stats.notAns++;
+        } else stats.notVisited++;
 
-        function updatePalette() {
-    const frag = document.createDocumentFragment();
-    let stats = { ans: 0, marked: 0, markedAns: 0, notVisited: 0, notAns: 0 };
+        // Add Active Ring
+        if (i === currentIndex) cls += " ring-2 ring-blue-500 ring-offset-2";
+        
+        // Only update DOM if the content/class actually changed to save CPU
+        if (node.className !== `q-node relative ${cls}`) node.className = `q-node relative ${cls}`;
+        if (node.querySelector('div') && !dotHtml) node.querySelector('div').remove();
+        else if (dotHtml && !node.querySelector('div')) node.insertAdjacentHTML('beforeend', dotHtml);
+    });
 
-    allQuestions.forEach((_, i) => {
-        const isAns = State.answers[i] !== undefined;
-        const isMark = State.reviews[i];
-        const isVis = State.visited[i];
-        
-        let cls = "bg-white text-slate-400 border-slate-200", dot = "";
+    // Update Sidebar Stats
+    DOM.legend.ans.innerText = stats.ans;
+    DOM.legend.na.innerText = stats.notAns;
+    document.getElementById('leg-not-visited').innerText = stats.notVisited;
+    State.currentStats = stats;
 
-        if (isMark) {
-            cls = "bg-purple-600 text-white";
-            if (isAns) {
-                dot = '<div class="absolute -top-1 -right-1 w-2.5 h-2.5 bg-green-400 border-2 border-white rounded-full"></div>';
-                stats.markedAns++;
-            } else {
-                stats.marked++;
-            }
-        } else if (isAns) {
-            cls = "bg-green-500 text-white";
-            stats.ans++;
-        } else if (isVis) {
-            cls = "bg-red-500 text-white";
-            stats.notAns++;
-        } else {
-            stats.notVisited++;
-        }
-
-const activeNode = DOM.palette.querySelector('.ring-2');
-if (activeNode) activeNode.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        const btn = document.createElement("div");
-        btn.className = `q-node relative ${cls} ${i === currentIndex ? 'ring-2 ring-blue-500 ring-offset-2' : ''}`;
-        btn.innerHTML = `<span>${i + 1}</span>${dot}`;
-        btn.onclick = () => { currentIndex = i; renderQuestion(); updatePalette(); };
-        frag.appendChild(btn);
-    });
-
-    DOM.palette.innerHTML = '';
-    DOM.palette.appendChild(frag);
-
-    // Update Sidebar Legends
-    if(DOM.legend.ans) DOM.legend.ans.innerText = stats.ans;
-    if(DOM.legend.na) DOM.legend.na.innerText = stats.notAns;
-    if(document.getElementById('leg-not-visited')) 
-        document.getElementById('leg-not-visited').innerText = stats.notVisited;
-    
-    // Store stats for modal
-    State.currentStats = stats;
+    // Smooth Scroll to active
+    const active = document.getElementById(`q-node-${currentIndex}`);
+    if (active) active.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+} 
+        function updateNodeUI(index) {
+    const node = document.querySelector(`[data-idx="${index}"]`);
+    if (!node) return;
+    
+    // Logic to update classes based on State.answers[index] or State.reviews[index]
+    // This is much faster than re-rendering 100 buttons.
 }
 
-        function selectOption(viewIdx) { 
-            State.answers[currentIndex] = allQuestions[currentIndex].shuffledOptions[viewIdx].originalIndex; 
-            State.save('cp_answers', State.answers); 
-            renderQuestion(); updatePalette(); 
-        }
+        function selectOption(viewIdx) { 
+            State.answers[currentIndex] = allQuestions[currentIndex].shuffledOptions[viewIdx].originalIndex; 
+            State.save('cp_answers', State.answers); 
+            renderQuestion(); updatePalette(); 
+        }
 
-        function saveAndNext() { delete State.reviews[currentIndex]; State.save('cp_reviews', State.reviews); move(1); }
-        function markReview() { State.reviews[currentIndex] = true; State.save('cp_reviews', State.reviews); move(1); }
-        function clearResponse() { delete State.answers[currentIndex]; delete State.reviews[currentIndex]; State.save('cp_answers', State.answers); State.save('cp_reviews', State.reviews); renderQuestion(); updatePalette(); }
-        
-        function startTimer() {
-            if (timerRunning) return; timerRunning = true;
-            const ticker = setInterval(() => {
-                if (window.timeInSeconds <= 0) { 
-                    clearInterval(ticker); confirmSubmit(true); return; 
-                }
-                window.timeInSeconds--;
-                localStorage.setItem('cp_timer', window.timeInSeconds);
-                
-                // Track time per question
-                State.timeSpent[currentIndex]++;
-                State.save('cp_time_spent', State.timeSpent);
+        function saveAndNext() { delete State.reviews[currentIndex]; State.save('cp_reviews', State.reviews); move(1); }
+        function markReview() { State.reviews[currentIndex] = true; State.save('cp_reviews', State.reviews); move(1); }
+        function clearResponse() { delete State.answers[currentIndex]; delete State.reviews[currentIndex]; State.save('cp_answers', State.answers); State.save('cp_reviews', State.reviews); renderQuestion(); updatePalette(); }
+        
+        function startTimer() {
+    if (timerRunning) return; 
+    timerRunning = true;
 
-                const h = Math.floor(window.timeInSeconds / 3600), m = Math.floor((window.timeInSeconds % 3600) / 60), s = window.timeInSeconds % 60;
-                DOM.timer.innerText = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
-            }, 1000);
-        }
+    const ticker = setInterval(() => {
+        window.timeInSeconds++;
+        State.timeSpent[currentIndex] = (State.timeSpent[currentIndex] || 0) + 1;
 
-        function confirmSubmit(isTimeOver = false) {
-    const s = State.currentStats;
-    
-    document.getElementById('modal-total').innerText = allQuestions.length;
-    document.getElementById('modal-answered').innerText = s.ans;
-    document.getElementById('modal-not-answered').innerText = s.notAns;
-    document.getElementById('modal-marked').innerText = s.marked;
-    document.getElementById('modal-marked-ans').innerText = s.markedAns;
-    document.getElementById('modal-not-visited').innerText = s.notVisited;
+        // Save to localStorage only every 10 seconds or when switching questions
+        if (window.timeInSeconds % 10 === 0) {
+            localStorage.setItem('cp_timer', window.timeInSeconds);
+            State.save('cp_time_spent', State.timeSpent);
+        }
 
-    if (isTimeOver) {
-        finalSubmit(); // Auto-submit if time is up
-        return;
-    }
-
-    document.getElementById('submit-modal').classList.remove('hidden');
+        // Fast UI Update
+        const h = Math.floor(window.timeInSeconds / 3600);
+        const m = Math.floor((window.timeInSeconds % 3600) / 60);
+        const s = window.timeInSeconds % 60;
+        DOM.timer.innerText = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+    }, 1000);
 }
 
-        function finalSubmit() {
-    const report = allQuestions.map((p, i) => {
-        // q is the actual question object containing data like questionText, subject, etc.
-        const q = p.en || p.hi; 
-        const userChoice = State.answers[i];
-        const correct = q.hasOwnProperty('correctIndex') ? parseInt(q.correctIndex) : parseInt(q.correct);
+        function confirmSubmit(isTimeOver = false) {
+    const s = State.currentStats;
+    
+    document.getElementById('modal-total').innerText = allQuestions.length;
+    document.getElementById('modal-answered').innerText = s.ans;
+    document.getElementById('modal-not-answered').innerText = s.notAns;
+    document.getElementById('modal-marked').innerText = s.marked;
+    document.getElementById('modal-marked-ans').innerText = s.markedAns;
+    document.getElementById('modal-not-visited').innerText = s.notVisited;
 
-        return { 
-            pair: p, 
-            userSelectedIndex: userChoice, 
-            isCorrect: userChoice === correct, 
-            timeSpent: State.timeSpent[i],
-            // ADD THIS LINE BELOW
-            subject: q.subject || "General" 
-        };
-    });
+    if (isTimeOver) {
+        finalSubmit(); // Auto-submit if time is up
+        return;
+    }
 
-    // ... rest of your scoring logic ...
-    const correctCount = report.filter(r => r.userSelectedIndex !== undefined && r.isCorrect).length;
-    const wrongCount = report.filter(r => r.userSelectedIndex !== undefined && !r.isCorrect).length;
-    const score = Math.max(0, correctCount - (wrongCount / 3)).toFixed(2);
-    
-    localStorage.setItem('detailedTestReport', JSON.stringify(report));
-    
-    // Optional: If you want subject-wise totals in your summary object too:
-    localStorage.setItem('lastTestResult', JSON.stringify({ 
-        testName: DOM.title.innerText, 
-        totalQuestions: allQuestions.length, 
-        correct: correctCount, 
-        incorrect: wrongCount, 
-        total: parseFloat(score) 
-    }));
-
-    ['cp_answers', 'cp_reviews', 'cp_visited', 'cp_timer', 'cp_time_spent', 'cp_question_order'].forEach(k => localStorage.removeItem(k));
-    window.location.href = "result.html";
+    document.getElementById('submit-modal').classList.remove('hidden');
 }
 
-        // Global UI toggles
-        function closeModal() { document.getElementById('submit-modal').classList.add('hidden'); document.body.classList.remove('modal-open'); }
-        function setLanguage(l) { currentLang = l; renderQuestion(); updatePalette(); }
+        function finalSubmit() {
+    const report = allQuestions.map((p, i) => {
+        // q is the actual question object containing data like questionText, subject, etc.
+        const q = p.en || p.hi; 
+        const userChoice = State.answers[i];
+        const correct = q.hasOwnProperty('correctIndex') ? parseInt(q.correctIndex) : parseInt(q.correct);
 
-        // Security
-        document.addEventListener('contextmenu', e => e.preventDefault());
-        document.addEventListener('keydown', e => {
-            if (e.key === "F12" || (e.ctrlKey && ['i','j','c','u','s','p'].includes(e.key.toLowerCase()))) e.preventDefault();
-        });
+        return { 
+            pair: p, 
+            userSelectedIndex: userChoice, 
+            isCorrect: userChoice === correct, 
+            timeSpent: State.timeSpent[i],
+            // ADD THIS LINE BELOW
+            subject: q.subject || "General" 
+        };
+    });
 
-        loadTestData();
-    </script>
+    // ... rest of your scoring logic ...
+    const correctCount = report.filter(r => r.userSelectedIndex !== undefined && r.isCorrect).length;
+    const wrongCount = report.filter(r => r.userSelectedIndex !== undefined && !r.isCorrect).length;
+    const score = Math.max(0, correctCount - (wrongCount / 3)).toFixed(2);
+    
+    localStorage.setItem('detailedTestReport', JSON.stringify(report));
+    
+    // Optional: If you want subject-wise totals in your summary object too:
+    localStorage.setItem('lastTestResult', JSON.stringify({ 
+        testName: DOM.title.innerText, 
+        totalQuestions: allQuestions.length, 
+        correct: correctCount, 
+        incorrect: wrongCount, 
+        total: parseFloat(score) 
+    }));
+
+    ['cp_answers', 'cp_reviews', 'cp_visited', 'cp_timer', 'cp_time_spent', 'cp_question_order'].forEach(k => localStorage.removeItem(k));
+    window.location.href = "result.html";
+}
+
+        // Global UI toggles
+        function closeModal() { document.getElementById('submit-modal').classList.add('hidden'); document.body.classList.remove('modal-open'); }
+        function setLanguage(l) { currentLang = l; renderQuestion(); updatePalette(); }
+
+        // Add to your <script> section
+window.onblur = function() {
+    console.warn("Tab switch detected");
+    // You could trigger an alert or log this to Firebase here.
+};
+        // Security
+        document.addEventListener('contextmenu', e => e.preventDefault());
+        document.addEventListener('keydown', e => {
+            if (e.key === "F12" || (e.ctrlKey && ['i','j','c','u','s','p'].includes(e.key.toLowerCase()))) e.preventDefault();
+        });
+
+        loadTestData();
+    </script>
 </body>
 </html>
